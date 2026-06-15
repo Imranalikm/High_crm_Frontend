@@ -1,0 +1,826 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Hind:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  /* Fonts */
+  --font-display: "Poppins", sans-serif;
+  --font-heading: "Poppins", sans-serif;
+  --font-body: "Hind", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Redefine white color dynamically based on light/dark mode for automatic theme support in all panels */
+  --color-white: var(--white-dynamic);
+
+  /* Surface & layout colors */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-2);
+  --color-muted-surface: var(--muted-surface);
+  --color-surface-bright: var(--surface-bright);
+  --color-border: var(--border);
+  --color-glass: var(--glass);
+
+  /* Brand — identity */
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-strong);
+  --color-brand-muted: color-mix(in srgb, var(--brand) 12%, transparent);
+  --color-primary: var(--brand);
+  --color-primary-hover: var(--brand-strong);
+  --color-primary-container: var(--brand-strong);
+
+  /* Text */
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-secondary: var(--text-muted);
+  --color-text-on-accent: var(--text-on-accent);
+
+  /* Semantic state colors — independent of brand */
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-secondary: var(--accent);
+  --color-border-subtle: var(--glass);
+  --color-cyan: var(--cyan);
+  --color-purple: var(--purple);
+  
+  /* Dynamic shadows */
+  --shadow-card-subtle: var(--shadow-dynamic);
+}
+
+@layer base {
+  :root {
+    /* ── DIGITAL OBSIDIAN (Light) ── */
+    --bg: #f8fafc;
+    --white-dynamic: #0b1326;
+    --surface: #ffffff;
+    --surface-2: #f1f5f9;
+    --muted-surface: #e2e8f0;
+    --surface-bright: #cbd5e1;
+
+    --text: #0b1326;
+    --text-muted: #424754;
+
+    /* The Accents */
+    --brand: #2a4a8a;
+    --brand-strong: #1e3a8a;
+
+    --positive: #2db85a;
+    --negative: #dc2626;
+    --warning: #d97706;
+    --accent: #2a4a8a;
+    --cyan: #0e9cb8;
+    --purple: #7c3aed;
+
+    --border: rgba(66, 71, 84, 0.15);
+    --glass: rgba(255, 255, 255, 0.1); /* Simplified */
+
+    --text-on-accent: #ffffff;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(66, 71, 84, 0.1);
+
+    /* RGB Helpers */
+    --primary-rgb: 42, 74, 138;
+    --negative-rgb: 220, 38, 38;
+
+    /* Shadows */
+    --shadow-dynamic: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  }
+
+  .dark {
+    /* ── DIGITAL OBSIDIAN (Dark) ── */
+    --bg: #0b1326; /* Primary void */
+    --white-dynamic: #ffffff;
+    --surface: #060e20; /* Card surface */
+    --surface-2: #131b2e; /* Section surface / Nav */
+    --muted-surface: #1a2540; /* Active panels */
+    --surface-bright: #31394d; /* Hover rank */
+
+    --text: #dae2fd; /* on_surface */
+    --text-muted: #c2c6d6; /* on_surface_variant */
+
+    /* The Accents */
+    --brand: #adc6ff; /* Primary Focus Blue */
+    --brand-strong: #2a4a8a; /* Primary Container */
+
+    --positive: #4ae176; /* Bioluminescent Green */
+    --positive-dim: #2db85a; /* Buy button green */
+
+    --negative: #ffb3ad; /* Sophisticated Red */
+    --warning: #f59e0b;
+    --accent: #adc6ff;
+    --cyan: #22d3ee;  /* Accent cyan — dashboard stream / charts */
+    --purple: #a78bfa; /* Accent purple — dashboard KPIs / trading */
+
+    --border: rgba(66, 71, 84, 0.15); /* Ghost Border */
+    --glass: rgba(34, 47, 74, 0.15); /* Simplified */
+
+    --text-on-accent: #0b1326;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(173, 198, 255, 0.1);
+
+    /* RGB Helpers */
+    --primary-rgb: 173, 198, 255;
+    --negative-rgb: 255, 179, 173;
+
+    /* Shadows */
+    --shadow-dynamic: 0 4px 16px -2px rgba(0, 0, 0, 0.45), 0 3px 6px -2px rgba(0, 0, 0, 0.35);
+  }
+
+  [data-theme="emerald"] {
+    --bg: #f0fdf9;
+    --white-dynamic: #021710;
+    --surface: #ffffff;
+    --surface-2: #dcfaf2;
+    --muted-surface: #b4f2e2;
+    --surface-bright: #86deca;
+    --brand: #0a8c78;
+    --brand-strong: #076d5c;
+    --accent: #10b981;
+    --text: #021710;
+    --text-muted: #1c5848;
+    --border: rgba(10, 140, 120, 0.15);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(10, 140, 120, 0.14);
+    --primary-rgb: 10, 140, 120;
+    --glass: rgba(10, 140, 120, 0.07);
+    --shadow-dynamic: 0 4px 16px -2px rgba(10, 140, 120, 0.1), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="emerald"] {
+    --bg: #010d0a;
+    --white-dynamic: #d4f8ef;
+    --surface: #061412;
+    --surface-2: #0c211a;
+    --muted-surface: #112e25;
+    --surface-bright: #183d30;
+    --brand: #2dd4bf;
+    --brand-strong: #0a8c78;
+    --accent: #10b981;
+    --text: #d4f8ef;
+    --text-muted: #58c4ac;
+    --border: rgba(45, 212, 191, 0.13);
+    --text-on-accent: #010d0a;
+    --scrollbar-thumb: rgba(45, 212, 191, 0.11);
+    --primary-rgb: 45, 212, 191;
+    --glass: rgba(45, 212, 191, 0.06);
+    --shadow-dynamic: 0 6px 28px -2px rgba(0, 0, 0, 0.72), 0 2px 10px -2px rgba(45, 212, 191, 0.07);
+  }
+
+
+  /* ============================================================
+     OBSIDIAN LUXE — Enterprise / B2B / Deal-room CRM
+     Navy-deep with electric cyan. Precision, authority, luxury.
+     ============================================================ */
+
+  [data-theme="obsidian-luxe"] {
+    --bg: #f3f7ff;
+    --white-dynamic: #06101e;
+    --surface: #ffffff;
+    --surface-2: #e3edfb;
+    --muted-surface: #cae0f8;
+    --surface-bright: #aeccea;
+    --brand: #163878;
+    --brand-strong: #102c60;
+    --accent: #0095cc;
+    --text: #06101e;
+    --text-muted: #2a4460;
+    --border: rgba(22, 56, 120, 0.14);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(22, 56, 120, 0.14);
+    --primary-rgb: 22, 56, 120;
+    --glass: rgba(22, 56, 120, 0.07);
+    --shadow-dynamic: 0 4px 18px -2px rgba(22, 56, 120, 0.1), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="obsidian-luxe"] {
+    --bg: #01060e;
+    --white-dynamic: #ddeeff;
+    --surface: #060d1e;
+    --surface-2: #0c1830;
+    --muted-surface: #142444;
+    --surface-bright: #1c3058;
+    --brand: #78b6f8;
+    --brand-strong: #163878;
+    --accent: #00ccf0;
+    --text: #ddeeff;
+    --text-muted: #6a94bc;
+    --border: rgba(120, 182, 248, 0.12);
+    --text-on-accent: #01060e;
+    --scrollbar-thumb: rgba(120, 182, 248, 0.1);
+    --primary-rgb: 120, 182, 248;
+    --glass: rgba(120, 182, 248, 0.06);
+    --shadow-dynamic: 0 6px 30px -2px rgba(0, 0, 0, 0.78), 0 2px 12px -2px rgba(120, 182, 248, 0.09);
+  }
+
+
+  /* ============================================================
+     INDIGO — SaaS / Tech / Product-led CRM
+     Rich indigo + electric violet. Modern, innovative, confident.
+     ============================================================ */
+
+  [data-theme="indigo"] {
+    --bg: #f7f6ff;
+    --white-dynamic: #0c0a26;
+    --surface: #ffffff;
+    --surface-2: #edeafd;
+    --muted-surface: #dad6fa;
+    --surface-bright: #c2bcf5;
+    --brand: #4f46e5;
+    --brand-strong: #3c34ce;
+    --accent: #7c3aed;
+    --text: #0c0a26;
+    --text-muted: #3e3c72;
+    --border: rgba(79, 70, 229, 0.14);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(79, 70, 229, 0.14);
+    --primary-rgb: 79, 70, 229;
+    --glass: rgba(79, 70, 229, 0.07);
+    --shadow-dynamic: 0 4px 18px -2px rgba(79, 70, 229, 0.12), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="indigo"] {
+    --bg: #030210;
+    --white-dynamic: #e6e4ff;
+    --surface: #09081f;
+    --surface-2: #110f34;
+    --muted-surface: #191748;
+    --surface-bright: #21205e;
+    --brand: #a5a3ff;
+    --brand-strong: #4f46e5;
+    --accent: #e879f9;
+    --text: #e6e4ff;
+    --text-muted: #908ec2;
+    --border: rgba(165, 163, 255, 0.12);
+    --text-on-accent: #030210;
+    --scrollbar-thumb: rgba(165, 163, 255, 0.1);
+    --primary-rgb: 165, 163, 255;
+    --glass: rgba(165, 163, 255, 0.06);
+    --shadow-dynamic: 0 6px 28px -2px rgba(0, 0, 0, 0.74), 0 2px 12px -2px rgba(165, 163, 255, 0.1);
+  }
+
+
+  /* ============================================================
+     SLATE — Corporate / Legal / Ops CRM
+     Steel-blue gray + sky blue. Clean, trust-inducing, executive.
+     ============================================================ */
+
+  [data-theme="slate"] {
+    --bg: #f4f6fa;
+    --white-dynamic: #0d1520;
+    --surface: #ffffff;
+    --surface-2: #eaecf2;
+    --muted-surface: #d5dae6;
+    --surface-bright: #bcc4d2;
+    --brand: #2c3e5c;
+    --brand-strong: #1e2e4a;
+    --accent: #0284c7;
+    --text: #0d1520;
+    --text-muted: #364c62;
+    --border: rgba(44, 62, 92, 0.13);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(44, 62, 92, 0.13);
+    --primary-rgb: 44, 62, 92;
+    --glass: rgba(44, 62, 92, 0.07);
+    --shadow-dynamic: 0 4px 14px -2px rgba(44, 62, 92, 0.1), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="slate"] {
+    --bg: #03080e;
+    --white-dynamic: #eaf1f8;
+    --surface: #0a1020;
+    --surface-2: #12192e;
+    --muted-surface: #1a2440;
+    --surface-bright: #243252;
+    --brand: #aec8e0;
+    --brand-strong: #2c3e5c;
+    --accent: #0ea5e9;
+    --text: #eaf1f8;
+    --text-muted: #7090aa;
+    --border: rgba(174, 200, 224, 0.11);
+    --text-on-accent: #03080e;
+    --scrollbar-thumb: rgba(174, 200, 224, 0.1);
+    --primary-rgb: 174, 200, 224;
+    --glass: rgba(174, 200, 224, 0.06);
+    --shadow-dynamic: 0 6px 24px -2px rgba(0, 0, 0, 0.66), 0 2px 10px -2px rgba(174, 200, 224, 0.06);
+  }
+
+
+  /* ============================================================
+     NAVY — Classic Enterprise / Financial / Banking CRM
+     Midnight navy + cerulean. Trustworthy, established, powerful.
+     ============================================================ */
+
+  [data-theme="navy"] {
+    --bg: #f2f7ff;
+    --white-dynamic: #050f20;
+    --surface: #ffffff;
+    --surface-2: #e0ecff;
+    --muted-surface: #c2d6f8;
+    --surface-bright: #a2bcee;
+    --brand: #153278;
+    --brand-strong: #0e2660;
+    --accent: #0ea5e9;
+    --text: #050f20;
+    --text-muted: #284068;
+    --border: rgba(21, 50, 120, 0.14);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(21, 50, 120, 0.14);
+    --primary-rgb: 21, 50, 120;
+    --glass: rgba(21, 50, 120, 0.07);
+    --shadow-dynamic: 0 4px 18px -2px rgba(21, 50, 120, 0.1), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="navy"] {
+    --bg: #01050e;
+    --white-dynamic: #d8e8ff;
+    --surface: #050c20;
+    --surface-2: #0b1632;
+    --muted-surface: #11224c;
+    --surface-bright: #182e64;
+    --brand: #66a8f8;
+    --brand-strong: #153278;
+    --accent: #38bdf8;
+    --text: #d8e8ff;
+    --text-muted: #5a82ba;
+    --border: rgba(102, 168, 248, 0.12);
+    --text-on-accent: #01050e;
+    --scrollbar-thumb: rgba(102, 168, 248, 0.1);
+    --primary-rgb: 102, 168, 248;
+    --glass: rgba(102, 168, 248, 0.06);
+    --shadow-dynamic: 0 6px 30px -2px rgba(0, 0, 0, 0.78), 0 2px 12px -2px rgba(102, 168, 248, 0.07);
+  }
+
+
+  /* ============================================================
+     AURORA — Creative / Marketing / Agency CRM
+     Deep violet + teal. Visionary, differentiated, premium.
+     ============================================================ */
+
+  [data-theme="aurora"] {
+    --bg: #faf8ff;
+    --white-dynamic: #100520;
+    --surface: #ffffff;
+    --surface-2: #f0e8ff;
+    --muted-surface: #e0ceff;
+    --surface-bright: #cab0ff;
+    --brand: #7c3aed;
+    --brand-strong: #6220d4;
+    --accent: #0d9488;
+    --text: #100520;
+    --text-muted: #483070;
+    --border: rgba(124, 58, 237, 0.14);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(124, 58, 237, 0.13);
+    --primary-rgb: 124, 58, 237;
+    --glass: rgba(124, 58, 237, 0.07);
+    --shadow-dynamic: 0 4px 18px -2px rgba(124, 58, 237, 0.11), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="aurora"] {
+    --bg: #03010e;
+    --white-dynamic: #ece2ff;
+    --surface: #0a061e;
+    --surface-2: #130d32;
+    --muted-surface: #1c1548;
+    --surface-bright: #241d5e;
+    --brand: #b68efc;
+    --brand-strong: #7c3aed;
+    --accent: #2dd4bf;
+    --text: #ece2ff;
+    --text-muted: #9a80c8;
+    --border: rgba(182, 142, 252, 0.12);
+    --text-on-accent: #03010e;
+    --scrollbar-thumb: rgba(182, 142, 252, 0.1);
+    --primary-rgb: 182, 142, 252;
+    --glass: rgba(182, 142, 252, 0.06);
+    --shadow-dynamic: 0 6px 30px -2px rgba(0, 0, 0, 0.78), 0 2px 12px -2px rgba(182, 142, 252, 0.09);
+  }
+
+
+  /* ============================================================
+     AMBER — Luxury / Premium / High-ticket CRM
+     Burnished gold + warm amber. Prestigious, refined, exclusive.
+     ============================================================ */
+
+  [data-theme="amber"] {
+    --bg: #fefcf3;
+    --white-dynamic: #190d02;
+    --surface: #fffdf7;
+    --surface-2: #f8efcc;
+    --muted-surface: #f0e0a0;
+    --surface-bright: #e2ca74;
+    --brand: #986010;
+    --brand-strong: #7a4c0c;
+    --accent: #d97706;
+    --text: #190d02;
+    --text-muted: #563a14;
+    --border: rgba(15, 96, 16, 0.15);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(15, 96, 16, 0.14);
+    --primary-rgb: 15, 96, 16;
+    --glass: rgba(15, 96, 16, 0.07);
+    --shadow-dynamic: 0 4px 18px -2px rgba(15, 96, 16, 0.1), 0 2px 8px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="amber"] {
+    --bg: #090601;
+    --white-dynamic: #fdf5e2;
+    --surface: #120c04;
+    --surface-2: #1d1408;
+    --muted-surface: #291c0a;
+    --surface-bright: #37240e;
+    --brand: #f5b934;
+    --brand-strong: #986010;
+    --accent: #fbbf24;
+    --text: #fdf5e2;
+    --text-muted: #c0a268;
+    --border: rgba(245, 185, 52, 0.14);
+    --text-on-accent: #090601;
+    --scrollbar-thumb: rgba(245, 185, 52, 0.11);
+    --primary-rgb: 245, 185, 52;
+    --glass: rgba(245, 185, 52, 0.07);
+    --shadow-dynamic: 0 6px 26px -2px rgba(0, 0, 0, 0.72), 0 2px 10px -2px rgba(245, 185, 52, 0.09);
+  }
+
+
+  /* ============================================================
+     CRIMSON — Bold / Executive / High-stakes CRM
+     Rich crimson + burnished amber. Authority, urgency, prestige.
+     ============================================================ */
+
+  [data-theme="crimson"] {
+    --bg: #fdf5f5;
+    --white-dynamic: #1c0404;
+    --surface: #ffffff;
+    --surface-2: #fae9e8;
+    --muted-surface: #f2d0cc;
+    --surface-bright: #e4b0aa;
+    --brand: #961616;
+    --brand-strong: #780e0e;
+    --accent: #c4891a;
+    --text: #1c0404;
+    --text-muted: #562a2a;
+    --border: rgba(150, 22, 22, 0.14);
+    --text-on-accent: #ffffff;
+    --scrollbar-thumb: rgba(150, 22, 22, 0.13);
+    --primary-rgb: 150, 22, 22;
+    --glass: rgba(150, 22, 22, 0.07);
+    --shadow-dynamic: 0 4px 16px -2px rgba(150, 22, 22, 0.1), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark[data-theme="crimson"] {
+    --bg: #090202;
+    --white-dynamic: #ffeeec;
+    --surface: #140505;
+    --surface-2: #1e0c0c;
+    --muted-surface: #2a1010;
+    --surface-bright: #3a1818;
+    --brand: #f87171;
+    --brand-strong: #961616;
+    --accent: #e6a020;
+    --text: #ffeeec;
+    --text-muted: #be8e8e;
+    --border: rgba(248, 112, 112, 0.12);
+    --text-on-accent: #090202;
+    --scrollbar-thumb: rgba(248, 112, 112, 0.1);
+    --primary-rgb: 248, 112, 112;
+    --glass: rgba(248, 112, 112, 0.06);
+    --shadow-dynamic: 0 6px 26px -2px rgba(0, 0, 0, 0.74), 0 2px 10px -2px rgba(248, 112, 112, 0.08);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-feature-settings: "ss01" 1, "cv03" 1, "cv04" 1;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition:
+      background-color 300ms ease,
+      color 300ms ease;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.035em;
+    font-weight: 600;
+  }
+
+  /* Reserve mono for dense numeric and operational data only */
+  .font-mono,
+  input[type="number"],
+  .price-data {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::placeholder {
+    letter-spacing: 0;
+  }
+}
+
+@layer utilities {
+  /* Minimal solid shadows only */
+  .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-md {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .focus-ring-primary {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  .btn-buy {
+    background-color: var(--positive);
+    color: var(--bg);
+  }
+
+  .btn-sell {
+    background-color: var(--negative);
+    color: #fff;
+  }
+
+  /* ── Global Scrollbar — sleek & minimal ── */
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--brand) 30%, transparent);
+  }
+
+  /* ── Sidebar auto-hide scrollbar ── */
+  .sidebar-scroll {
+    scrollbar-width: none;
+  }
+  .sidebar-scroll:hover {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+}
+
+/* Minimal Load Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.3s ease-out forwards;
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* ── no-scrollbar utility ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Sidebar collapsed tooltip animation ── */
+@keyframes sideTooltip {
+  from { opacity: 0; transform: translateX(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0)   scale(1); }
+}
+
+/* ── animate-in (Tailwind Animate compatible) ─────────────────
+   Enables: animate-in + fade-in, slide-in-from-*, zoom-in-*
+   Used across drawers, palettes, overlays, page transitions.
+───────────────────────────────────────────────────────────── */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform:
+      translate3d(
+        var(--tw-enter-translate-x, 0),
+        var(--tw-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--tw-enter-scale, 1),
+        var(--tw-enter-scale, 1),
+        var(--tw-enter-scale, 1)
+      );
+  }
+}
+
+.animate-in {
+  animation-name: enter;
+  animation-duration: var(--tw-anim-duration, 150ms);
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+/* Duration modifiers for animate-in */
+.animate-in.duration-150 { --tw-anim-duration: 150ms; }
+.animate-in.duration-200 { --tw-anim-duration: 200ms; }
+.animate-in.duration-300 { --tw-anim-duration: 300ms; }
+.animate-in.duration-500 { --tw-anim-duration: 500ms; }
+
+/* Entry effect modifiers */
+.fade-in                  { --tw-enter-opacity: 0; }
+.zoom-in                  { --tw-enter-scale: 0.95; }
+.zoom-in-95               { --tw-enter-scale: 0.95; }
+.zoom-in-98               { --tw-enter-scale: 0.98; }
+.slide-in-from-top-1      { --tw-enter-translate-y: -0.25rem; }
+.slide-in-from-top-2      { --tw-enter-translate-y: -0.5rem; }
+.slide-in-from-top-5      { --tw-enter-translate-y: -1.25rem; }
+.slide-in-from-bottom-2   { --tw-enter-translate-y: 0.5rem; }
+.slide-in-from-right-4    { --tw-enter-translate-x: 1rem; }
+.slide-in-from-left-2     { --tw-enter-translate-x: -0.5rem; }
+.fill-mode-both           { animation-fill-mode: both; }
+
+
+/* ═════════════════════════════════════════════════════════════
+   LIVE-TRADER CRM TYPOGRAPHY DESIGN SYSTEM
+   Standardized scale & pattern utilities matching v4 specs.
+═════════════════════════════════════════════════════════════ */
+@utility text-nano {
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+@utility text-micro {
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+@utility text-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+@utility text-caption {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+@utility text-body-scale {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+@utility text-data-sm {
+  font-size: 12.5px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+@utility text-ui {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+@utility text-data-md {
+  font-size: 13.5px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+@utility text-heading-sm {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+@utility text-heading-md {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+@utility text-heading-lg {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+@utility text-display-sm {
+  font-size: 23px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -0.04em;
+}
+@utility text-display-md {
+  font-size: 26px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -0.04em;
+}
+@utility text-display-lg {
+  font-size: 30px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  letter-spacing: -0.05em;
+}
+
+/* ── Typography Section Eyebrow ── */
+@utility text-section-eyebrow {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+/* ── Typography Drawer Title ── */
+@utility text-drawer-title {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+/* ── Typography KPI Value (Primary) ── */
+@utility text-kpi-val-primary {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+/* ── Typography KPI Value (Secondary) ── */
+@utility text-kpi-val-secondary {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+/* ── Typography Form Field Label ── */
+@utility text-form-field-label {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* ── Typography Data Row Label ── */
+@utility text-data-row-lbl {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* ── Typography Table Header ── */
+@utility text-table-header {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+
+

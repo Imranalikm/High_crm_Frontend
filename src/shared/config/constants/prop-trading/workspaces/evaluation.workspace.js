@@ -1,0 +1,10 @@
+export const evaluationRows = [
+  { id: 'EV-4421', trader: 'Sam Torres', uid: 'UID-8821', challenge: 'Standard 100K', phase: 'Phase 2', profit: '+7.4%', drawdown: '-3.1%', dailyLoss: 'OK', kyc: 'VERIFIED', risk: 'MEDIUM', reviewedBy: 'Auto', status: 'PENDING', days: 18, ts: '2024-08-01' },
+  { id: 'EV-4420', trader: 'Lena Braun', uid: 'UID-7712', challenge: 'Standard 10K', phase: 'Phase 1', profit: '+9.8%', drawdown: '-1.2%', dailyLoss: 'OK', kyc: 'VERIFIED', risk: 'LOW', reviewedBy: 'Admin', status: 'PENDING', days: 12, ts: '2024-08-01' },
+  { id: 'EV-4419', trader: 'Ali Hassan', uid: 'UID-3341', challenge: 'Standard 200K', phase: 'Phase 1', profit: '+5.1%', drawdown: '-7.8%', dailyLoss: 'WARN', kyc: 'PENDING', risk: 'HIGH', reviewedBy: 'Auto', status: 'REVIEW', days: 8, ts: '2024-07-31' },
+  { id: 'EV-4418', trader: 'Yuki Tanaka', uid: 'UID-9902', challenge: 'Standard 25K', phase: 'Phase 2', profit: '+10.2%', drawdown: '-2.0%', dailyLoss: 'OK', kyc: 'VERIFIED', risk: 'LOW', reviewedBy: 'Admin', status: 'APPROVED', days: 22, ts: '2024-07-30' },
+  { id: 'EV-4417', trader: 'Dev Patel', uid: 'UID-5521', challenge: 'Standard 50K', phase: 'Phase 1', profit: '-2.4%', drawdown: '-10.1%', dailyLoss: 'FAIL', kyc: 'VERIFIED', risk: 'HIGH', reviewedBy: 'Auto', status: 'REJECTED', days: 14, ts: '2024-07-30' },
+  { id: 'EV-4416', trader: 'Sofia Reyes', uid: 'UID-1182', challenge: 'Aggressive 25K', phase: 'Phase 1', profit: '+11.3%', drawdown: '-3.5%', dailyLoss: 'OK', kyc: 'VERIFIED', risk: 'LOW', reviewedBy: 'Admin', status: 'APPROVED', days: 7, ts: '2024-07-29' },
+  { id: 'EV-4415', trader: 'Kwame Asante', uid: 'UID-6634', challenge: 'Standard 100K', phase: 'Phase 2', profit: '+8.7%', drawdown: '-4.2%', dailyLoss: 'OK', kyc: 'VERIFIED', risk: 'MEDIUM', reviewedBy: 'Admin', status: 'PENDING', days: 19, ts: '2024-07-28' },
+  { id: 'EV-4414', trader: 'Nina Voronova', uid: 'UID-2298', challenge: 'Standard 25K', phase: 'Phase 1', profit: '+3.2%', drawdown: '-0.8%', dailyLoss: 'OK', kyc: 'VERIFIED', risk: 'LOW', reviewedBy: 'Auto', status: 'PENDING', days: 5, ts: '2024-07-28' },
+];

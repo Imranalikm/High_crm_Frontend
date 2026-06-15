@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/shared/*": ["src/shared/*"],
+      "@/admin/*": ["src/admin/*"],
+      "@/client/*": ["src/client/*"],
+      "@/components/*": ["src/shared/components/*"],
+      "@/hooks/*": ["src/shared/hooks/*"],
+      "@/utils/*": ["src/shared/utils/*"],
+      "@/styles/*": ["src/shared/styles/*"],
+      "@/api/*": ["src/shared/api/*"],
+      "@/auth/*": ["src/shared/features/auth/*"],
+      "@/config/*": ["src/shared/config/*"],
+      "@/features/auth/*": ["src/shared/features/auth/*"],
+      "@/features/account-center/*": ["src/shared/features/account-center/*"],
+      "@/features/client-dashboard/*": ["src/client/features/client-dashboard/*"],
+      "@/features/client-finance/*": ["src/client/features/client-finance/*"],
+      "@/features/client-support/*": ["src/client/features/client-support/*"],
+      "@/features/dashboard/*": ["src/admin/features/dashboard/*"],
+      "@/features/users/*": ["src/admin/features/users/*"],
+      "@/features/finance/*": ["src/admin/features/finance/*"],
+      "@/features/trading/*": ["src/admin/features/trading/*"],
+      "@/features/copy-trading/*": ["src/admin/features/copy-trading/*"],
+      "@/features/ib-system/*": ["src/admin/features/ib-system/*"],
+      "@/features/prop-trading/*": ["src/admin/features/prop-trading/*"],
+      "@/features/reports/*": ["src/admin/features/reports/*"],
+      "@/features/support/*": ["src/admin/features/support/*"],
+      "@/features/settings/*": ["src/admin/features/settings/*"],
+      "@/features/roles-permissions/*": ["src/admin/features/roles-permissions/*"],
+      "@/features/group-management/*": ["src/admin/features/group-management/*"]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}
