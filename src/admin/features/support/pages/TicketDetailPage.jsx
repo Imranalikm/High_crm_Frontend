@@ -133,7 +133,7 @@ function ThreadMessage({ msg }) {
 
   const accent = isInternal ? '#a78bfa' : isAgent ? 'var(--brand)' : 'var(--text-muted)';
 
-  const initials = msg.author
+  const initials = (msg.author || 'User')
     .split(' ')
     .map((w) => w[0])
     .join('')
@@ -685,7 +685,7 @@ function TicketDetail({ ticket: t, onBack, navigate }) {
                     color: 'var(--brand)',
                   }}
                 >
-                  {t.user
+                  {(t.user || 'Unknown')
                     .split(' ')
                     .map((w) => w[0])
                     .join('')
