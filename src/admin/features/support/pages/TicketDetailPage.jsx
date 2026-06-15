@@ -424,30 +424,55 @@ function TicketDetail({ ticket: t, onBack, navigate }) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const sendReply = () => {
+  const sendReply = async () => {
     if (!replyText.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `MSG-${Date.now()}`,
-        type: noteType === 'REPLY' ? 'agent' : 'internal',
-        author: 'Arjun Ravi',
-        role: 'Admin',
-        ts: new Date().toLocaleString('en-GB').replace(',', ''),
-        body: replyText.trim(),
-      },
-    ]);
+    const type = noteType === 'REPLY' ? 'agent' : 'internal';
+    try {
+      const result = await adminSupportApi.replyToTicket(t.uuid, replyText.trim(), type);
+      
+      const newMsg = {
+        id: result.data.id,
+        type: result.data.type,
+        author: result.data.author?.name || 'Admin',
+        role: result.data.author?.roleId === 1 ? 'Admin' : 'Agent',
+        ts: new Date(result.data.createdAt).toLocaleString('en-GB').replace(',', ''),
+        body: result.data.body,
+      };
 
-    setReplyText('');
-    notify(noteType === 'REPLY' ? 'Reply sent' : 'Note saved');
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setMessages((prev) => [...prev, newMsg]);
+      setReplyText('');
+      notify(noteType === 'REPLY' ? 'Reply sent' : 'Note saved');
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (err) {
+      console.error('Error sending reply:', err);
+      notify('Failed to send reply');
+    }
   };
 
-  const assignAgent = (name) => {
-    setOwner({ name, photo: '' });
-    setShowAssign(false);
-    notify(`Assigned to ${name}`);
+  const assignAgent = async (name) => {
+    try {
+      // In a real app we'd pass the agent's ID from a fetched list.
+      // For now, we'll just mock the API call since we don't have agent IDs in the UI.
+      // await adminSupportApi.assignTicketAgent(t.uuid, agentId);
+      setOwner({ name, photo: '' });
+      setShowAssign(false);
+      notify(`Assigned to ${name}`);
+    } catch (err) {
+      console.error('Error assigning agent:', err);
+      notify('Failed to assign agent');
+    }
+  };
+
+  const changeStatus = async (newStatus) => {
+    try {
+      await adminSupportApi.updateTicketStatus(t.uuid, newStatus);
+      setStatus(newStatus);
+      notify(`Ticket marked as ${newStatus.toLowerCase()}`);
+    } catch (err) {
+      console.error('Error updating status:', err);
+      notify('Failed to update status');
+    }
   };
 
   const msgCount = messages.filter((m) => m.type !== 'system').length;
@@ -530,20 +555,14 @@ function TicketDetail({ ticket: t, onBack, navigate }) {
 
               {status === 'OPEN' || status === 'PENDING' ? (
                 <ActionBtn
-                  onClick={() => {
-                    setStatus('RESOLVED');
-                    notify('Ticket resolved');
-                  }}
+                  onClick={() => changeStatus('RESOLVED')}
                   icon={CheckCircle2}
                   label="Resolve"
                   variant="success"
                 />
               ) : (
                 <ActionBtn
-                  onClick={() => {
-                    setStatus('OPEN');
-                    notify('Ticket reopened');
-                  }}
+                  onClick={() => changeStatus('OPEN')}
                   icon={RefreshCw}
                   label="Reopen"
                   variant="warning"
@@ -551,10 +570,7 @@ function TicketDetail({ ticket: t, onBack, navigate }) {
               )}
 
               <ActionBtn
-                onClick={() => {
-                  setStatus('CLOSED');
-                  notify('Ticket closed');
-                }}
+                onClick={() => changeStatus('CLOSED')}
                 icon={XCircle}
                 label="Close"
                 variant="danger"
