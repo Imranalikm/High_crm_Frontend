@@ -224,6 +224,76 @@ function CardInstructions({ method }) {
   );
 }
 
+/* ── UPI instructions ── */
+function UpiInstructions() {
+  const details = [
+    { label: 'UPI ID',          value: 'smatams@ybl' },
+    { label: 'Merchant Name',   value: 'Smatams Trading' },
+    { label: 'Reference Note',  value: 'DEP-2026-00483', highlight: true },
+  ];
+
+  const [copied, setCopied] = useState(null);
+
+  const handleCopy = (label, value) => {
+    navigator.clipboard.writeText(value).catch(() => {});
+    setCopied(label);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div
+        className="flex items-start gap-2.5 p-3.5 rounded-[10px] text-[12px]"
+        style={{ background: 'color-mix(in srgb, var(--warning) 7%, transparent)', color: 'rgba(194,198,214,0.65)' }}
+      >
+        <AlertCircle size={13} className="shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} strokeWidth={2} />
+        <span>
+          Pay exactly the amount requested using any UPI app (GPay, PhonePe, Paytm). <strong style={{ color: 'var(--text)' }}>Do not forget to add the Reference Note</strong>.
+        </span>
+      </div>
+
+      <div
+        className="rounded-[13px] overflow-hidden"
+        style={{ background: 'var(--muted-surface)', border: '1px solid var(--border)' }}
+      >
+        {details.map((d, i) => (
+          <div
+            key={d.label}
+            className="flex items-center justify-between px-4 py-3.5 transition-colors duration-150"
+            style={{
+              borderBottom: i < details.length - 1 ? '1px solid rgba(66,71,84,0.12)' : 'none',
+              background: d.highlight ? 'color-mix(in srgb, var(--brand) 6%, transparent)' : 'transparent',
+            }}
+          >
+            <div>
+              <p className="text-[9.5px] font-black uppercase tracking-[0.14em] mb-0.5" style={{ color: 'rgba(194,198,214,0.35)' }}>
+                {d.label}
+              </p>
+              <p
+                className="font-mono text-[13.5px] font-bold"
+                style={{ color: d.highlight ? 'var(--brand)' : 'var(--text)' }}
+              >
+                {d.value}
+              </p>
+            </div>
+            <button
+              onClick={() => handleCopy(d.label, d.value)}
+              className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer"
+              style={{
+                color: copied === d.label ? 'var(--positive)' : 'rgba(194,198,214,0.45)',
+                background: copied === d.label ? 'color-mix(in srgb, var(--positive) 8%, transparent)' : 'transparent',
+              }}
+            >
+              {copied === d.label ? <CheckCircle2 size={12} /> : <Copy size={12} />}
+              {copied === d.label ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * DepositInstructions
  * Conditionally renders method-specific instructions.
@@ -233,6 +303,7 @@ export function DepositInstructions({ method, amount }) {
     <div className="animate-in fade-in duration-300">
       {method === 'bank'   && <BankInstructions amount={amount} />}
       {method === 'crypto' && <CryptoInstructions amount={amount} />}
+      {method === 'upi'    && <UpiInstructions amount={amount} />}
       {(method === 'card' || method === 'skrill') && <CardInstructions method={method} amount={amount} />}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine, ArrowUpFromLine, MonitorCheck,
@@ -6,32 +6,52 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
 import { Card } from '@/components/ui/Card';
-
-const ACCOUNT = {
-  name: 'Marcus Chen',
-  login: '100841',
-  server: 'MT5-Live-01',
-  type: 'LIVE',
-  leverage: '1:100',
-  currency: 'USD',
-  balance: 84200,
-  equity: 86140,
-  freeMargin: 81930,
-  usedMargin: 4210,
-  todayPnl: 1940,
-  todayPnlPct: 2.31,
-  openPositions: 3,
-};
+import { apiClient } from '@/shared/api/client/apiClient';
 
 export function WelcomeBanner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [hideBalance, setHideBalance] = useState(false);
+  const [mt5Account, setMt5Account] = useState(null);
+  
+  useEffect(() => {
+    const fetchAccount = async () => {
+      try {
+        const response = await apiClient.get('/mt5-accounts');
+        const accounts = response?.data || response || [];
+        const arr = Array.isArray(accounts) ? accounts : [];
+        if (arr.length > 0) {
+          // Sort by balance descending to show the most active account, or just pick the first
+          setMt5Account(arr[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching mt5 accounts for banner:', err);
+      }
+    };
+    fetchAccount();
+  }, []);
   
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const displayName = user?.name ?? ACCOUNT.name;
-  const pnlPos = ACCOUNT.todayPnl >= 0;
+  const displayName = user?.name || 'Trader';
+  
+  // Map fetched data or use zeroed fallbacks
+  const login = mt5Account?.accountid || 'No Account';
+  const server = mt5Account?.server || '—';
+  const leverage = mt5Account?.leverage || '—';
+  const type = mt5Account?.status || 'N/A';
+  
+  const balance = parseFloat(mt5Account?.balance || 0);
+  const equity = balance; // In a real MT5 integration this would be dynamic equity
+  const freeMargin = balance;
+  const usedMargin = 0;
+  
+  // PnL placeholders since these require live MT5 streaming API which isn't wired yet
+  const todayPnl = 0;
+  const todayPnlPct = 0;
+  const openPositions = 0;
+  
+  const pnlPos = todayPnl >= 0;
 
   return (
     <Card className="p-0 overflow-hidden" padding={false}>
@@ -66,22 +86,22 @@ export function WelcomeBanner() {
             {/* Account Metadata Row */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 text-[12px] text-text-muted">
               <div>
-                <span className="text-text-muted">Account:</span> <span className="font-mono font-semibold text-text">{ACCOUNT.login}</span>
+                <span className="text-text-muted">Account:</span> <span className="font-mono font-semibold text-text">{login}</span>
               </div>
               <div className="w-1.5 h-1.5 rounded-full bg-border/40 hidden sm:block" />
               <div>
-                <span className="text-text-muted">Server:</span> <span className="font-mono font-semibold text-text">{ACCOUNT.server}</span>
+                <span className="text-text-muted">Server:</span> <span className="font-mono font-semibold text-text">{server}</span>
               </div>
               <div className="w-1.5 h-1.5 rounded-full bg-border/40 hidden sm:block" />
               <div>
-                <span className="text-text-muted">Leverage:</span> <span className="font-mono font-semibold text-text">{ACCOUNT.leverage}</span>
+                <span className="text-text-muted">Leverage:</span> <span className="font-mono font-semibold text-text">{leverage}</span>
               </div>
               
               {/* Status Tags */}
               <div className="flex items-center gap-2 ml-1 sm:ml-2">
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[9.5px] font-bold tracking-wider bg-positive/8 border border-positive/20 text-positive">
                   <span className="w-1.5 h-1.5 rounded-full bg-positive animate-pulse" />
-                  {ACCOUNT.type}
+                  {type}
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9.5px] font-bold tracking-wider bg-positive/8 border border-positive/20 text-positive">
                   <ShieldCheck size={11} />
@@ -103,7 +123,7 @@ export function WelcomeBanner() {
                   </button>
                 </div>
                 <p className="font-mono font-black text-[28px] tracking-[-0.04em] text-text leading-none">
-                  {hideBalance ? '••••••' : `$${ACCOUNT.equity.toLocaleString()}`}
+                  {hideBalance ? '••••••' : `$${equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`}
                 </p>
               </div>
 
@@ -116,10 +136,10 @@ export function WelcomeBanner() {
                     className={`font-mono font-bold text-[18px] ${pnlPos ? 'text-positive' : 'text-negative'}`}
                     style={{ textShadow: `0 0 16px color-mix(in srgb, var(--${pnlPos ? 'positive' : 'negative'}) 15%, transparent)` }}
                   >
-                    {pnlPos ? '+' : ''}${Math.abs(ACCOUNT.todayPnl).toLocaleString()}
+                    {pnlPos ? '+' : ''}${Math.abs(todayPnl).toLocaleString()}
                   </span>
                   <span className={`font-mono text-[12.5px] font-semibold ${pnlPos ? 'text-positive' : 'text-negative'}`}>
-                    ({pnlPos ? '+' : ''}{ACCOUNT.todayPnlPct}%)
+                    ({pnlPos ? '+' : ''}{todayPnlPct}%)
                   </span>
                 </div>
               </div>
@@ -157,10 +177,10 @@ export function WelcomeBanner() {
         {/* Bottom row: Balance Metrics Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 border-t border-border/10">
           {[
-            { label: 'Balance', val: `$${ACCOUNT.balance.toLocaleString()}`, color: 'var(--brand)', icon: Wallet },
-            { label: 'Free Margin', val: `$${ACCOUNT.freeMargin.toLocaleString()}`, color: 'var(--cyan)', icon: Landmark },
-            { label: 'Margin Used', val: `$${ACCOUNT.usedMargin.toLocaleString()}`, color: 'var(--warning)', icon: Layers },
-            { label: 'Open Trades', val: ACCOUNT.openPositions, color: 'var(--text)', icon: TrendingUp },
+            { label: 'Balance', val: `$${balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`, color: 'var(--brand)', icon: Wallet },
+            { label: 'Free Margin', val: `$${freeMargin.toLocaleString('en-US', {minimumFractionDigits: 2})}`, color: 'var(--cyan)', icon: Landmark },
+            { label: 'Margin Used', val: `$${usedMargin.toLocaleString('en-US', {minimumFractionDigits: 2})}`, color: 'var(--warning)', icon: Layers },
+            { label: 'Open Trades', val: openPositions, color: 'var(--text)', icon: TrendingUp },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-3">
               <div 

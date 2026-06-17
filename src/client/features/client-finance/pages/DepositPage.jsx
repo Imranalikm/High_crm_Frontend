@@ -287,12 +287,12 @@ export function DepositPage() {
                   </button>
                 )}
 
-                {(method === 'bank' || method === 'crypto') && (
+                {(method === 'bank' || method === 'crypto' || method === 'upi') && (
                   <div className="flex flex-col gap-4 mt-2">
-                    {method === 'bank' && (
+                    {(method === 'bank' || method === 'upi') && (
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
-                          Bank Wire Transaction ID (Required)
+                          {method === 'upi' ? 'UPI Transaction ID (UTR) (Required)' : 'Bank Wire Transaction ID (Required)'}
                         </label>
                         <input
                           type="text"
@@ -316,11 +316,11 @@ export function DepositPage() {
                   </div>
                 )}
 
-                {(method === 'bank' || method === 'crypto') && (
+                {(method === 'bank' || method === 'crypto' || method === 'upi') && (
                   <button
                     id="deposit-confirm-sent-btn"
                     onClick={handleConfirm}
-                    disabled={isSubmitting || (method === 'bank' && !transactionId)}
+                    disabled={isSubmitting || ((method === 'bank' || method === 'upi') && !transactionId)}
                     className="w-full h-12 rounded-[10px] font-bold text-[13px] transition-all duration-150 cursor-pointer border border-border bg-surface-elevated text-text hover:bg-muted-surface active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                   >
                     <Check size={14} strokeWidth={2.5} />

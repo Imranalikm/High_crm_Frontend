@@ -1,38 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { KpiCard } from '@/components/cards';
 import {
   Wallet, TrendingUp, Shield, BarChart2,
   PieChart, Target
 } from 'lucide-react';
-
-const ACCOUNT = {
-  balance: 84200,
-  equity: 86140,
-  freeMargin: 81930,
-  todayPnl: 1940,
-  todayPnlPct: 2.31,
-  openPositions: 3,
-  winRate: 68.4,
-  totalTrades: 284,
-  currency: 'USD'
-};
+import { apiClient } from '@/shared/api/client/apiClient';
 
 export function ClientKpis() {
-  const pnlPos = ACCOUNT.todayPnl >= 0;
+  const [mt5Account, setMt5Account] = useState(null);
+
+  useEffect(() => {
+    const fetchAccount = async () => {
+      try {
+        const response = await apiClient.get('/mt5-accounts');
+        const accounts = response?.data || response || [];
+        const arr = Array.isArray(accounts) ? accounts : [];
+        if (arr.length > 0) {
+          setMt5Account(arr[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching mt5 accounts for KPIs:', err);
+      }
+    };
+    fetchAccount();
+  }, []);
+
+  const balance = parseFloat(mt5Account?.balance || 0);
+  const equity = balance; 
+  const freeMargin = balance;
+  
+  // Placeholders for real-time MT5 metrics not yet available via API
+  const todayPnl = 0;
+  const todayPnlPct = 0;
+  const openPositions = 0;
+  const winRate = 0;
+  const totalTrades = 0;
+  const currency = 'USD';
+
+  const pnlPos = todayPnl >= 0;
 
   const KPI_DATA = [
     {
       label:   'Balance',
-      value:   `$${ACCOUNT.balance.toLocaleString()}`,
+      value:   `$${balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
       trend:   'stable',
-      sub:     `USD · ${ACCOUNT.currency}`,
+      sub:     `USD · ${currency}`,
       Icon:    Wallet,
       accent:  'var(--brand)',
     },
     {
       label:   'Equity',
-      value:   `$${ACCOUNT.equity.toLocaleString()}`,
-      trend:   '+2.3%',
+      value:   `$${equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+      trend:   '+0.0%',
       trendUp: true,
       sub:     'floating included',
       Icon:    TrendingUp,
@@ -40,7 +59,7 @@ export function ClientKpis() {
     },
     {
       label:   'Free Margin',
-      value:   `$${ACCOUNT.freeMargin.toLocaleString()}`,
+      value:   `$${freeMargin.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
       trend:   'stable',
       sub:     'available to trade',
       Icon:    Shield,
@@ -48,8 +67,8 @@ export function ClientKpis() {
     },
     {
       label:   "Today's PnL",
-      value:   `${pnlPos ? '+' : ''}$${ACCOUNT.todayPnl.toLocaleString()}`,
-      trend:   `${pnlPos ? '+' : ''}${ACCOUNT.todayPnlPct}%`,
+      value:   `${pnlPos ? '+' : ''}$${todayPnl.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+      trend:   `${pnlPos ? '+' : ''}${todayPnlPct}%`,
       trendUp: pnlPos,
       sub:     'floating live',
       Icon:    BarChart2,
@@ -57,7 +76,7 @@ export function ClientKpis() {
     },
     {
       label:   'Open Positions',
-      value:   ACCOUNT.openPositions.toString(),
+      value:   openPositions.toString(),
       trend:   'active',
       trendUp: true,
       sub:     'across markets',
@@ -66,10 +85,10 @@ export function ClientKpis() {
     },
     {
       label:   'Win Rate',
-      value:   `${ACCOUNT.winRate}%`,
-      trend:   `+0.8%`,
+      value:   `${winRate}%`,
+      trend:   `+0.0%`,
       trendUp: true,
-      sub:     `${ACCOUNT.totalTrades} total trades`,
+      sub:     `${totalTrades} total trades`,
       Icon:    Target,
       accent:  'var(--warning)',
     },
