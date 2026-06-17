@@ -5,7 +5,7 @@ import { Copy, CheckCircle2, Upload, X, AlertCircle, QrCode, Building2 } from 'l
 function BankInstructions() {
   const details = [
     { label: 'Bank Name',       value: 'CitiBank N.A.' },
-    { label: 'Account Name',    value: 'LiveTrade Finance Ltd.' },
+    { label: 'Account Name',    value: 'Smatams' },
     { label: 'Account Number',  value: '4429 8800 1234 5678' },
     { label: 'Routing / SWIFT', value: 'CITIUS33' },
     { label: 'Reference ID',    value: 'DEP-2026-00483', highlight: true },

@@ -85,7 +85,7 @@ export function Topbar({ collapsed, setCollapsed, theme, toggleTheme, onOpenComm
             <span
               className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted/60 cursor-default hover:text-text/75 transition-colors"
             >
-              LiveTrade.PRO
+              Smatams
             </span>
             <ChevronRight size={8} strokeWidth={2.5} className="text-text-muted/30 shrink-0" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-muted/75">

@@ -252,6 +252,7 @@ export const adminRouteModules = [
     navSection: 'management',
     permission: PERMISSIONS.copyTrading.view,
     defaultPath: '/admin/copy-trading/strategies',
+    hidden: true,
     routes: [
       {
         id: 'copy-strategies',
@@ -331,6 +332,7 @@ export const adminRouteModules = [
     navSection: 'management',
     permission: PERMISSIONS.propTrading.view,
     defaultPath: '/admin/prop-trading',
+    hidden: true,
     routes: [
       {
         id: 'prop-overview',
@@ -411,6 +413,7 @@ export const adminRouteModules = [
     navSection: 'management',
     permission: PERMISSIONS.ibSystem.view,
     defaultPath: '/admin/ib-system/overview',
+    hidden: true,
     routes: [
       {
         id: 'ib-overview',

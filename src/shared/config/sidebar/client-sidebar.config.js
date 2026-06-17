@@ -79,6 +79,7 @@ export const clientNavigation = [
     icon: Copy,
     path: '/client/copy-trading',
     navSection: 'trading',
+    hidden: true,
   },
   {
     id: 'client-prop-trading',
@@ -86,6 +87,7 @@ export const clientNavigation = [
     icon: Trophy,
     path: '/client/prop-trading',
     navSection: 'trading',
+    hidden: true,
   },
 
   /* ── PARTNERSHIP ── */
@@ -95,6 +97,7 @@ export const clientNavigation = [
     icon: Share2,
     path: '/client/ib-system',
     navSection: 'partnership',
+    hidden: true,
   },
 
   /* ── HELP & SETTINGS ── */

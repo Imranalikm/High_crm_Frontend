@@ -20,7 +20,7 @@ const ensureAdminPrefix = (path) => {
   return `/admin${cleanPath}`;
 };
 
-export const adminNavigation = adminRouteModules.map((module) => {
+export const adminNavigation = adminRouteModules.filter((m) => !m.hidden).map((module) => {
   const defaultPath = ensureAdminPrefix(module.defaultPath);
 
   return {

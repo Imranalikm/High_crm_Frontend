@@ -446,7 +446,7 @@ export function Sidebar({ collapsed, isMobile }) {
           <div className="flex flex-col gap-0.5 overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200">
             <div className="flex items-center gap-1.5 leading-none">
               <span className="font-heading font-bold text-[16px] tracking-[-0.05em] text-text">
-                LiveTrade<span className="text-primary">.</span>
+                Smatams
               </span>
               <span className="text-[8px] font-black tracking-[0.22em] uppercase text-primary/65 px-1.5 py-0.5 rounded-[3px] bg-primary/[0.08] border border-primary/[0.15] leading-none">
                 PRO
