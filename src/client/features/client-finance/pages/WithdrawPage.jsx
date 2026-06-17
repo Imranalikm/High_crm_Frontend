@@ -1,5 +1,5 @@
 /**
- * WithdrawPage.jsx — Live-Trader Customer Withdrawal Flow
+ * WithdrawPage.jsx — Smatams Customer Withdrawal Flow
  *
  * Design system: dark premium fintech (Syne + DM Sans + DM Mono)
  * Requires: react-router-dom, lucide-react

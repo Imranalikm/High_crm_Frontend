@@ -1,5 +1,5 @@
 /**
- * LiveTrader Admin - REST API Client
+ * Smatams Admin - REST API Client
  * Premium fetch-based wrapper with token injection, timeout, and unified error handling.
  */
 

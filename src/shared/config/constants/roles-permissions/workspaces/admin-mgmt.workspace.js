@@ -3,16 +3,16 @@ import {
 } from 'lucide-react';
 
 export const adminUsers = [
-  { id: 'ADM-001', name: 'Arjun Ravi', email: 'arjun@live-trader.com', role: 'SUPER_ADMIN', status: 'ACTIVE', twoFA: true, lastLogin: '2 min ago', created: '2023-01-10', locked: false, logins: 1842, actions: 4821, region: 'IN' },
-  { id: 'ADM-002', name: 'Keiran Lynch', email: 'keiran@live-trader.com', role: 'RISK_OFFICER', status: 'ACTIVE', twoFA: true, lastLogin: '18 min ago', created: '2023-02-14', locked: false, logins: 984, actions: 2140, region: 'IE' },
-  { id: 'ADM-003', name: 'Priya Sharma', email: 'priya@live-trader.com', role: 'COMPLIANCE', status: 'ACTIVE', twoFA: true, lastLogin: '1h ago', created: '2023-03-08', locked: false, logins: 762, actions: 1890, region: 'IN' },
-  { id: 'ADM-004', name: 'Marcus Webb', email: 'marcus@live-trader.com', role: 'SUPPORT', status: 'ACTIVE', twoFA: false, lastLogin: '3h ago', created: '2023-04-21', locked: false, logins: 521, actions: 981, region: 'UK' },
-  { id: 'ADM-005', name: 'Yuki Nakamura', email: 'yuki@live-trader.com', role: 'FINANCE', status: 'ACTIVE', twoFA: true, lastLogin: '5h ago', created: '2023-05-15', locked: false, logins: 641, actions: 1420, region: 'JP' },
-  { id: 'ADM-006', name: 'Sofia Delgado', email: 'sofia@live-trader.com', role: 'SUPPORT', status: 'INACTIVE', twoFA: false, lastLogin: '12d ago', created: '2023-06-30', locked: false, logins: 188, actions: 340, region: 'ES' },
-  { id: 'ADM-007', name: 'Omar Farouk', email: 'omar@live-trader.com', role: 'RISK_OFFICER', status: 'LOCKED', twoFA: true, lastLogin: '8d ago', created: '2023-07-12', locked: true, logins: 420, actions: 890, region: 'EG' },
-  { id: 'ADM-008', name: 'Nina Volkov', email: 'nina@live-trader.com', role: 'COMPLIANCE', status: 'PENDING', twoFA: false, lastLogin: 'Never', created: '2024-07-28', locked: false, logins: 0, actions: 0, region: 'RU' },
-  { id: 'ADM-009', name: 'Dev Kapoor', email: 'dev@live-trader.com', role: 'FINANCE', status: 'ACTIVE', twoFA: true, lastLogin: '30 min ago', created: '2023-09-05', locked: false, logins: 528, actions: 1102, region: 'IN' },
-  { id: 'ADM-010', name: 'Lena Fischer', email: 'lena@live-trader.com', role: 'SUPPORT', status: 'ACTIVE', twoFA: false, lastLogin: '2h ago', created: '2023-10-18', locked: false, logins: 312, actions: 620, region: 'DE' },
+  { id: 'ADM-001', name: 'Arjun Ravi', email: 'arjun@smatams.com', role: 'SUPER_ADMIN', status: 'ACTIVE', twoFA: true, lastLogin: '2 min ago', created: '2023-01-10', locked: false, logins: 1842, actions: 4821, region: 'IN' },
+  { id: 'ADM-002', name: 'Keiran Lynch', email: 'keiran@smatams.com', role: 'RISK_OFFICER', status: 'ACTIVE', twoFA: true, lastLogin: '18 min ago', created: '2023-02-14', locked: false, logins: 984, actions: 2140, region: 'IE' },
+  { id: 'ADM-003', name: 'Priya Sharma', email: 'priya@smatams.com', role: 'COMPLIANCE', status: 'ACTIVE', twoFA: true, lastLogin: '1h ago', created: '2023-03-08', locked: false, logins: 762, actions: 1890, region: 'IN' },
+  { id: 'ADM-004', name: 'Marcus Webb', email: 'marcus@smatams.com', role: 'SUPPORT', status: 'ACTIVE', twoFA: false, lastLogin: '3h ago', created: '2023-04-21', locked: false, logins: 521, actions: 981, region: 'UK' },
+  { id: 'ADM-005', name: 'Yuki Nakamura', email: 'yuki@smatams.com', role: 'FINANCE', status: 'ACTIVE', twoFA: true, lastLogin: '5h ago', created: '2023-05-15', locked: false, logins: 641, actions: 1420, region: 'JP' },
+  { id: 'ADM-006', name: 'Sofia Delgado', email: 'sofia@smatams.com', role: 'SUPPORT', status: 'INACTIVE', twoFA: false, lastLogin: '12d ago', created: '2023-06-30', locked: false, logins: 188, actions: 340, region: 'ES' },
+  { id: 'ADM-007', name: 'Omar Farouk', email: 'omar@smatams.com', role: 'RISK_OFFICER', status: 'LOCKED', twoFA: true, lastLogin: '8d ago', created: '2023-07-12', locked: true, logins: 420, actions: 890, region: 'EG' },
+  { id: 'ADM-008', name: 'Nina Volkov', email: 'nina@smatams.com', role: 'COMPLIANCE', status: 'PENDING', twoFA: false, lastLogin: 'Never', created: '2024-07-28', locked: false, logins: 0, actions: 0, region: 'RU' },
+  { id: 'ADM-009', name: 'Dev Kapoor', email: 'dev@smatams.com', role: 'FINANCE', status: 'ACTIVE', twoFA: true, lastLogin: '30 min ago', created: '2023-09-05', locked: false, logins: 528, actions: 1102, region: 'IN' },
+  { id: 'ADM-010', name: 'Lena Fischer', email: 'lena@smatams.com', role: 'SUPPORT', status: 'ACTIVE', twoFA: false, lastLogin: '2h ago', created: '2023-10-18', locked: false, logins: 312, actions: 620, region: 'DE' },
 ];
 
 export const adminNotes = {

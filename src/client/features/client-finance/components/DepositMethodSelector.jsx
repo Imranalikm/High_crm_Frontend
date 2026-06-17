@@ -1,20 +1,8 @@
 import React from 'react';
-import { CreditCard, Bitcoin, Building2, Zap, Clock } from 'lucide-react';
+import { CreditCard, Building2, Zap, Clock } from 'lucide-react';
 import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
 
 const DEFAULT_METHODS = {
-  card: {
-    id: 'card',
-    label: 'Credit / Debit Card',
-    sub: 'Visa, Mastercard, Amex',
-    icon: CreditCard,
-    color: 'brand',
-    processingLabel: 'Instant',
-    processingIcon: Zap,
-    processingColor: 'var(--positive)',
-    fee: '2.5%',
-    minDeposit: '$10',
-  },
   bank: {
     id: 'bank',
     label: 'Bank Transfer',
@@ -27,17 +15,29 @@ const DEFAULT_METHODS = {
     fee: 'Free',
     minDeposit: '$50',
   },
-  crypto: {
-    id: 'crypto',
-    label: 'Cryptocurrency',
-    sub: 'USDT, BTC, ETH, BNB',
-    icon: Bitcoin,
-    color: 'warning',
-    processingLabel: '10–30 Minutes',
-    processingIcon: Clock,
-    processingColor: 'var(--cyan)',
+  upi: {
+    id: 'upi',
+    label: 'UPI',
+    sub: 'Google Pay, PhonePe, Paytm',
+    icon: Zap,
+    color: 'positive',
+    processingLabel: 'Instant',
+    processingIcon: Zap,
+    processingColor: 'var(--positive)',
     fee: '0%',
-    minDeposit: '$20',
+    minDeposit: '₹100',
+  },
+  card: {
+    id: 'card',
+    label: 'Credit / Debit Card',
+    sub: 'Visa, Mastercard, Amex',
+    icon: CreditCard,
+    color: 'brand',
+    processingLabel: 'Instant',
+    processingIcon: Zap,
+    processingColor: 'var(--positive)',
+    fee: '2.5%',
+    minDeposit: '$10',
   },
   skrill: {
     id: 'skrill',
@@ -57,37 +57,22 @@ export function DepositMethodSelector({ value, onChange }) {
   const { clientSettings } = usePlatformSettings();
   const { gateways } = clientSettings;
 
-  const activeMethods = [];
+  // Gateway ID → DEFAULT_METHODS key mapping
+  const gatewayToMethod = { swift: 'bank', upi: 'upi', stripe: 'card', skrill: 'skrill' };
 
-  // Map admin gateways to client methods
+  // Build a fee lookup from enabled gateways
+  const feeOverrides = {};
   gateways.forEach((g) => {
     if (!g.enabled) return;
-    
-    if (g.id === 'stripe') {
-      activeMethods.push({
-        ...DEFAULT_METHODS.card,
-        fee: g.fee || '2.5%'
-      });
-    } else if (g.id === 'swift') {
-      activeMethods.push({
-        ...DEFAULT_METHODS.bank,
-        fee: g.fee || 'Free'
-      });
-    } else if (g.id === 'fireblocks') {
-      activeMethods.push({
-        ...DEFAULT_METHODS.crypto,
-        fee: g.fee || '0%'
-      });
-    } else if (g.id === 'skrill') {
-      activeMethods.push({
-        ...DEFAULT_METHODS.skrill,
-        fee: g.fee || '1.9%'
-      });
-    }
+    const key = gatewayToMethod[g.id];
+    if (key && g.fee) feeOverrides[key] = g.fee;
   });
 
-  // Fallback in case everything is disabled
-  const methodsToRender = activeMethods.length > 0 ? activeMethods : [DEFAULT_METHODS.card];
+  // Always show all methods in the defined order, with gateway fee overrides
+  const methodsToRender = Object.values(DEFAULT_METHODS).map((m) => ({
+    ...m,
+    ...(feeOverrides[m.id] ? { fee: feeOverrides[m.id] } : {}),
+  }));
 
   return (
     <div className="flex flex-col gap-3">

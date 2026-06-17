@@ -167,7 +167,7 @@ export function PaymentGatewayPage({
                       </div>
                       <div>
                         <FieldLabel hint="URL that receives gateway events">Webhook URL</FieldLabel>
-                        <TInput value={`https://api.live-trader.com/webhooks/${gw.id}`} readOnly mono />
+                        <TInput value={`https://api.smatams.com/webhooks/${gw.id}`} readOnly mono />
                       </div>
                       <div>
                         <FieldLabel hint="Custom fee for this gateway">Fee Override</FieldLabel>

@@ -20,6 +20,7 @@ import {
   Inbox,
   MessageCircle,
   Bell,
+  Monitor,
 } from 'lucide-react';
 
 export const clientNavigationSections = [
@@ -71,6 +72,13 @@ export const clientNavigation = [
     label: 'Transactions',
     icon: History,
     path: '/client/finance/transactions',
+    navSection: 'trading',
+  },
+  {
+    id: 'client-mt5-accounts',
+    label: 'MT5 Accounts',
+    icon: Monitor,
+    path: '/client/accounts',
     navSection: 'trading',
   },
   {

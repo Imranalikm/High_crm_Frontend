@@ -1,5 +1,5 @@
 /**
- * WalletsPage.jsx — Live-Trader Customer Wallet Overview
+ * WalletsPage.jsx — Smatams Customer Wallet Overview
  *
  * Design system: dark premium fintech (Syne + DM Sans + DM Mono)
  * Requires: react-router-dom, lucide-react

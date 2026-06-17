@@ -74,7 +74,7 @@ export function ApiConfigPage({
                 <TInput
                   value={apiConfig.baseUrl}
                   onChange={(v) => updateApiField('baseUrl', v)}
-                  placeholder="https://api.live-trader.com/v2"
+                  placeholder="https://api.smatams.com/v2"
                   mono
                 />
               </div>
@@ -91,7 +91,7 @@ export function ApiConfigPage({
                 <TInput
                   value={apiConfig.wsUrl}
                   onChange={(v) => updateApiField('wsUrl', v)}
-                  placeholder="wss://ws.live-trader.com"
+                  placeholder="wss://ws.smatams.com"
                   mono
                 />
               </div>
@@ -100,7 +100,7 @@ export function ApiConfigPage({
                 <TInput
                   value={apiConfig.webhookUrl}
                   onChange={(v) => updateApiField('webhookUrl', v)}
-                  placeholder="https://api.live-trader.com/webhooks"
+                  placeholder="https://api.smatams.com/webhooks"
                   mono
                 />
               </div>
@@ -301,7 +301,7 @@ export function ApiConfigPage({
                 <TArea
                   value={apiConfig.corsOrigins}
                   onChange={(v) => updateApiField('corsOrigins', v)}
-                  placeholder="https://app.live-trader.com&#10;https://admin.live-trader.com"
+                  placeholder="https://app.smatams.com&#10;https://admin.smatams.com"
                   mono
                   rows={4}
                 />

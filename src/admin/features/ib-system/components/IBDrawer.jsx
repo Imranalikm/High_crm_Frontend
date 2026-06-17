@@ -140,11 +140,11 @@ export function ReferralDrawer({ row, open, onClose, onAction }) {
 
         <DrawerSection title="Referral Link">
           <div className="flex items-center gap-2 rounded-[10px] border border-border/25 bg-bg/50 px-3 h-10">
-            <code className="flex-1 text-[11px] font-mono text-cyan truncate">https://live-trader.com/ref/{row.code?.toLowerCase()}</code>
+            <code className="flex-1 text-[11px] font-mono text-cyan truncate">https://smatams.com/ref/{row.code?.toLowerCase()}</code>
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard.writeText(`https://live-trader.com/ref/${row.code?.toLowerCase()}`);
+                navigator.clipboard.writeText(`https://smatams.com/ref/${row.code?.toLowerCase()}`);
                 onAction('Link copied', row.id);
               }}
               className="flex h-6 w-6 flex-shrink-0 items-center justify-center text-text-muted/40 hover:text-text cursor-pointer outline-none"

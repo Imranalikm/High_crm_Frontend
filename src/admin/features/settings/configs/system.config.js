@@ -1,7 +1,7 @@
 export const INITIAL_SYSTEM_CONFIG = {
-  brandName: 'Live-Trader',
-  brandDomain: 'live-trader.com',
-  supportEmail: 'support@live-trader.com',
+  brandName: 'Smatams',
+  brandDomain: 'smatams.com',
+  supportEmail: 'support@smatams.com',
   timezone: 'UTC',
   locale: 'en-US',
   currency: 'USD',

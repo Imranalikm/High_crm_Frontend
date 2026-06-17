@@ -334,7 +334,7 @@ export function NotificationSettingsPage({
                   <TInput
                     value={notificationConfig.fromEmail}
                     onChange={(v) => updateNotificationField('fromEmail', v)}
-                    placeholder="noreply@live-trader.com"
+                    placeholder="noreply@smatams.com"
                     mono
                   />
                 </div>
@@ -378,7 +378,7 @@ export function NotificationSettingsPage({
                 <TInput
                   value={notificationConfig.fromName}
                   onChange={(v) => updateNotificationField('fromName', v)}
-                  placeholder="Live-Trader Operations"
+                  placeholder="Smatams"
                 />
               </div>
             </div>

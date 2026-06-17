@@ -1,6 +1,6 @@
 /**
  * ══════════════════════════════════════════════════════════════
- *  LIVE-TRADER — AUTH PAGE  (Premium Redesign)
+ *  SMATAMS — AUTH PAGE  (Premium Redesign)
  *  src/pages/auth/LoginPage.jsx
  *
  *  Login · Register  ·  Zod validation  ·  React Hook Form

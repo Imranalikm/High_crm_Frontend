@@ -1,5 +1,5 @@
 /**
- * DepositPage.jsx — Live-Trader Customer Deposit Flow
+ * DepositPage.jsx — Smatams Customer Deposit Flow
  *
  * Design system: dark premium fintech (Syne + DM Sans + DM Mono)
  * Requires: react-router-dom, lucide-react

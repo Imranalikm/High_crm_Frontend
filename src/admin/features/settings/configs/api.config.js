@@ -1,7 +1,7 @@
 export const INITIAL_API_CONFIG = {
-  baseUrl: 'https://api.live-trader.com/v2',
-  wsUrl: 'wss://ws.live-trader.com',
-  webhookUrl: 'https://api.live-trader.com/webhooks',
+  baseUrl: 'https://api.smatams.com/v2',
+  wsUrl: 'wss://ws.smatams.com',
+  webhookUrl: 'https://api.smatams.com/webhooks',
   env: 'PRODUCTION',
   apiKey: 'lt_live_YOUR_API_KEY_HERE',
   secretKey: 'sk_live_YOUR_SECRET_KEY_HERE',
@@ -11,7 +11,7 @@ export const INITIAL_API_CONFIG = {
   retries: '3',
   webhookSecret: 'whsec_YOUR_WEBHOOK_SECRET_HERE',
   ipWhitelist: "103.82.14.0/24\n82.44.18.0/24",
-  corsOrigins: "https://app.live-trader.com\nhttps://admin.live-trader.com",
+  corsOrigins: "https://app.smatams.com\nhttps://admin.smatams.com",
 };
 
 export const API_ENV_OPTIONS = [

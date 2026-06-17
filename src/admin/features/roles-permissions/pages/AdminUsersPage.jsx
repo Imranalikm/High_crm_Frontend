@@ -299,7 +299,7 @@ function AdminUsersPage() {
               type="email"
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
-              placeholder="e.g. priya@live-trader.com"
+              placeholder="e.g. priya@smatams.com"
               className="w-full h-9 rounded-[8px] border border-white/[0.1] bg-bg/40 px-3 text-[12.5px] text-text outline-none focus:border-brand/40 focus:ring-1 focus:ring-brand/10 transition-all font-heading"
               required
             />

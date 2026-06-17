@@ -1141,8 +1141,8 @@ export default function AuthForm({ mode, onModeChange }) {
               <TrendingUp size={18} color="#fff" />
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.3px', color: '#fff' }}>LIVETRADE<span style={{ color: mode === 'login' ? '#6f9cff' : '#a78bfa' }}>.</span></div>
-              <div style={{ fontSize: 9, opacity: 0.4, letterSpacing: 1 }}>CRM ENTERPRISE</div>
+              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.3px', color: '#fff' }}>SMATAMS</div>
+              <div style={{ fontSize: 9, opacity: 0.4, letterSpacing: 1 }}>TRADING PLATFORM</div>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>

@@ -582,7 +582,7 @@ export function SystemSettingsPage({
                 <TInput
                   value={systemConfig.brandName}
                   onChange={(v) => updateSystemField('brandName', v)}
-                  placeholder="Live-Trader"
+                  placeholder="Smatams"
                 />
               </div>
               <div>
@@ -590,7 +590,7 @@ export function SystemSettingsPage({
                 <TInput
                   value={systemConfig.brandDomain}
                   onChange={(v) => updateSystemField('brandDomain', v)}
-                  placeholder="live-trader.com"
+                  placeholder="smatams.com"
                   mono
                 />
               </div>
@@ -600,7 +600,7 @@ export function SystemSettingsPage({
               <TInput
                 value={systemConfig.supportEmail}
                 onChange={(v) => updateSystemField('supportEmail', v)}
-                placeholder="support@live-trader.com"
+                placeholder="support@smatams.com"
                 mono
               />
             </div>

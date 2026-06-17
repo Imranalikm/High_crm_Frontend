@@ -10,8 +10,6 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
   
   const [selectedGroup, setSelectedGroup] = useState('');
   const [leverage, setLeverage] = useState('1:100');
-  const [mPassword, setMPassword] = useState('');
-  const [iPassword, setIPassword] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -29,7 +27,12 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
       const response = await apiClient.get('/crm-groups');
       const groups = response?.data || response || [];
       // Filter or format as needed. Ensure array.
-      setCrmGroups(Array.isArray(groups) ? groups : []);
+      const arr = Array.isArray(groups) ? groups : [];
+      setCrmGroups(arr);
+      
+      if (arr.length > 0) {
+        setSelectedGroup(arr[0].name || arr[0]);
+      }
     } catch (err) {
       console.error('Error loading CRM groups:', err);
     }
@@ -38,25 +41,13 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
   const resetForm = () => {
     setSelectedGroup('');
     setLeverage('1:100');
-    setMPassword('');
-    setIPassword('');
     setError('');
     setShowSuccess(false);
   };
 
   const handleSave = async () => {
-    if (!selectedGroup || !leverage || !mPassword || !iPassword) {
+    if (!selectedGroup || !leverage) {
       setError('Please fill in all fields.');
-      return;
-    }
-
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W).{8,}$/;
-    if (!regex.test(mPassword)) {
-      setError('Main password does not meet complexity requirements. Must be 8+ chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.');
-      return;
-    }
-    if (!regex.test(iPassword)) {
-      setError('Investor password does not meet complexity requirements.');
       return;
     }
 
@@ -66,9 +57,7 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
     try {
       const payload = {
         groupName: selectedGroup,
-        leverage,
-        mPassword,
-        iPassword
+        leverage
       };
 
       await apiClient.post('/mt5-accounts', payload);
@@ -107,7 +96,7 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
       <DrawerBody>
         <div className="space-y-5 animate-fade-up">
           <InlineAlert tone="info" title="Security First">
-             Passwords must contain at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.
+             Passwords will be auto-generated and securely stored. You can view or change them later from your account settings.
           </InlineAlert>
 
           {showSuccess && (
@@ -135,25 +124,6 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
                 value={leverage}
                 onChange={setLeverage}
                 options={leverageOptions}
-              />
-            </DrawerFormGrid>
-          </DrawerSection>
-
-          <DrawerSection title="Security">
-            <DrawerFormGrid cols={1}>
-              <TextField
-                label="Main Password"
-                type="password"
-                value={mPassword}
-                onChange={setMPassword}
-                placeholder="Required for full trading access"
-              />
-              <TextField
-                label="Investor Password"
-                type="password"
-                value={iPassword}
-                onChange={setIPassword}
-                placeholder="Read-only access password"
               />
             </DrawerFormGrid>
           </DrawerSection>
