@@ -431,15 +431,9 @@ export function Sidebar({ collapsed, isMobile }) {
       >
         <button
           onClick={() => navigate('/admin')}
-          className="relative shrink-0 w-8 h-8 rounded-[9px] flex items-center justify-center bg-primary cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
-          style={{ boxShadow: '0 0 14px color-mix(in srgb, var(--primary) 30%, transparent)' }}
+          className="relative shrink-0 w-8 h-8 flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
         >
-          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-            <rect x="1" y="1" width="6" height="6" rx="1.5" fill="rgba(0,0,0,0.55)" />
-            <rect x="11" y="1" width="6" height="6" rx="1.5" fill="rgba(0,0,0,0.35)" />
-            <rect x="1" y="11" width="6" height="6" rx="1.5" fill="rgba(0,0,0,0.35)" />
-            <rect x="11" y="11" width="6" height="6" rx="1.5" fill="rgba(0,0,0,0.15)" />
-          </svg>
+          <img src="/LOGO (1).png" alt="Logo" className="w-8 h-8 object-contain rounded-[9px]" />
         </button>
 
         {!collapsed && (

@@ -46,8 +46,8 @@ const TRANSACTIONS = [
 const QUICK_ACTIONS = [
   { id: 'deposit', label: 'Deposit', desc: 'Add funds instantly', path: '/client/finance/deposit', color: 'brand', Icon: ArrowDownToLine },
   { id: 'withdraw', label: 'Withdraw', desc: 'Withdraw to account', path: '/client/finance/withdraw', color: 'cyan', Icon: ArrowUpFromLine },
-  { id: 'payment-methods', label: 'Payment Methods', desc: 'Manage saved methods', path: '/client/finance/payment-methods', color: 'purple', Icon: CreditCard },
-  { id: 'limits', label: 'Limits & Fees', desc: 'View fee structure', path: '/client/finance/limits', color: 'warning', Icon: BarChart3 },
+  // { id: 'payment-methods', label: 'Payment Methods', desc: 'Manage saved methods', path: '/client/finance/payment-methods', color: 'purple', Icon: CreditCard },
+  // { id: 'limits', label: 'Limits & Fees', desc: 'View fee structure', path: '/client/finance/limits', color: 'warning', Icon: BarChart3 },
 ];
 
 /* ─────────────────────────────────────────────────────────
@@ -244,7 +244,7 @@ function QuickActions({ actions, onNavigate }) {
       <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-muted mb-3">
         Quick Actions
       </p>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {actions.map((a) => {
           const colorVar = `var(--${a.color})`;
           const dimVar = `color-mix(in srgb, var(--${a.color}) 12%, transparent)`;
