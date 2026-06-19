@@ -74,7 +74,20 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const data = await loginUser(email, password);
     const { accessToken, refreshToken, user: apiUser } = data;
-    return establishSession(apiUser, accessToken, refreshToken);
+    // Establish session with the login response first
+    const sessionUser = establishSession(apiUser, accessToken, refreshToken);
+
+    // Fetch full profile (includes phone, country, etc. that login may omit)
+    try {
+      const profile = await fetchMe(accessToken);
+      if (profile?.user) {
+        establishSession(profile.user, accessToken, refreshToken);
+      }
+    } catch (e) {
+      console.warn('Post-login profile fetch failed, using login data:', e);
+    }
+
+    return sessionUser;
   }, [establishSession]);
 
   const logout = useCallback(() => {

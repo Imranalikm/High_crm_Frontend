@@ -192,6 +192,7 @@ export const adminRouteModules = [
     navSection: 'main',
     permission: PERMISSIONS.trading.view,
     defaultPath: '/admin/trading/accounts',
+    hidden: true,
     routes: [
       {
         id: 'trading-accounts',
@@ -503,6 +504,7 @@ export const adminRouteModules = [
     navSection: 'management',
     permission: PERMISSIONS.reports.view,
     defaultPath: '/admin/reports/overview',
+    hidden: true,
     routes: [
       {
         id: 'reports-overview',
@@ -588,7 +590,6 @@ export const adminRouteModules = [
         id: 'support-escalated',
         path: 'support/escalated',
         pageKey: 'support/support-workspace',
-        navLabel: 'Urgent Tickets',
         permission: PERMISSIONS.support.escalate,
         meta: [
           { pattern: '/admin/support/escalated', title: 'Urgent Tickets', section: 'Support', permission: PERMISSIONS.support.escalate },
@@ -612,6 +613,7 @@ export const adminRouteModules = [
     navSection: 'system',
     permission: PERMISSIONS.settings.view,
     defaultPath: '/admin/settings/overview',
+    hidden: true,
     routes: [
       {
         id: 'settings-overview',
@@ -692,6 +694,7 @@ export const adminRouteModules = [
     navSection: 'system',
     permission: PERMISSIONS.rolesPermissions.view,
     defaultPath: '/admin/admin-mgmt/users',
+    hidden: true,
     routes: [
       {
         id: 'admin-users',

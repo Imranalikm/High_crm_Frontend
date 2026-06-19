@@ -47,36 +47,16 @@ export function useKycUpload() {
   // Prefill registration info from logged-in user profile
   useEffect(() => {
     if (user) {
-      setData((current) => {
-        let phoneCode = current.personalInfo.phoneCode || '';
-        let phoneVal = current.personalInfo.phone || user.phone || '';
-
-        // If user has a phone and we haven't set a phone value or code yet, try to parse the code out
-        if (user.phone && !current.personalInfo.phone) {
-          const knownCodes = ['+1', '+44', '+91', '+971', '+61', '+49', '+33', '+65', '+81', '+55', '+7', '+86', '+52', '+82', '+966', '+234', '+27'];
-          const matchedCode = knownCodes.find(code => user.phone.startsWith(code));
-          if (matchedCode) {
-            phoneCode = matchedCode;
-            phoneVal = user.phone.slice(matchedCode.length).trim();
-          }
-        }
-
-        return {
-          ...current,
-          personalInfo: {
-            ...current.personalInfo,
-            fullName: current.personalInfo.fullName || user.name || '',
-            email: current.personalInfo.email || user.email || '',
-            phone: phoneVal,
-            phoneCode: phoneCode,
-            country: current.personalInfo.country || user.country || '',
-          },
-          identityDocument: {
-            ...current.identityDocument,
-            issuingCountry: current.identityDocument.issuingCountry || user.country || '',
-          },
-        };
-      });
+      setData((current) => ({
+        ...current,
+        personalInfo: {
+          ...current.personalInfo,
+          fullName: current.personalInfo.fullName || user.name || '',
+          email: current.personalInfo.email || user.email || '',
+          country: current.personalInfo.country || user.country || '',
+          phone: current.personalInfo.phone || user.phone || '',
+        },
+      }));
     }
   }, [user]);
 
