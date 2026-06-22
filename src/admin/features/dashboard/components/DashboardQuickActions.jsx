@@ -1,15 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, Copy, CreditCard, Search, Terminal, UserCheck } from 'lucide-react';
+import { CreditCard, FileCheck, Search, LifeBuoy } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
 const QUICK_ACTIONS = [
-  { label: 'Approve KYC Requests', Icon: UserCheck, path: '/admin/users/kyc', accent: 'var(--positive)' },
+  { label: 'Approve KYC Requests', Icon: FileCheck, path: '/admin/users/kyc', accent: 'var(--positive)' },
   { label: 'Review Withdrawals', Icon: CreditCard, path: '/admin/finance/withdrawals', accent: 'var(--warning)' },
-  { label: 'User Master Directory', Icon: Search, path: '/admin/users', accent: 'var(--brand)' },
-  { label: 'Execution Logs Stream', Icon: Terminal, path: '/admin/trading/execution-logs', accent: 'var(--purple)' },
-  { label: 'Copy Strategy Board', Icon: Copy, path: '/admin/copy-trading', accent: 'var(--cyan)' },
-  { label: 'Support Queue Management', Icon: Activity, path: '/admin/support', accent: 'var(--negative)' },
+  { label: 'User Directory', Icon: Search, path: '/admin/users', accent: 'var(--brand)' },
+  { label: 'Support Tickets', Icon: LifeBuoy, path: '/admin/support/tickets', accent: 'var(--cyan)' },
 ];
 
 export function DashboardQuickActions() {
@@ -17,7 +15,7 @@ export function DashboardQuickActions() {
   return (
     <Card className="flex flex-col">
       <div className="text-[15px] font-semibold text-text mb-4 border-b border-border/15 pb-3 tracking-tight">
-        Command Terminal Keys
+        Quick Actions
       </div>
       <div className="grid grid-cols-2 gap-2.5">
         {QUICK_ACTIONS.map((item) => {
@@ -30,8 +28,8 @@ export function DashboardQuickActions() {
             >
               <div
                 className="flex h-7.5 w-7.5 flex-shrink-0 items-center justify-center rounded-[8px] transition-all duration-300 group-hover:scale-110"
-                style={{ 
-                  background: `color-mix(in srgb, ${accent} 10%, transparent)`, 
+                style={{
+                  background: `color-mix(in srgb, ${accent} 10%, transparent)`,
                   color: accent,
                   boxShadow: `0 0 6px color-mix(in srgb, ${accent} 25%, transparent)`
                 }}

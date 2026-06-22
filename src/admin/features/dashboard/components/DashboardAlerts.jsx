@@ -1,14 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ShieldAlert } from 'lucide-react';
+import { ChevronRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-
-const ALERTS = [
-  { id: 1, level: 'critical', cat: 'RISK', title: 'Margin breach — Account #8821', text: 'Equity dropped 94% on open XAUUSD long. Auto-liquidation threshold breached.', stamp: '2m ago', path: '/admin/users/usr-18552/risk-view' },
-  { id: 2, level: 'critical', cat: 'FINANCE', title: '$47,500 withdrawal pending', text: 'Bank wire above threshold. AML flag triggered.', stamp: '11m ago', path: '/admin/finance/withdrawals' },
-  { id: 3, level: 'warning', cat: 'KYC', title: 'Document mismatch — #10043', text: 'Uploaded ID surname differs from registration.', stamp: '34m ago', path: '/admin/users/kyc' },
-  { id: 4, level: 'warning', cat: 'COPY', title: 'Signal provider drawdown >12%', text: '"FX_Alpha" strategy hit 12.4% drawdown today. 231 followers impacted.', stamp: '51m ago', path: '/admin/copy-trading' },
-];
 
 const LEVEL_COLOR = {
   critical: 'var(--negative)',
@@ -54,7 +47,6 @@ function AlertItem({ alert }) {
             <span className="text-[11.5px] font-bold uppercase tracking-wider text-text-muted">
               {alert.cat}
             </span>
-            <span className="ml-auto font-mono text-[11.5px] text-text-muted font-medium">{alert.stamp}</span>
           </div>
           <div className="text-[13.5px] font-semibold text-text leading-snug group-hover:text-primary transition-colors">
             {alert.title}
@@ -71,7 +63,24 @@ function AlertItem({ alert }) {
   );
 }
 
-export function DashboardAlerts() {
+export function DashboardAlerts({ actionItems, loading }) {
+  if (loading) {
+    return (
+      <Card className="flex flex-col animate-pulse">
+        <div className="h-6 w-32 bg-surface-elevated/85 rounded mb-2" />
+        <div className="h-4 w-48 bg-surface-elevated/65 rounded mb-4" />
+        <div className="space-y-2.5">
+          <div className="h-20 bg-surface-elevated/40 rounded" />
+          <div className="h-20 bg-surface-elevated/40 rounded" />
+        </div>
+      </Card>
+    );
+  }
+
+  const items = actionItems || [];
+  const criticalCount = items.filter((item) => item.level === 'critical').length;
+  const warningCount = items.filter((item) => item.level === 'warning').length;
+
   return (
     <Card className="flex flex-col">
       <div className="flex items-center justify-between mb-4 border-b border-border/15 pb-3">
@@ -81,14 +90,32 @@ export function DashboardAlerts() {
             Operations Queue
           </div>
           <div className="text-[12.5px] text-text-muted mt-0.5">
-            <span className="text-negative font-bold">2 critical</span> • 2 warnings
+            {items.length === 0 ? (
+              <span className="text-positive font-medium">All tasks completed</span>
+            ) : (
+              <>
+                {criticalCount > 0 && <span className="text-negative font-bold">{criticalCount} critical</span>}
+                {criticalCount > 0 && warningCount > 0 && ' • '}
+                {warningCount > 0 && <span className="text-warning font-semibold">{warningCount} warning{warningCount > 1 ? 's' : ''}</span>}
+                {items.length > 0 && ' needing review'}
+              </>
+            )}
           </div>
         </div>
       </div>
+
       <div className="space-y-2.5 overflow-y-auto max-h-[380px] pr-1 custom-scrollbar">
-        {ALERTS.map((alert) => (
-          <AlertItem key={alert.id} alert={alert} />
-        ))}
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-border/20 rounded-[10px] bg-bg/10">
+            <CheckCircle2 size={32} className="text-positive mb-2.5 opacity-80" />
+            <div className="text-[13.5px] font-semibold text-text">Queue is clear!</div>
+            <p className="text-[12.5px] text-text-muted mt-1 max-w-[200px]">No pending KYC, withdrawals, or tickets require action.</p>
+          </div>
+        ) : (
+          items.map((alert) => (
+            <AlertItem key={alert.id} alert={alert} />
+          ))
+        )}
       </div>
     </Card>
   );
