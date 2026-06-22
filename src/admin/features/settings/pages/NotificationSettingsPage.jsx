@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bell, Mail, Smartphone, Code, FileText, Settings, Key, Eye, Check,
   ArrowDownCircle, ArrowUpCircle, XCircle, ShieldCheck, ShieldAlert,
-  AlertTriangle, Fingerprint, Award, CheckCircle2, X as CloseIcon
+  AlertTriangle, Fingerprint, Award, CheckCircle2, X as CloseIcon,
+  Plus, Trash2, Edit3
 } from 'lucide-react';
 import { SettingsSection } from '../components/SettingsSection';
 import { SettingsCard } from '../components/SettingsCard';
@@ -15,12 +16,324 @@ import {
   TSelect,
   ToggleRow,
   Btn,
+  TArea,
 } from '../components/SettingsForm';
 import {
   EMAIL_PROVIDERS,
   SMS_PROVIDERS,
-  TEMPLATES_LIST,
 } from '../configs/notification.config';
+import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
+
+/* ─── TemplateModal Component ─────────────────────────────────────── */
+function TemplateModal({ isOpen, onClose, template, onSave, onDelete, eventKeys = [], defaultEventKey = '' }) {
+  const [name, setName] = useState('');
+  const [event, setEvent] = useState('');
+  const [customEvent, setCustomEvent] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [status, setStatus] = useState('ACTIVE');
+  const [type, setType] = useState('email');
+  const [modalTab, setModalTab] = useState('edit'); // 'edit' or 'preview'
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
+
+  useEffect(() => {
+    if (template) {
+      setName(template.name || '');
+      const evt = template.event || '';
+      setSubject(template.subject || '');
+      setBody(template.body || '');
+      setStatus(template.status || 'ACTIVE');
+      setType(template.type || 'email');
+
+      if (eventKeys.includes(evt)) {
+        setEvent(evt);
+        setIsCustom(false);
+      } else {
+        setEvent('custom');
+        setCustomEvent(evt);
+        setIsCustom(true);
+      }
+    } else {
+      setName('');
+      const defaultEvt = defaultEventKey || '';
+      if (defaultEvt) {
+        if (eventKeys.includes(defaultEvt)) {
+          setEvent(defaultEvt);
+          setIsCustom(false);
+        } else {
+          setEvent('custom');
+          setCustomEvent(defaultEvt);
+          setIsCustom(true);
+        }
+      } else {
+        setEvent('');
+        setIsCustom(false);
+      }
+      setCustomEvent('');
+      setSubject('');
+      setBody('');
+      setStatus('ACTIVE');
+      setType('email');
+    }
+    setModalTab('edit');
+    setError('');
+  }, [template, isOpen, eventKeys, defaultEventKey]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const finalEvent = isCustom ? customEvent.trim().toLowerCase().replace(/\s+/g, '_') : event;
+    if (!name || !finalEvent || !subject || !body) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await onSave({
+        id: template?.id,
+        name,
+        event: finalEvent,
+        subject,
+        body,
+        status,
+        type
+      });
+      onClose();
+    } catch (err) {
+      setError(err?.message || 'Failed to save template.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-3xl rounded-[12px] border border-border/15 bg-surface-elevated shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-left">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-border/10">
+          <div>
+            <h3 className="text-[14px] font-bold font-heading text-text">
+              {template ? 'Edit Template' : 'Create Template'}
+            </h3>
+            <p className="text-[11px] text-text-muted/40 font-heading mt-0.5">
+              Customize automated email message responses.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full hover:bg-white/[0.06] text-text-muted/50 hover:text-text cursor-pointer transition-colors"
+          >
+            <CloseIcon size={14} />
+          </button>
+        </div>
+
+        {/* Tab Selector inside Modal */}
+        <div className="flex px-6 border-b border-border/10 bg-bg/30">
+          <button
+            type="button"
+            onClick={() => setModalTab('edit')}
+            className={`px-4 py-2.5 text-[12px] font-semibold font-heading border-b-2 transition-all ${
+              modalTab === 'edit'
+                ? 'border-brand text-brand font-bold'
+                : 'border-transparent text-text-muted/50 hover:text-text-muted font-normal'
+            }`}
+          >
+            Editor
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalTab('preview')}
+            className={`px-4 py-2.5 text-[12px] font-semibold font-heading border-b-2 transition-all ${
+              modalTab === 'preview'
+                ? 'border-brand text-brand font-bold'
+                : 'border-transparent text-text-muted/50 hover:text-text-muted font-normal'
+            }`}
+          >
+            Rendered Preview
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {error && (
+            <div className="p-3 rounded-[6px] border border-negative/20 bg-negative/5 text-negative text-[11.5px] font-heading font-semibold">
+              {error}
+            </div>
+          )}
+
+          {modalTab === 'edit' ? (
+            <div className="space-y-4">
+              <FGroup cols={2}>
+                <div>
+                  <FieldLabel required hint="Display name of the template">Template Name</FieldLabel>
+                  <TInput
+                    value={name}
+                    onChange={setName}
+                    placeholder="e.g. Deposit Confirmation"
+                  />
+                </div>
+                <div>
+                  <FieldLabel required hint="Select or define the system event key">Event Key</FieldLabel>
+                  <TSelect
+                    value={isCustom ? 'custom' : event}
+                    onChange={(v) => {
+                      if (v === 'custom') {
+                        setIsCustom(true);
+                        setEvent('custom');
+                      } else {
+                        setIsCustom(false);
+                        setEvent(v);
+                      }
+                    }}
+                    options={[
+                      { value: '', label: 'Select Event Key...' },
+                      ...eventKeys.map(k => ({ value: k, label: k })),
+                      { value: 'custom', label: 'Create New / Custom Event...' }
+                    ]}
+                  />
+                  {isCustom && (
+                    <div className="mt-2 animate-in slide-in-from-top duration-200">
+                      <TInput
+                        value={customEvent}
+                        onChange={setCustomEvent}
+                        placeholder="Enter custom event key (e.g. user_registered)"
+                        mono
+                      />
+                    </div>
+                  )}
+                </div>
+              </FGroup>
+
+              <FGroup cols={2}>
+                <div>
+                  <FieldLabel hint="Active or Draft status">Status</FieldLabel>
+                  <TSelect
+                    value={status}
+                    onChange={setStatus}
+                    options={[
+                      { value: 'ACTIVE', label: 'ACTIVE' },
+                      { value: 'DRAFT', label: 'DRAFT' }
+                    ]}
+                  />
+                </div>
+                <div>
+                  <FieldLabel hint="Notification channel type">Channel Type</FieldLabel>
+                  <TSelect
+                    value={type}
+                    onChange={setType}
+                    options={[
+                      { value: 'email', label: 'Email Only' },
+                      { value: 'sms', label: 'SMS (Coming Soon)' },
+                      { value: 'in_app', label: 'In-App Dashboard (Coming Soon)' }
+                    ]}
+                    disabled
+                  />
+                </div>
+              </FGroup>
+
+              <div>
+                <FieldLabel required hint="Email subject line seen by users">Email Subject</FieldLabel>
+                <TInput
+                  value={subject}
+                  onChange={setSubject}
+                  placeholder="e.g. Deposit Confirmed Successfully"
+                />
+              </div>
+
+              <div>
+                <FieldLabel required hint="HTML body content supporting replacement tags">
+                  Template Body (HTML)
+                </FieldLabel>
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  rows={8}
+                  placeholder="<h3>Welcome</h3><p>Hi {userName}, thank you for registering...</p>"
+                  className="w-full px-3 py-2.5 rounded-[8px] border border-border/30 bg-bg text-[12.5px] text-text font-mono tracking-wide outline-none placeholder:text-text-muted/30 focus:border-brand/40 focus:bg-surface-elevated resize-none transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              {/* Dynamic Variables Cheatsheet */}
+              <div className="p-3 bg-bg/40 border border-border/10 rounded-[8px]">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-text-muted/40 font-heading mb-1.5">
+                  Available Replacement Tags
+                </span>
+                <div className="flex flex-wrap gap-2 text-[10px] font-mono text-text-muted/65">
+                  <span className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">{`{userName}`}</span>
+                  <span className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">{`{amount}`}</span>
+                  <span className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">{`{otp}`}</span>
+                  <span className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">{`{rejectionReason}`}</span>
+                  <span className="bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">{`{status}`}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="border border-border/10 rounded-[8px] bg-bg/30 p-4">
+                <span className="block text-[10.5px] uppercase tracking-wider text-text-muted/40 font-bold mb-1">
+                  Subject Preview
+                </span>
+                <div className="text-[12.5px] font-semibold text-text font-heading">
+                  {subject || '(No Subject)'}
+                </div>
+              </div>
+
+              <div className="border border-border/10 rounded-[8px] bg-white text-black min-h-[250px] overflow-hidden flex flex-col">
+                <span className="block text-[10.5px] uppercase tracking-wider text-gray-400 font-bold p-3 bg-gray-50 border-b border-gray-100">
+                  Rendered HTML Preview
+                </span>
+                <div
+                  className="p-5 overflow-auto text-sm leading-relaxed flex-1 font-sans"
+                  dangerouslySetInnerHTML={{ __html: body || '<p class="text-gray-400 italic">Body is empty</p>' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between px-6 py-4.5 border-t border-border/10 bg-bg/10">
+          <div>
+            {template && onDelete && (
+              <Btn
+                Icon={Trash2}
+                label="Delete Template"
+                variant="danger"
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete '${name}' template?`)) {
+                    onDelete(template.id);
+                    onClose();
+                  }
+                }}
+              />
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Btn
+              label="Cancel"
+              variant="default"
+              onClick={onClose}
+              disabled={loading}
+            />
+            {modalTab === 'edit' && (
+              <Btn
+                label="Save Template"
+                variant="brand"
+                type="submit"
+                loading={loading}
+                onClick={handleSubmit}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * NotificationSettingsPage — Manages email/SMS gateways, alert channels, webhook dispatches, and message templates.
@@ -34,6 +347,60 @@ export function NotificationSettingsPage({
   resetCurrentSection,
 }) {
   const [activeTab, setActiveTab] = useState('channels');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [newEventKey, setNewEventKey] = useState('');
+  const [showAddEventForm, setShowAddEventForm] = useState(false);
+  const [defaultEvent, setDefaultEvent] = useState('');
+
+  const {
+    templates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate
+  } = usePlatformSettings();
+
+  const handleEdit = (tpl) => {
+    setSelectedTemplate(tpl);
+    setDefaultEvent('');
+    setModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedTemplate(null);
+    setDefaultEvent('');
+    setModalOpen(true);
+  };
+
+  const handleSaveTemplate = async (templateData) => {
+    if (templateData.id) {
+      await updateTemplate(templateData.id, templateData);
+    } else {
+      await createTemplate(templateData);
+    }
+  };
+
+  const handleAddEvent = (key) => {
+    if (!key) return;
+    const formattedKey = key.trim().toLowerCase().replace(/\s+/g, '_');
+    if (notificationConfig.events?.[formattedKey]) {
+      alert('Event already exists.');
+      return;
+    }
+    const updatedEvents = {
+      ...(notificationConfig.events || {}),
+      [formattedKey]: { email: false, sms: false, inApp: false, templateId: '' }
+    };
+    updateNotificationField('events', updatedEvents);
+  };
+
+  const handleDeleteEvent = (evtKey) => {
+    if (window.confirm(`Are you sure you want to remove the event '${evtKey}'?`)) {
+      const updatedEvents = { ...notificationConfig.events };
+      delete updatedEvents[evtKey];
+      updateNotificationField('events', updatedEvents);
+    }
+  };
 
   const AlertCheck = ({ active, onChange }) => (
     <button
@@ -157,7 +524,45 @@ export function NotificationSettingsPage({
             desc="Choose which channels send alerts for each event."
             Icon={Settings}
             action={
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                {showAddEventForm ? (
+                  <div className="flex items-center gap-1.5 animate-in slide-in-from-right duration-250">
+                    <input
+                      type="text"
+                      placeholder="e.g. payout_processed"
+                      value={newEventKey}
+                      onChange={(e) => setNewEventKey(e.target.value)}
+                      className="h-7.5 px-2 bg-bg border border-border/30 rounded-[6px] text-[11px] text-text font-mono placeholder:text-text-muted/30 outline-none focus:border-brand/40"
+                    />
+                    <Btn
+                      label="Confirm"
+                      variant="primary"
+                      small
+                      onClick={() => {
+                        handleAddEvent(newEventKey);
+                        setNewEventKey('');
+                        setShowAddEventForm(false);
+                      }}
+                    />
+                    <Btn
+                      label="Cancel"
+                      variant="default"
+                      small
+                      onClick={() => {
+                        setNewEventKey('');
+                        setShowAddEventForm(false);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <Btn
+                    label="Add Event"
+                    Icon={Plus}
+                    variant="brand"
+                    small
+                    onClick={() => setShowAddEventForm(true)}
+                  />
+                )}
                 <Btn
                   label="Enable All"
                   Icon={CheckCircle2}
@@ -186,9 +591,16 @@ export function NotificationSettingsPage({
                         <div className="h-5" />
                       </div>
                     </th>
+                    <th className="py-2.5 px-3 text-center">
+                      <div className="flex flex-col items-center gap-1.5 pb-1">
+                        <span>Email Template</span>
+                        <div className="h-5" />
+                      </div>
+                    </th>
                     {['Email', 'SMS', 'In-App'].map((channelName) => {
                       const channelKey = channelName === 'Email' ? 'email' : channelName === 'SMS' ? 'sms' : 'inApp';
-                      const allOn = Object.values(notificationConfig.events || {}).every((ch) => ch[channelKey]);
+                      const allOn = Object.values(notificationConfig.events || {}).length > 0 &&
+                        Object.values(notificationConfig.events || {}).every((ch) => ch[channelKey]);
                       return (
                         <th key={channelName} className="py-2.5 px-3 text-center">
                           <div className="flex flex-col items-center gap-1.5 pb-1">
@@ -205,6 +617,12 @@ export function NotificationSettingsPage({
                         </th>
                       );
                     })}
+                    <th className="py-2.5 px-3 text-right">
+                      <div className="flex flex-col items-end gap-1.5 pb-1">
+                        <span>Actions</span>
+                        <div className="h-5" />
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/10 font-heading">
@@ -244,6 +662,41 @@ export function NotificationSettingsPage({
                           })()}
                         </td>
                         <td className="py-2.5 px-3 text-center">
+                          {(() => {
+                            const matchedTemplate = templates.find((t) => t.event === evtKey);
+                            if (matchedTemplate) {
+                              const isActive = matchedTemplate.status === 'ACTIVE';
+                              const colorClass = isActive
+                                ? 'border-positive/20 bg-positive/[0.06] text-positive hover:bg-positive/[0.12]'
+                                : 'border-warning/20 bg-warning/[0.06] text-warning hover:bg-warning/[0.12]';
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleEdit(matchedTemplate)}
+                                  className={`inline-flex items-center gap-1.5 rounded-[6px] border ${colorClass} transition-all px-2.5 py-1 text-[11px] font-semibold cursor-pointer mx-auto`}
+                                >
+                                  <FileText size={11} className="opacity-75" />
+                                  <span>{matchedTemplate.name}</span>
+                                </button>
+                              );
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDefaultEvent(evtKey);
+                                  setSelectedTemplate(null);
+                                  setModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-[6px] border border-brand/20 bg-brand/[0.06] text-brand hover:bg-brand/[0.12] transition-all px-2.5 py-1 text-[11px] font-semibold cursor-pointer mx-auto"
+                              >
+                                <Plus size={11} strokeWidth={2.5} />
+                                <span>Create Template</span>
+                              </button>
+                            );
+                          })()}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
                           <AlertCheck
                             active={channelSettings.email}
                             onChange={(v) =>
@@ -276,9 +729,24 @@ export function NotificationSettingsPage({
                             }
                           />
                         </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <Btn
+                            Icon={Trash2}
+                            variant="danger"
+                            small
+                            onClick={() => handleDeleteEvent(evtKey)}
+                          />
+                        </td>
                       </tr>
                     );
                   })}
+                  {Object.entries(notificationConfig.events || {}).length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-text-muted/30 font-heading">
+                        No event triggers defined. Use 'Add Event' to create your first notification trigger.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
@@ -431,6 +899,15 @@ export function NotificationSettingsPage({
             title="Email Templates"
             desc="View and manage message templates sent on system events."
             Icon={FileText}
+            action={
+              <Btn
+                Icon={Plus}
+                label="Create Template"
+                variant="brand"
+                small
+                onClick={handleCreate}
+              />
+            }
           >
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-[12.5px]">
@@ -443,8 +920,8 @@ export function NotificationSettingsPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/10 font-heading">
-                  {TEMPLATES_LIST.map((tpl) => (
-                    <tr key={tpl.name} className="hover:bg-border/5 transition-colors">
+                  {templates.map((tpl) => (
+                    <tr key={tpl.id || tpl.name} className="hover:bg-border/5 transition-colors">
                       <td className="py-3 px-3 font-semibold text-text/85">{tpl.name}</td>
                       <td className="py-3 px-3 text-text-muted/50 font-mono text-[11px]">{tpl.event}</td>
                       <td className="py-3 px-3 text-center">
@@ -462,14 +939,21 @@ export function NotificationSettingsPage({
                       <td className="py-3 px-3 text-right">
                         <Btn
                           Icon={Eye}
-                          label="Preview"
+                          label="Edit / Preview"
                           variant="default"
                           small
-                          onClick={() => alert(`Opening preview: ${tpl.name}`)}
+                          onClick={() => handleEdit(tpl)}
                         />
                       </td>
                     </tr>
                   ))}
+                  {templates.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-text-muted/30 font-heading">
+                        No templates loaded. Use 'Create Template' to define one.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -482,6 +966,16 @@ export function NotificationSettingsPage({
         onSave={saveCurrentSection}
         onReset={resetCurrentSection}
         label="Save Notification Settings"
+      />
+
+      <TemplateModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        template={selectedTemplate}
+        onSave={handleSaveTemplate}
+        onDelete={deleteTemplate}
+        eventKeys={Object.keys(notificationConfig.events || {})}
+        defaultEventKey={defaultEvent}
       />
     </div>
   );

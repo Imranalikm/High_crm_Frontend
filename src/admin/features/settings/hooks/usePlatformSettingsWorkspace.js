@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
 
@@ -73,6 +73,11 @@ export function usePlatformSettingsWorkspace() {
   const [tradingConfig, setTradingConfig] = useState(savedTradingConfig);
   const [notificationConfig, setNotificationConfig] = useState(savedNotificationConfig);
   const [systemConfig, setSystemConfig] = useState(savedSystemConfig);
+
+  // Sync state if async loaded settings change
+  useEffect(() => {
+    setNotificationConfig(savedNotificationConfig);
+  }, [savedNotificationConfig]);
 
   // Wrapper setSection to navigate between routes when clicked
   const setSection = useCallback((newSection) => {

@@ -676,7 +676,7 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) => 
       </form>
 
       {/* SSO & Demo Access */}
-      <div style={{ marginTop: 10 }}>
+      <div style={{ marginTop: 10, display: 'none' }}>
         <div className="auth-sep">Secure SSO</div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
           <button
@@ -1184,9 +1184,7 @@ export default function AuthForm({ mode, onModeChange }) {
         </div>
 
         {/* Footer security */}
-        <div style={{ marginTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 12, display: 'flex', justifyContent: 'center', gap: 8, fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
-          <Lock size={10} /> 256-bit encryption • SOC2 Type II • <CheckCircle2 size={10} />
-        </div>
+        
       </div>
     </>
   );

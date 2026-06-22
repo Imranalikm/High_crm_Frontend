@@ -1,11 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { INITIAL_API_CONFIG } from '@/admin/features/settings/configs/api.config';
 import { INITIAL_GATEWAYS, INITIAL_GLOBAL_FEES } from '@/admin/features/settings/configs/payment.config';
 import { INITIAL_KYC_CONFIG } from '@/admin/features/settings/configs/kyc.config';
 import { INITIAL_TRADING_CONFIG } from '@/admin/features/settings/configs/trading.config';
 import { INITIAL_NOTIFICATION_CONFIG } from '@/admin/features/settings/configs/notification.config';
 import { INITIAL_SYSTEM_CONFIG } from '@/admin/features/settings/configs/system.config';
+import { apiClient } from '@/shared/api/client/apiClient';
+import { useAuth } from '@/auth/AuthContext';
 
 const PlatformSettingsContext = createContext(null);
 
@@ -31,13 +33,15 @@ function getStoredValue(key, fallback) {
 }
 
 export function PlatformSettingsProvider({ children }) {
+  const { isAuthenticated } = useAuth();
   const [apiConfig, setApiConfigState] = useState(() => getStoredValue(STORAGE_KEYS.api, INITIAL_API_CONFIG));
   const [gateways, setGatewaysState] = useState(() => getStoredValue(STORAGE_KEYS.gateways, INITIAL_GATEWAYS));
   const [globalFees, setGlobalFeesState] = useState(() => getStoredValue(STORAGE_KEYS.globalFees, INITIAL_GLOBAL_FEES));
   const [kycConfig, setKycConfigState] = useState(() => getStoredValue(STORAGE_KEYS.kyc, INITIAL_KYC_CONFIG));
   const [tradingConfig, setTradingConfigState] = useState(() => getStoredValue(STORAGE_KEYS.trading, INITIAL_TRADING_CONFIG));
-  const [notificationConfig, setNotificationConfigState] = useState(() => getStoredValue(STORAGE_KEYS.notifications, INITIAL_NOTIFICATION_CONFIG));
+  const [notificationConfig, setNotificationConfigState] = useState(INITIAL_NOTIFICATION_CONFIG);
   const [systemConfig, setSystemConfigState] = useState(() => getStoredValue(STORAGE_KEYS.system, INITIAL_SYSTEM_CONFIG));
+  const [templates, setTemplates] = useState([]);
 
   // Sync to localStorage
   const saveToStorage = useCallback((key, data) => {
@@ -47,6 +51,37 @@ export function PlatformSettingsProvider({ children }) {
       console.error(`Error writing key ${key} to localStorage`, e);
     }
   }, []);
+
+  // Fetch settings from API
+  const fetchNotificationConfig = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/notifications/config');
+      if (response && response.success) {
+        setNotificationConfigState(response.data);
+      }
+    } catch (err) {
+      console.error('[PlatformSettingsContext] Failed to load notification settings', err);
+    }
+  }, []);
+
+  const fetchTemplates = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/notifications/templates');
+      if (response && response.success) {
+        setTemplates(response.data);
+      }
+    } catch (err) {
+      console.error('[PlatformSettingsContext] Failed to load notification templates', err);
+    }
+  }, []);
+
+  // Automatically fetch when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotificationConfig();
+      fetchTemplates();
+    }
+  }, [isAuthenticated, fetchNotificationConfig, fetchTemplates]);
 
   const updateApiConfig = useCallback((newConfig) => {
     setApiConfigState(newConfig);
@@ -73,15 +108,62 @@ export function PlatformSettingsProvider({ children }) {
     saveToStorage(STORAGE_KEYS.trading, newConfig);
   }, [saveToStorage]);
 
-  const updateNotificationConfig = useCallback((newConfig) => {
-    setNotificationConfigState(newConfig);
-    saveToStorage(STORAGE_KEYS.notifications, newConfig);
-  }, [saveToStorage]);
+  const updateNotificationConfig = useCallback(async (newConfig) => {
+    try {
+      const response = await apiClient.put('/notifications/config', newConfig);
+      if (response && response.success) {
+        setNotificationConfigState(response.data);
+        return response.data;
+      }
+    } catch (err) {
+      console.error('[PlatformSettingsContext] Failed to update notification settings', err);
+      throw err;
+    }
+  }, []);
 
   const updateSystemConfig = useCallback((newConfig) => {
     setSystemConfigState(newConfig);
     saveToStorage(STORAGE_KEYS.system, newConfig);
   }, [saveToStorage]);
+
+  // Templates CRUD handlers
+  const createTemplate = useCallback(async (templateData) => {
+    try {
+      const response = await apiClient.post('/notifications/templates', templateData);
+      if (response && response.success) {
+        setTemplates(prev => [...prev, response.data].sort((a, b) => a.name.localeCompare(b.name)));
+        return response.data;
+      }
+    } catch (err) {
+      console.error('[PlatformSettingsContext] Failed to create template', err);
+      throw err;
+    }
+  }, []);
+
+  const updateTemplate = useCallback(async (id, templateData) => {
+    try {
+      const response = await apiClient.put(`/notifications/templates/${id}`, templateData);
+      if (response && response.success) {
+        setTemplates(prev => prev.map(t => t.id === id ? response.data : t).sort((a, b) => a.name.localeCompare(b.name)));
+        return response.data;
+      }
+    } catch (err) {
+      console.error('[PlatformSettingsContext] Failed to update template', err);
+      throw err;
+    }
+  }, []);
+
+  const deleteTemplate = useCallback(async (id) => {
+    try {
+      const response = await apiClient.delete(`/notifications/templates/${id}`);
+      if (response && response.success) {
+        setTemplates(prev => prev.filter(t => t.id !== id));
+      }
+    } catch (err) {
+      console.error('[PlatformSettingsContext] Failed to delete template', err);
+      throw err;
+    }
+  }, []);
 
   // Read-only settings representation for Clients (Sanitized out secrets/passwords)
   const getSanitizedSettings = useCallback(() => {
@@ -132,6 +214,11 @@ export function PlatformSettingsProvider({ children }) {
       updateNotificationConfig,
       systemConfig,
       updateSystemConfig,
+      templates,
+      createTemplate,
+      updateTemplate,
+      deleteTemplate,
+      fetchTemplates,
       clientSettings: getSanitizedSettings()
     }}>
       {children}

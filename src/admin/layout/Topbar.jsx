@@ -299,13 +299,7 @@ export function Topbar({ collapsed, setCollapsed, theme, toggleTheme, onOpenComm
                   <User size={13} strokeWidth={1.8} className="shrink-0 group-hover/item:scale-110 transition-transform" />
                   <span className="text-[12.5px] font-medium tracking-[-0.01em] text-text-muted/85 group-hover/item:text-text transition-colors">Account Profile</span>
                 </button>
-                <button
-                  onClick={() => { setIsProfileOpen(false); navigate('/admin/settings/system'); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[7px] text-text-muted/55 hover:bg-text/[0.04] hover:text-text/80 transition-all duration-150 text-left group/item outline-none cursor-pointer"
-                >
-                  <Settings size={13} strokeWidth={1.8} className="shrink-0 group-hover/item:scale-110 transition-transform" />
-                  <span className="text-[12.5px] font-medium tracking-[-0.01em] text-text-muted/85 group-hover/item:text-text transition-colors">System Settings</span>
-                </button>
+
               </div>
 
               {/* Divider */}
