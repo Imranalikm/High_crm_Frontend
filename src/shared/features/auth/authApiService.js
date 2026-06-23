@@ -96,6 +96,24 @@ export async function loginUser(email, password) {
 }
 
 /**
+ * Forgot Password
+ * @param {string} email
+ */
+export async function forgotPassword(email) {
+  return apiFetch('/auth/forgot-password', { email });
+}
+
+/**
+ * Reset Password
+ * @param {string} email
+ * @param {string} otp
+ * @param {string} newPassword
+ */
+export async function resetPassword(email, otp, newPassword) {
+  return apiFetch('/auth/reset-password', { email, otp, newPassword });
+}
+
+/**
  * Rotate tokens using a refresh token.
  *
  * @param {string} refreshToken

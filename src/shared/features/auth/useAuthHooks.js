@@ -7,7 +7,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
-import { registerUser, sendOtp, verifyOtp } from './authApiService';
+import { registerUser, sendOtp, verifyOtp, forgotPassword, resetPassword } from './authApiService';
 
 /* ─────────────────────────────────────────────
    1.  REGISTER
@@ -60,6 +60,32 @@ export function useLoginUser(options = {}) {
   const { login } = useAuth();
   return useMutation({
     mutationFn: ({ email, password }) => login(email, password),
+    ...options,
+  });
+}
+
+/* ─────────────────────────────────────────────
+   5.  FORGOT PASSWORD
+   ───────────────────────────────────────────── */
+/**
+ * Mutation to send a password reset OTP.
+ */
+export function useForgotPassword(options = {}) {
+  return useMutation({
+    mutationFn: (email) => forgotPassword(email),
+    ...options,
+  });
+}
+
+/* ─────────────────────────────────────────────
+   6.  RESET PASSWORD
+   ───────────────────────────────────────────── */
+/**
+ * Mutation to reset the password using the OTP.
+ */
+export function useResetPassword(options = {}) {
+  return useMutation({
+    mutationFn: ({ email, otp, newPassword }) => resetPassword(email, otp, newPassword),
     ...options,
   });
 }

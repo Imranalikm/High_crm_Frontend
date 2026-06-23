@@ -24,7 +24,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
-import { useRegisterUser, useSendOtp, useVerifyOtp, useLoginUser } from '../useAuthHooks';
+import { useRegisterUser, useSendOtp, useVerifyOtp, useLoginUser, useForgotPassword, useResetPassword } from '../useAuthHooks';
 
 /* --------------------------------------------------------------------------
    PASSWORD STRENGTH UTILITY
@@ -562,7 +562,7 @@ function PasswordInput({
 /* --------------------------------------------------------------------------
    LOGIN FORM (CRM MODERN)
 -------------------------------------------------------------------------- */
-const LoginForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) => {
+const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPassword }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const {
@@ -570,14 +570,10 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) => 
     handleSubmit,
     setValue,
     formState: { errors },
-    watch,
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', rememberMe: false },
   });
-
-  const passwordValue = watch('password');
-  const strength = getPasswordStrength(passwordValue || '');
 
   const { mutateAsync: doLogin, isPending: loading } = useLoginUser();
 
@@ -602,7 +598,7 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) => 
               <Mail size={14} />
             </div>
             <input
-              {...register('email')}
+               {...register('email')}
               type="email"
               placeholder="name@company.com"
               className={`auth-input ${errors.email ? 'has-error' : ''}`}
@@ -622,7 +618,7 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) => 
             <label className="auth-label">Password</label>
             <button
               type="button"
-              onClick={() => alert('🔐 Demo: Password reset link would be sent to your email.')}
+              onClick={onForgotPassword}
               style={{ background: 'none', border: 'none', fontSize: 11, fontWeight: 600, color: '#6f9cff', cursor: 'pointer' }}
             >
               Forgot password?
@@ -636,28 +632,12 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) => 
             error={errors.password}
             mode={mode}
           />
-          {passwordValue && (
-            <div className="strength-bar">
-              <div className="strength-fill" style={{ width: strength.width, background: strength.color }} />
-            </div>
-          )}
           {errors.password && (
             <div className="auth-error-msg">
               <AlertCircle size={11} /> {errors.password.message}
             </div>
           )}
         </div>
-
-        {/* Remember Me */}
-        <label className="auth-checkbox-wrap">
-          <input type="checkbox" {...register('rememberMe')} />
-          <div className="auth-checkbox-box">
-            <svg viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>Keep me signed in</span>
-        </label>
 
         {/* Submit */}
         <button type="submit" disabled={loading} className="auth-btn-primary">
@@ -1082,6 +1062,148 @@ const RegisterForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) 
 });
 
 /* --------------------------------------------------------------------------
+   FORGOT PASSWORD FORM
+-------------------------------------------------------------------------- */
+const ForgotPasswordForm = React.forwardRef(({ onError, shake, isActive, onSent, onBack }, ref) => {
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(z.object({ email: z.string().min(1, 'Email is required').email('Invalid email') })),
+  });
+  const { mutateAsync: doForgot, isPending: loading } = useForgotPassword();
+
+  const onSubmit = async (data) => {
+    onError('');
+    try {
+      await doForgot(data.email);
+      onSent(data.email);
+    } catch (err) {
+      onError(err.message || 'Failed to send reset email.');
+    }
+  };
+
+  return (
+    <div ref={ref} className={`auth-panel ${isActive ? 'visible' : 'slide-out-right'}${shake ? ' auth-shake' : ''}`}>
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ textAlign: 'center', marginBottom: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Reset Password</div>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+            Enter your email and we'll send you a code.
+          </div>
+        </div>
+        <div>
+          <label className="auth-label">Business Email</label>
+          <div className="auth-input-wrap">
+            <div className="auth-input-icon"><Mail size={14} /></div>
+            <input {...register('email')} type="email" placeholder="name@company.com" className={`auth-input ${errors.email ? 'has-error' : ''}`} />
+          </div>
+          {errors.email && <div className="auth-error-msg"><AlertCircle size={11} /> {errors.email.message}</div>}
+        </div>
+        <button type="submit" disabled={loading} className="auth-btn-primary">
+          <div className="btn-shimmer" />
+          {loading ? (
+            <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'authSpin 0.7s linear infinite' }} /> Sending...</>
+          ) : (
+            <>Send Reset Code <ArrowRight size={15} /></>
+          )}
+        </button>
+        <button type="button" onClick={onBack} style={{ background: 'none', border: 'none', fontSize: 12, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontWeight: 600, marginTop: 10 }}>
+          ← Back to Login
+        </button>
+      </form>
+    </div>
+  );
+});
+
+/* --------------------------------------------------------------------------
+   RESET PASSWORD FORM
+-------------------------------------------------------------------------- */
+const ResetPasswordForm = React.forwardRef(({ onError, shake, isActive, email, onSuccess, onBack }, ref) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(z.object({
+      otp: z.string().length(6, 'Code must be 6 digits'),
+      newPassword: z.string().min(8, 'Minimum 8 characters')
+    })),
+  });
+  const { mutateAsync: doReset, isPending: loading } = useResetPassword();
+
+  const onSubmit = async (data) => {
+    onError('');
+    try {
+      await doReset({ email, otp: data.otp, newPassword: data.newPassword });
+      onSuccess();
+    } catch (err) {
+      onError(err.message || 'Failed to reset password.');
+    }
+  };
+
+  return (
+    <div ref={ref} className={`auth-panel ${isActive ? 'visible' : 'slide-out-right'}${shake ? ' auth-shake' : ''}`}>
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ textAlign: 'center', marginBottom: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>New Password</div>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+            Enter the 6-digit code sent to <br/><span style={{ color: '#6f9cff', fontWeight: 600 }}>{email}</span>
+          </div>
+        </div>
+        <div>
+          <label className="auth-label">Reset Code (6 Digits)</label>
+          <div className="auth-input-wrap">
+            <div className="auth-input-icon"><KeyRound size={14} /></div>
+            <input {...register('otp')} placeholder="123456" className={`auth-input ${errors.otp ? 'has-error' : ''}`} maxLength={6} />
+          </div>
+          {errors.otp && <div className="auth-error-msg"><AlertCircle size={11} /> {errors.otp.message}</div>}
+        </div>
+        <div>
+          <label className="auth-label">New Password</label>
+          <PasswordInput {...register('newPassword')} show={showPassword} onToggle={() => setShowPassword(p => !p)} error={errors.newPassword} mode="login" />
+          {errors.newPassword && <div className="auth-error-msg"><AlertCircle size={11} /> {errors.newPassword.message}</div>}
+        </div>
+        <button type="submit" disabled={loading} className="auth-btn-primary">
+          <div className="btn-shimmer" />
+          {loading ? (
+            <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'authSpin 0.7s linear infinite' }} /> Saving...</>
+          ) : (
+            <>Reset Password <CheckCircle2 size={15} /></>
+          )}
+        </button>
+        <button type="button" onClick={onBack} style={{ background: 'none', border: 'none', fontSize: 12, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontWeight: 600, marginTop: 10 }}>
+          Cancel
+        </button>
+      </form>
+    </div>
+  );
+});
+
+/* --------------------------------------------------------------------------
+   RESET SUCCESS PANEL
+-------------------------------------------------------------------------- */
+const ResetSuccessPanel = React.forwardRef(({ isActive, onContinue, shake }, ref) => {
+  return (
+    <div ref={ref} className={`auth-panel ${isActive ? 'visible' : 'slide-out-right'}${shake ? ' auth-shake' : ''}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: '50%',
+          background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(52,211,153,0.05))',
+          border: '1px solid rgba(52,211,153,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 16,
+        }}>
+          <CheckCircle2 size={28} color="#34d399" />
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Password Reset</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 24 }}>
+          Your password has been successfully reset. You can now use your new password to sign in.
+        </div>
+        <button type="button" onClick={onContinue} className="auth-btn-primary">
+          <div className="btn-shimmer" />
+          Continue to Sign In <ArrowRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+/* --------------------------------------------------------------------------
    MAIN AUTH FORM COMPONENT (EXPORTED)
 -------------------------------------------------------------------------- */
 export default function AuthForm({ mode, onModeChange }) {
@@ -1089,12 +1211,24 @@ export default function AuthForm({ mode, onModeChange }) {
   const [shake, setShake] = useState(false);
   const [sessionId] = useState(() => 'SES—' + Math.random().toString(36).slice(2, 10).toUpperCase());
 
+  const [authFlow, setAuthFlow] = useState('main'); // 'main' | 'forgot' | 'reset' | 'reset-success'
+  const [resetEmail, setResetEmail] = useState('');
+
   const loginRef = useRef(null);
   const signupRef = useRef(null);
+  const forgotRef = useRef(null);
+  const resetRef = useRef(null);
+  const resetSuccessRef = useRef(null);
   const [containerHeight, setContainerHeight] = useState(mode === 'login' ? 385 : 465);
 
   useEffect(() => {
-    const activeRef = mode === 'login' ? loginRef : signupRef;
+    if (authFlow !== 'main' && mode !== 'login') {
+      setAuthFlow('main');
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    const activeRef = authFlow === 'forgot' ? forgotRef : authFlow === 'reset' ? resetRef : authFlow === 'reset-success' ? resetSuccessRef : mode === 'login' ? loginRef : signupRef;
     if (activeRef.current) {
       const updateHeight = () => {
         const height = activeRef.current.offsetHeight;
@@ -1113,7 +1247,7 @@ export default function AuthForm({ mode, onModeChange }) {
       observer.observe(activeRef.current);
       return () => observer.disconnect();
     }
-  }, [mode, error]); // Also run when global error changes height
+  }, [mode, error, authFlow]); // Also run when global error or flow changes height
 
   const handleError = (msg) => {
     if (msg) {
@@ -1166,8 +1300,8 @@ export default function AuthForm({ mode, onModeChange }) {
             transition: 'all 0.35s cubic-bezier(0.25, 1, 0.5, 1)',
             zIndex: 0
           }} />
-          <button type="button" className={`auth-tab ${mode === 'login' ? 'active' : ''}`} onClick={() => onModeChange('login')} style={{ zIndex: 1, color: mode === 'login' ? '#9bbdff' : 'rgba(255, 255, 255, 0.5)', background: 'transparent', boxShadow: 'none' }}>Sign in</button>
-          <button type="button" className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => onModeChange('signup')} style={{ zIndex: 1, color: mode === 'signup' ? '#c4b5fd' : 'rgba(255, 255, 255, 0.5)', background: 'transparent', boxShadow: 'none' }}>Create account</button>
+          <button type="button" className={`auth-tab ${mode === 'login' ? 'active' : ''}`} onClick={() => { onModeChange('login'); setAuthFlow('main'); }} style={{ zIndex: 1, color: mode === 'login' ? '#9bbdff' : 'rgba(255, 255, 255, 0.5)', background: 'transparent', boxShadow: 'none' }}>Sign in</button>
+          <button type="button" className={`auth-tab ${mode === 'signup' ? 'active' : ''}`} onClick={() => { onModeChange('signup'); setAuthFlow('main'); }} style={{ zIndex: 1, color: mode === 'signup' ? '#c4b5fd' : 'rgba(255, 255, 255, 0.5)', background: 'transparent', boxShadow: 'none' }}>Create account</button>
         </div>
 
         {/* Global error */}
@@ -1179,8 +1313,11 @@ export default function AuthForm({ mode, onModeChange }) {
 
         {/* Form render with slide transition container */}
         <div className="auth-panel-container" style={{ height: `${containerHeight}px` }}>
-          <LoginForm ref={loginRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'login'} />
-          <RegisterForm ref={signupRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'signup'} />
+          <LoginForm ref={loginRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'login' && authFlow === 'main'} onForgotPassword={() => setAuthFlow('forgot')} />
+          <RegisterForm ref={signupRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'signup' && authFlow === 'main'} />
+          <ForgotPasswordForm ref={forgotRef} onError={handleError} shake={shake} isActive={authFlow === 'forgot'} onSent={(email) => { setResetEmail(email); setAuthFlow('reset'); }} onBack={() => setAuthFlow('main')} />
+          <ResetPasswordForm ref={resetRef} onError={handleError} shake={shake} isActive={authFlow === 'reset'} email={resetEmail} onSuccess={() => setAuthFlow('reset-success')} onBack={() => setAuthFlow('main')} />
+          <ResetSuccessPanel ref={resetSuccessRef} shake={shake} isActive={authFlow === 'reset-success'} onContinue={() => setAuthFlow('main')} />
         </div>
 
         {/* Footer security */}

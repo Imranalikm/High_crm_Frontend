@@ -5,6 +5,7 @@ import { Plus, Monitor, ShieldAlert, Activity, Copy, Wallet } from 'lucide-react
 import { Card, StatusBadge, Toast } from '@/components/ui';
 import { MainTable, TableToolbar } from '@/components/common/table';
 import { ClientCreateAccountDrawer } from './ClientCreateAccountDrawer';
+import { UpdateMt5PasswordModal } from './UpdateMt5PasswordModal';
 import { apiClient } from '@/shared/api/client/apiClient';
 
 const fmt = (n) =>
@@ -15,6 +16,8 @@ export function ClientAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
 
@@ -26,7 +29,11 @@ export function ClientAccountsPage() {
     setLoading(true);
     try {
       const response = await apiClient.get('/mt5-accounts');
-      setAccounts(response?.data || []);
+      const fetchedData = response?.data || [];
+      const liveAccounts = fetchedData.filter(
+        (acc) => acc.status === 'LIVE' && acc.accountid && !acc.accountid.startsWith('PENDING-')
+      );
+      setAccounts(liveAccounts);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch user accounts:', err);
@@ -137,16 +144,13 @@ export function ClientAccountsPage() {
       render: (_, row) => (
         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
           <button
-            onClick={() => navigate('/client/finance/deposit')}
-            className="h-7 px-2.5 rounded-[6px] font-bold text-[11px] bg-brand text-text-on-accent hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            onClick={() => {
+              setSelectedAccountId(row.accountid);
+              setIsPasswordModalOpen(true);
+            }}
+            className="h-7 px-3 rounded-[6px] font-bold text-[11px] border border-brand/30 text-brand hover:bg-brand/10 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            Deposit
-          </button>
-          <button
-            onClick={() => navigate('/client/finance/withdraw')}
-            className="h-7 px-2.5 rounded-[6px] font-bold text-[11px] border border-border text-text hover:bg-white/[0.02] active:scale-95 transition-all cursor-pointer"
-          >
-            Withdraw
+            Update Password
           </button>
         </div>
       )
@@ -267,6 +271,17 @@ export function ClientAccountsPage() {
         open={isDrawerOpen} 
         onClose={() => setIsDrawerOpen(false)} 
         onSave={() => fetchAccounts()} 
+      />
+
+      <UpdateMt5PasswordModal
+        open={isPasswordModalOpen}
+        accountId={selectedAccountId}
+        onClose={() => setIsPasswordModalOpen(false)}
+        onSuccess={() => {
+          setIsPasswordModalOpen(false);
+          setToast('MT5 passwords updated successfully and emailed to you.');
+          setTimeout(() => setToast(''), 4000);
+        }}
       />
 
       {toast && (
