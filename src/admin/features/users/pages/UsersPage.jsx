@@ -48,7 +48,6 @@ function UsersPage() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [kycFilter, setKycFilter] = useState('all');
-  const [riskFilter, setRiskFilter] = useState('all');
   const [fundingFilter, setFundingFilter] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('create');
@@ -125,10 +124,9 @@ function UsersPage() {
   const filteredUsers = useMemo(() => {
     let rows = filterBySearch(userRows, search, ['name', 'uid', 'email', 'phone', 'segment']);
     if (kycFilter !== 'all') rows = rows.filter((user) => user.kycStatus === kycFilter);
-    if (riskFilter !== 'all') rows = rows.filter((user) => user.riskStatus === riskFilter);
     if (fundingFilter !== 'all') rows = rows.filter((user) => user.fundingState === fundingFilter);
     return rows;
-  }, [fundingFilter, kycFilter, riskFilter, search, userRows]);
+  }, [fundingFilter, kycFilter, search, userRows]);
 
   const usersTable = useTableState(filteredUsers, { searchFields: [], initialPageSize: 10 });
 
@@ -290,20 +288,7 @@ function UsersPage() {
                   </select>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-text-muted/70 font-bold uppercase tracking-wider shrink-0">Risk:</span>
-                  <select
-                    value={riskFilter}
-                    onChange={(e) => { setRiskFilter(e.target.value); usersTable.setPage(1); }}
-                    className="h-7 rounded-[7px] border border-border/20 bg-bg text-[12.5px] font-semibold text-text px-2 pr-5 outline-none focus:border-brand/40 transition-all cursor-pointer appearance-none"
-                    style={{ minWidth: '76px' }}
-                  >
-                    <option value="all">ALL</option>
-                    {RISK_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
+
 
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] text-text-muted/70 font-bold uppercase tracking-wider shrink-0">Funding:</span>

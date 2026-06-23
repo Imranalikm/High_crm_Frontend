@@ -207,7 +207,7 @@ export function UsersListTable({
             onClick={() => onOpenUser(row.id)}
             className="rounded-[6px] border border-border/25 bg-bg/50 px-3 py-1.5 text-[12.5px] font-semibold text-text-muted transition-all hover:border-border/55 hover:text-text cursor-pointer animate-fade-in"
           >
-            Open
+            View
           </button>
           <RowActionsMenu
             user={row}
