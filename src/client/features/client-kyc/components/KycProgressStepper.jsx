@@ -36,15 +36,29 @@ export function KycProgressStepper({ current = 1, completed = [], onSelect }) {
           const num = i + 1;
           const done = completed[i];
           const active = num === current;
+          
+          const isFinishedStep = num === 6;
+          let isLocked = false;
+          if (num > current) {
+            for (let idx = 0; idx < num - 1; idx++) {
+              if (!completed[idx]) {
+                isLocked = true;
+                break;
+              }
+            }
+          }
+          const disabled = isFinishedStep || isLocked;
 
           return (
             <button key={label} type="button"
-              onClick={() => onSelect?.(num)}
+              disabled={disabled}
+              onClick={() => !disabled && onSelect?.(num)}
               className={[
-                'relative p-3 rounded-[10px] border text-left transition-all cursor-pointer',
-                active ? 'border-brand/50 bg-brand/[0.08]'
-                  : done ? 'border-positive/30 bg-positive/[0.04] hover:border-positive/50'
-                    : 'border-border/30 bg-surface hover:border-border/55 hover:bg-muted-surface/10',
+                'relative p-3 rounded-[10px] border text-left transition-all',
+                disabled ? 'opacity-40 cursor-not-allowed border-border/15 bg-surface'
+                  : active ? 'border-brand/50 bg-brand/[0.08] cursor-pointer'
+                    : done ? 'border-positive/30 bg-positive/[0.04] hover:border-positive/50 cursor-pointer'
+                      : 'border-border/30 bg-surface hover:border-border/55 hover:bg-muted-surface/10 cursor-pointer',
               ].join(' ')}
             >
               <span className="absolute top-2.5 right-2.5 font-mono text-[8px] text-text-muted/25 font-bold">

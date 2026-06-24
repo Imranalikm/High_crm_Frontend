@@ -169,7 +169,23 @@ export function KycUploadPage() {
       <KycProgressStepper
         current={step}
         completed={completedSteps ?? []}
-        onSelect={(target) => setStep(target)}
+        onSelect={(target) => {
+          if (target === 6) return;
+          if (target <= step) {
+            setStep(target);
+            return;
+          }
+          let canGo = true;
+          for (let i = 0; i < target - 1; i++) {
+            if (!completedSteps[i]) {
+              canGo = false;
+              break;
+            }
+          }
+          if (canGo) {
+            setStep(target);
+          }
+        }}
       />
 
       {/* ── Main grid ── */}

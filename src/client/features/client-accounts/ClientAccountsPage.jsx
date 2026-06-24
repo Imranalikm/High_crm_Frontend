@@ -150,7 +150,7 @@ export function ClientAccountsPage() {
             }}
             className="h-7 px-3 rounded-[6px] font-bold text-[11px] border border-brand/30 text-brand hover:bg-brand/10 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            Update Password
+            Change Password
           </button>
         </div>
       )

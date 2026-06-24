@@ -20,9 +20,22 @@ export function UpdateMt5PasswordModal({ open, accountId, onClose, onSuccess }) 
       return;
     }
     
-    // Basic validation
-    if (mPassword.length < 5 || iPassword.length < 5) {
-      setError('Passwords must be at least 5 characters long.');
+    const isValidPassword = (pwd) => {
+      if (pwd.length < 8 || pwd.length > 16) return false;
+      const hasUpper = /[A-Z]/.test(pwd);
+      const hasLower = /[a-z]/.test(pwd);
+      const hasNumber = /[0-9]/.test(pwd);
+      const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+      return hasUpper && hasLower && hasNumber && hasSpecial;
+    };
+
+    if (!isValidPassword(mPassword)) {
+      setError('Master password must be 8-16 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+      return;
+    }
+
+    if (!isValidPassword(iPassword)) {
+      setError('Investor password must be 8-16 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
       return;
     }
 
@@ -61,7 +74,7 @@ export function UpdateMt5PasswordModal({ open, accountId, onClose, onSuccess }) 
               <KeyRound size={20} className="text-brand" />
             </div>
             <div>
-              <h2 className="font-semibold text-text text-[16px]">Update Passwords</h2>
+              <h2 className="font-semibold text-text text-[16px]">Change Passwords</h2>
               <p className="text-[12px] text-text-muted mt-0.5">MT5 Account: <span className="font-mono text-brand font-bold">{accountId}</span></p>
             </div>
           </div>
@@ -144,7 +157,7 @@ export function UpdateMt5PasswordModal({ open, accountId, onClose, onSuccess }) 
               {loading ? (
                 <><Loader2 size={16} className="animate-spin" /> Updating...</>
               ) : (
-                <><ShieldCheck size={16} /> Update MT5 Passwords</>
+                <><ShieldCheck size={16} /> Change MT5 Passwords</>
               )}
             </button>
           </div>

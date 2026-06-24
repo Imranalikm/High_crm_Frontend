@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/auth/AuthContext';
 import { kycApi } from '../services/kyc.api';
-import { addressProofSchema, identityDocumentSchema, personalInfoSchema, validateSection } from '../schemas/kyc.schema';
+import { addressProofSchema, identityDocumentSchema, personalInfoSchema, validateSection, kycSubmissionSchema } from '../schemas/kyc.schema';
 
 const defaultData = {
   personalInfo: {
@@ -91,15 +91,28 @@ export function useKycUpload() {
   }, [data, submitted]);
 
   const validateCurrent = () => {
-    const validation = step === 1
-      ? validateSection(personalInfoSchema, data.personalInfo)
-      : step === 2
-        ? validateSection(identityDocumentSchema, data.identityDocument)
-        : step === 3 && !data.selfie
-          ? { selfie: 'Complete a selfie or live capture to continue' }
-          : step === 4
-            ? validateSection(addressProofSchema, data.addressProof)
-            : {};
+    let validation = {};
+    if (step === 1) {
+      const sectErrors = validateSection(personalInfoSchema, data.personalInfo);
+      if (Object.keys(sectErrors).length > 0) {
+        validation = { personalInfo: sectErrors };
+      }
+    } else if (step === 2) {
+      const sectErrors = validateSection(identityDocumentSchema, data.identityDocument);
+      if (Object.keys(sectErrors).length > 0) {
+        validation = { identityDocument: sectErrors };
+      }
+    } else if (step === 3) {
+      if (!data.selfie) {
+        validation = { selfie: 'Complete a selfie or live capture to continue' };
+      }
+    } else if (step === 4) {
+      const sectErrors = validateSection(addressProofSchema, data.addressProof);
+      if (Object.keys(sectErrors).length > 0) {
+        validation = { addressProof: sectErrors };
+      }
+    }
+    
     setErrors(validation);
     return Object.keys(validation).length === 0;
   };
@@ -118,6 +131,28 @@ export function useKycUpload() {
       setErrors({ declaration: 'Accept the declaration before submitting' });
       return false;
     }
+
+    const result = kycSubmissionSchema.safeParse(data);
+    if (!result.success) {
+      const formattedErrors = {};
+      result.error.issues.forEach((issue) => {
+        const path = issue.path;
+        if (path.length === 1) {
+          formattedErrors[path[0]] = issue.message;
+        } else if (path.length === 2) {
+          if (!formattedErrors[path[0]]) {
+            formattedErrors[path[0]] = {};
+          }
+          formattedErrors[path[0]][path[1]] = issue.message;
+        }
+      });
+      setErrors({
+        ...formattedErrors,
+        submit: 'Please complete all preceding steps and correct all errors before submitting.'
+      });
+      return false;
+    }
+
     setSaving(true);
     try {
       await kycApi.submit(data);
