@@ -46,7 +46,7 @@ async function apiFetch(path, payload) {
 /**
  * Register a new user.
  *
- * @param {{ name: string, email: string, password: string, country?: string, phone?: string }} payload
+ * @param {{ name: string, email: string, password: string, country: string, phone: string }} payload
  * @returns {{ accessToken: string, refreshToken: string, user: object }}
  */
 export async function registerUser(payload) {
@@ -54,8 +54,8 @@ export async function registerUser(payload) {
     name: payload.name,
     email: payload.email,
     password: payload.password,
-    ...(payload.country ? { country: payload.country } : {}),
-    ...(payload.phone ? { phone: payload.phone } : {}),
+    country: payload.country,
+    phone: payload.phone,
   });
   return data?.data ?? data;
 }

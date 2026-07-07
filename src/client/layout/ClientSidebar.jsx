@@ -545,78 +545,12 @@ export function ClientSidebar({ collapsed, isMobile }) {
           backgroundColor: 'var(--surface-2)',
         }}
       >
-        {/* ── Profile submenu accordion (expands upward) ── */}
         <div
-          style={{
-            transition: 'grid-template-rows 280ms cubic-bezier(0.4,0,0.2,1), opacity 220ms ease',
-            display: 'grid',
-            gridTemplateRows: showSubMenu ? '1fr' : '0fr',
-            opacity: showSubMenu ? 1 : 0,
-            pointerEvents: showSubMenu ? 'auto' : 'none',
-          }}
-        >
-          <div className="overflow-hidden min-h-0">
-            <div
-              className="flex flex-col gap-px pb-2 mb-1 border-b"
-              style={{ borderColor: 'var(--border)' }}
-            >
-              {profileSubTabs.map((sub) => {
-                const isSubActive = location.pathname === sub.path || (location.pathname === '/client/settings' && sub.id === 'profile');
-                const SubIcon = sub.icon;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => navigate(sub.path)}
-                    className={`
-                      w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[7px]
-                      text-[13px] font-heading font-medium tracking-[-0.01em] min-w-0
-                      outline-none cursor-pointer transition-all duration-150 text-left
-                      ${isSubActive
-                        ? 'bg-primary/[0.12] text-primary font-semibold'
-                        : 'text-text-muted/60 hover:bg-text/[0.04] hover:text-text/80'
-                      }
-                    `}
-                  >
-                    <SubIcon
-                      size={12}
-                      strokeWidth={isSubActive ? 2.2 : 1.75}
-                      className={`shrink-0 ${isSubActive ? 'text-primary' : 'text-text-muted/30'}`}
-                    />
-                    <span className="truncate flex-1">{sub.label}</span>
-                    {isSubActive && (
-                      <span className="w-1 h-1 rounded-full bg-primary shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Profile button ── */}
-        <button
-          onClick={() => {
-            if (collapsed) {
-              navigate('/client/account/overview');
-            } else {
-              setProfileMenuExpanded((prev) => !prev);
-            }
-          }}
-          onMouseEnter={(e) => {
-            if (collapsed) {
-              handleHoverStart(profileItem, e.currentTarget.getBoundingClientRect());
-            }
-          }}
-          onMouseLeave={handleHoverEnd}
           className={`
-            flex items-center rounded-[8px] transition-all duration-200 cursor-pointer outline-none
+            flex items-center rounded-[8px] transition-all duration-200 select-none
             ${collapsed
               ? 'justify-center w-10 h-10 mx-auto'
-              : 'p-2 gap-3 w-full hover:bg-text/[0.04]'
-            }
-            ${isAccountActive || (collapsed && hoverNode?.item.id === 'account')
-              ? 'bg-primary/[0.08]'
-              : ''
+              : 'p-2 gap-3 w-full'
             }
           `}
         >
@@ -625,10 +559,7 @@ export function ClientSidebar({ collapsed, isMobile }) {
             className={`
               rounded-[7px] flex items-center justify-center
               font-heading font-black text-[10px] tracking-tight shrink-0 transition-all duration-200
-              ${isAccountActive
-                ? 'bg-primary text-bg'
-                : 'bg-primary/[0.12] text-primary border border-primary/20'
-              }
+              bg-primary/[0.12] text-primary border border-primary/20
             `}
             style={{ width: '1.875rem', height: '1.875rem' }}
           >
@@ -646,21 +577,7 @@ export function ClientSidebar({ collapsed, isMobile }) {
               </span>
             </div>
           )}
-
-          {/* Chevron toggle (visible only when expanded) */}
-          {!collapsed && (
-            <div className="w-5 h-5 flex items-center justify-center shrink-0">
-              <ChevronDown
-                size={13}
-                strokeWidth={2.5}
-                className={`
-                  transition-transform duration-300
-                  ${profileMenuExpanded ? 'rotate-180 text-primary' : 'rotate-0 text-text-muted/35'}
-                `}
-              />
-            </div>
-          )}
-        </button>
+        </div>
       </div>
 
     </aside>

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
 import { useRegisterUser, useSendOtp, useVerifyOtp, useLoginUser, useForgotPassword, useResetPassword } from '../useAuthHooks';
+import { COUNTRIES } from '@/config/constants/COUNTRIES';
 
 /* --------------------------------------------------------------------------
    PASSWORD STRENGTH UTILITY
@@ -59,36 +60,21 @@ const signupSchema = z
   .object({
     name: z.string().min(1, 'Full name is required'),
     email: z.string().min(1, 'Email is required').email('Invalid email address'),
-    phone: z.string().optional(),
-    country: z.string().optional(),
+    countryCode: z.string().min(1, 'Country code is required'),
+    phone: z.string()
+      .min(1, 'Phone number is required')
+      .regex(/^\d{7,15}$/, 'Phone number must be 7-15 digits'),
+    country: z.string().min(1, 'Country is required'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
-    agreedToTerms: z.literal(true, {
-      errorMap: () => ({ message: 'You must agree to the Terms & Privacy Policy' }),
+    agreedToTerms: z.boolean().refine((val) => val === true, {
+      message: 'You must agree to the Terms & Privacy Policy',
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   });
-
-/* --------------------------------------------------------------------------
-   COUNTRY LIST (CRM OPTIMIZED)
--------------------------------------------------------------------------- */
-const COUNTRIES = [
-  'United States',
-  'United Kingdom',
-  'Germany',
-  'France',
-  'Canada',
-  'Australia',
-  'Singapore',
-  'United Arab Emirates',
-  'Japan',
-  'India',
-  'Brazil',
-  'South Africa',
-];
 
 /* --------------------------------------------------------------------------
    STYLES (INJECTED GLOBALLY ONCE)
@@ -343,7 +329,6 @@ const globalStyles = `
   .auth-panel-container {
     position: relative;
     z-index: 1;
-    transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
   }
   .auth-panel {
@@ -410,10 +395,11 @@ const globalStyles = `
 `;
 
 /* --------------------------------------------------------------------------
-   CUSTOM COUNTRY SELECTOR (GLOSSY COMPONENT)
+   CUSTOM COUNTRY SELECTOR (SEARCHABLE, FULL LIST)
 -------------------------------------------------------------------------- */
 function CountrySelector({ value, onChange, error }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -422,9 +408,13 @@ function CountrySelector({ value, onChange, error }) {
         setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const filtered = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
@@ -460,44 +450,217 @@ function CountrySelector({ value, onChange, error }) {
           top: 'calc(100% + 6px)',
           left: 0,
           right: 0,
-          maxHeight: '180px',
-          overflowY: 'auto',
           background: 'rgba(8, 14, 26, 0.95)',
           backdropFilter: 'blur(16px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: '12px',
           boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
           zIndex: 50,
-          padding: '6px'
-        }} className="custom-scroll">
-          {COUNTRIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => {
-                onChange(c);
-                setIsOpen(false);
-              }}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '8px 12px',
-                background: value === c ? 'rgba(167, 139, 250, 0.15)' : 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                color: value === c ? '#c4b5fd' : '#f1f5ff',
-                fontSize: '13px',
-                fontWeight: value === c ? '600' : '400',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = value === c ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.05)'}
-              onMouseLeave={e => e.currentTarget.style.background = value === c ? 'rgba(167, 139, 250, 0.15)' : 'transparent'}
-            >
-              {c}
-            </button>
-          ))}
+          padding: '6px',
+          maxHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <input
+            type="text"
+            placeholder="Search country..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              color: '#f1f5ff',
+              fontSize: '12px',
+              outline: 'none',
+              marginBottom: '4px',
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+            onClick={e => e.stopPropagation()}
+          />
+          <div style={{ overflowY: 'auto', flex: 1 }} className="custom-scroll">
+            {filtered.map((c) => (
+              <button
+                key={c.iso}
+                type="button"
+                onClick={() => {
+                  onChange(c.name);
+                  setSearch('');
+                  setIsOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '7px 10px',
+                  background: value === c.name ? 'rgba(167, 139, 250, 0.15)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: value === c.name ? '#c4b5fd' : '#f1f5ff',
+                  fontSize: '12.5px',
+                  fontWeight: value === c.name ? '600' : '400',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = value === c.name ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.05)'}
+                onMouseLeave={e => e.currentTarget.style.background = value === c.name ? 'rgba(167, 139, 250, 0.15)' : 'transparent'}
+              >
+                <span>{c.name}</span>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{c.dialCode}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ padding: '12px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
+                No countries found
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------------------
+   DIAL CODE SELECTOR (PHONE PREFIX DROPDOWN)
+-------------------------------------------------------------------------- */
+function DialCodeSelector({ value, onChange, error }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filtered = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.dialCode.includes(search)
+  );
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(255,255,255,0.06)',
+          border: `1px solid ${error ? '#f87171' : 'rgba(255,255,255,0.1)'}`,
+          borderRight: 'none',
+          borderRadius: '12px 0 0 12px',
+          padding: '0 8px 0 10px',
+          height: '40px',
+          color: value ? '#f1f5ff' : 'rgba(255,255,255,0.35)',
+          fontSize: '12.5px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+          transition: 'all 0.2s',
+          minWidth: '76px'
+        }}
+      >
+        <Phone size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
+        <span>{value || '+?'}</span>
+        <svg width="8" height="5" viewBox="0 0 10 6" fill="none" style={{
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.2s',
+          opacity: 0.4,
+          flexShrink: 0
+        }}>
+          <path d="M1 1L5 5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          width: '240px',
+          background: 'rgba(8, 14, 26, 0.95)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          zIndex: 50,
+          padding: '6px',
+          maxHeight: '200px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '7px 10px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              color: '#f1f5ff',
+              fontSize: '12px',
+              outline: 'none',
+              marginBottom: '4px',
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+            onClick={e => e.stopPropagation()}
+          />
+          <div style={{ overflowY: 'auto', flex: 1 }} className="custom-scroll">
+            {filtered.map((c) => (
+              <button
+                key={c.iso}
+                type="button"
+                onClick={() => {
+                  onChange(c.dialCode);
+                  setSearch('');
+                  setIsOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '6px 10px',
+                  background: value === c.dialCode ? 'rgba(167, 139, 250, 0.15)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: value === c.dialCode ? '#c4b5fd' : '#f1f5ff',
+                  fontSize: '12px',
+                  fontWeight: value === c.dialCode ? '600' : '400',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = value === c.dialCode ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.05)'}
+                onMouseLeave={e => e.currentTarget.style.background = value === c.dialCode ? 'rgba(167, 139, 250, 0.15)' : 'transparent'}
+              >
+                <span>{c.name}</span>
+                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.5)' }}>{c.dialCode}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ padding: '10px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
+                No results
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -901,6 +1064,7 @@ const RegisterForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) 
     formState: { errors },
     watch,
     control,
+    setValue,
   } = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -908,6 +1072,7 @@ const RegisterForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) 
       email: '',
       phone: '',
       country: '',
+      countryCode: '',
       password: '',
       confirmPassword: '',
       agreedToTerms: false,
@@ -916,6 +1081,17 @@ const RegisterForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) 
 
   const passwordValue = watch('password');
   const strength = getPasswordStrength(passwordValue || '');
+  const countryValue = watch('country');
+
+  // Auto-set dial code when country changes
+  useEffect(() => {
+    if (countryValue) {
+      const found = COUNTRIES.find(c => c.name === countryValue);
+      if (found) {
+        setValue('countryCode', found.dialCode);
+      }
+    }
+  }, [countryValue, setValue]);
 
   /* TanStack Query mutation */
   const { mutate: doRegister, isPending: registering } = useRegisterUser({
@@ -935,8 +1111,8 @@ const RegisterForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) 
       name: data.name,
       email: data.email.toLowerCase().trim(),
       password: data.password,
-      ...(data.country ? { country: data.country } : {}),
-      ...(data.phone ? { phone: data.phone } : {}),
+      country: data.country,
+      phone: data.countryCode + data.phone,
     });
   };
 
@@ -958,52 +1134,73 @@ const RegisterForm = React.forwardRef(({ onError, shake, mode, isActive }, ref) 
       {/* ─── STEP 1: Registration Form ─── */}
       {step === 'form' && (
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* Full name */}
-          <div>
-            <label className="auth-label">Full name</label>
-            <div className="auth-input-wrap">
-              <div className="auth-input-icon"><User size={14} /></div>
-              <input {...register('name')} placeholder="Alex Morgan" className={`auth-input ${errors.name ? 'has-error' : ''}`} />
-            </div>
-            {errors.name && <div className="auth-error-msg"><AlertCircle size={11} />{errors.name.message}</div>}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="auth-label">Email address</label>
-            <div className="auth-input-wrap">
-              <div className="auth-input-icon"><Mail size={14} /></div>
-              <input {...register('email')} type="email" placeholder="alex@example.com" className={`auth-input ${errors.email ? 'has-error' : ''}`} />
-            </div>
-            {errors.email && <div className="auth-error-msg"><AlertCircle size={11} />{errors.email.message}</div>}
-          </div>
-
-          {/* Row: Phone + Country */}
+          {/* Row 1: Name & Email */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {/* Full name */}
             <div>
-              <label className="auth-label">Phone (optional)</label>
+              <label className="auth-label">Full name</label>
               <div className="auth-input-wrap">
-                <div className="auth-input-icon"><Phone size={14} /></div>
-                <input {...register('phone')} placeholder="+1 555 0000" className="auth-input" />
+                <div className="auth-input-icon"><User size={14} /></div>
+                <input {...register('name')} placeholder="Alex Morgan" className={`auth-input ${errors.name ? 'has-error' : ''}`} />
               </div>
+              {errors.name && <div className="auth-error-msg"><AlertCircle size={11} />{errors.name.message}</div>}
             </div>
+
+            {/* Email */}
             <div>
-              <label className="auth-label">Country (optional)</label>
+              <label className="auth-label">Email address</label>
               <div className="auth-input-wrap">
-                <div className="auth-input-icon"><Globe size={14} /></div>
-                <Controller
-                  control={control}
-                  name="country"
-                  render={({ field }) => (
-                    <CountrySelector
-                      value={field.value}
-                      onChange={field.onChange}
-                      error={errors.country}
-                    />
-                  )}
-                />
+                <div className="auth-input-icon"><Mail size={14} /></div>
+                <input {...register('email')} type="email" placeholder="alex@example.com" className={`auth-input ${errors.email ? 'has-error' : ''}`} />
               </div>
+              {errors.email && <div className="auth-error-msg"><AlertCircle size={11} />{errors.email.message}</div>}
             </div>
+          </div>
+
+          {/* Country Row */}
+          <div>
+            <label className="auth-label">Country <span style={{ color: '#f87171' }}>*</span></label>
+            <div className="auth-input-wrap">
+              <div className="auth-input-icon"><Globe size={14} /></div>
+              <Controller
+                control={control}
+                name="country"
+                render={({ field }) => (
+                  <CountrySelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.country}
+                  />
+                )}
+              />
+            </div>
+            {errors.country && <div className="auth-error-msg"><AlertCircle size={11} />{errors.country.message}</div>}
+          </div>
+
+          {/* Phone Row */}
+          <div>
+            <label className="auth-label">Phone Number <span style={{ color: '#f87171' }}>*</span></label>
+            <div style={{ display: 'flex' }}>
+              <Controller
+                control={control}
+                name="countryCode"
+                render={({ field }) => (
+                  <DialCodeSelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.countryCode}
+                  />
+                )}
+              />
+              <input
+                {...register('phone')}
+                placeholder="Enter phone number"
+                className={`auth-input ${errors.phone ? 'has-error' : ''}`}
+                style={{ borderRadius: '0 12px 12px 0', paddingLeft: '12px' }}
+              />
+            </div>
+            {errors.phone && <div className="auth-error-msg"><AlertCircle size={11} />{errors.phone.message}</div>}
+            {errors.countryCode && !errors.phone && <div className="auth-error-msg"><AlertCircle size={11} />{errors.countryCode.message}</div>}
           </div>
 
           {/* Password row */}
@@ -1219,7 +1416,8 @@ export default function AuthForm({ mode, onModeChange }) {
   const forgotRef = useRef(null);
   const resetRef = useRef(null);
   const resetSuccessRef = useRef(null);
-  const [containerHeight, setContainerHeight] = useState(mode === 'login' ? 385 : 465);
+  const [containerHeight, setContainerHeight] = useState(mode === 'login' ? 220 : 490);
+  const [animateHeight, setAnimateHeight] = useState(false);
 
   useEffect(() => {
     if (authFlow !== 'main' && mode !== 'login') {
@@ -1234,6 +1432,8 @@ export default function AuthForm({ mode, onModeChange }) {
         const height = activeRef.current.offsetHeight;
         if (height > 0) {
           setContainerHeight(height);
+          // Enable height transition only after first layout/paint has occurred
+          setTimeout(() => setAnimateHeight(true), 50);
         }
       };
 
@@ -1260,7 +1460,7 @@ export default function AuthForm({ mode, onModeChange }) {
   return (
     <>
       <style>{globalStyles}</style>
-      <div className={`auth-card mode-${mode} auth-rise`} style={{ maxWidth: 460, width: '100%', padding: '24px 24px 20px', position: 'relative' }}>
+      <div className={`auth-card mode-${mode} auth-rise`} style={{ maxWidth: mode === 'signup' ? 560 : 460, width: '100%', padding: '24px 24px 20px', position: 'relative', transition: 'max-width 0.3s ease' }}>
         {/* Ambient glow */}
         <div style={{ position: 'absolute', top: 0, right: 0, width: 200, height: 200, borderRadius: '0 28px 0 200px', background: mode === 'login' ? 'rgba(111,156,255,0.06)' : 'rgba(167,139,250,0.06)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, width: 150, height: 150, borderRadius: '0 150px 0 28px', background: mode === 'login' ? 'rgba(56,189,248,0.03)' : 'rgba(240,171,252,0.03)', pointerEvents: 'none' }} />
@@ -1312,7 +1512,10 @@ export default function AuthForm({ mode, onModeChange }) {
         )}
 
         {/* Form render with slide transition container */}
-        <div className="auth-panel-container" style={{ height: `${containerHeight}px` }}>
+        <div className="auth-panel-container" style={{
+          height: `${containerHeight}px`,
+          transition: animateHeight ? 'height 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
+        }}>
           <LoginForm ref={loginRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'login' && authFlow === 'main'} onForgotPassword={() => setAuthFlow('forgot')} />
           <RegisterForm ref={signupRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'signup' && authFlow === 'main'} />
           <ForgotPasswordForm ref={forgotRef} onError={handleError} shake={shake} isActive={authFlow === 'forgot'} onSent={(email) => { setResetEmail(email); setAuthFlow('reset'); }} onBack={() => setAuthFlow('main')} />

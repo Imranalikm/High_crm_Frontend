@@ -5,8 +5,12 @@ export const kycApi = {
     try {
       const response = await apiClient.get('/panel/kyc');
       const kyc = response?.data?.kyc || response?.kyc || response;
+      let status = kyc?.status?.toLowerCase() || 'not-started';
+      if (status === 'approved') {
+        status = 'verified';
+      }
       return {
-        status: kyc?.status?.toLowerCase() || 'not-started',
+        status,
         level: kyc?.level || 'Basic',
         progress: kyc?.progress ?? 0,
         estimatedReviewTime: kyc?.estimatedReviewTime || '',
@@ -15,22 +19,7 @@ export const kycApi = {
         kycData: kyc,
       };
     } catch (error) {
-      console.warn('Failed to fetch real KYC status, falling back to local state:', error);
-      
-      // Check if there is local cached submitted state
-      const submittedKyc = localStorage.getItem('submitted_kyc');
-      if (submittedKyc) {
-        try {
-          const parsed = JSON.parse(submittedKyc);
-          const cachedData = localStorage.getItem('submitted_kyc_data');
-          if (cachedData) {
-            parsed.kycData = JSON.parse(cachedData);
-          }
-          return parsed;
-        } catch (e) {
-          console.error('Failed to parse cached kyc overview', e);
-        }
-      }
+      console.warn('Failed to fetch real KYC status, returning default not-started status:', error);
       
       // Default initial status
       return {
@@ -54,8 +43,8 @@ export const kycApi = {
     }
   },
 
-  async saveDraft(payload) {
-    if (!payload) return { savedAt: new Date().toISOString(), payload };
+  async saveDraft(payload, userId) {
+    if (!payload || !userId) return { savedAt: new Date().toISOString(), payload };
     
     // Strip file binaries to avoid serialization errors
     const draftToSave = {
@@ -73,7 +62,7 @@ export const kycApi = {
     };
     
     try {
-      localStorage.setItem('kyc_draft', JSON.stringify(draftToSave));
+      localStorage.setItem(`kyc_draft_${userId}`, JSON.stringify(draftToSave));
     } catch (e) {
       console.error('Failed to save KYC draft to localStorage', e);
     }
@@ -81,7 +70,7 @@ export const kycApi = {
     return { savedAt: new Date().toISOString(), payload };
   },
 
-  async submit(payload) {
+  async submit(payload, userId) {
     const formData = new FormData();
     
     // ── Personal Info ──
@@ -138,15 +127,15 @@ export const kycApi = {
       formData.append('idCountryOfIssue', payload.identityDocument.issuingCountry);
     }
     
-    if (payload.identityDocument?.front) {
+    if (payload.identityDocument?.front && payload.identityDocument.front instanceof File) {
       formData.append('idFrontImage', payload.identityDocument.front);
     }
-    if (payload.identityDocument?.back) {
+    if (payload.identityDocument?.back && payload.identityDocument.back instanceof File) {
       formData.append('idBackImage', payload.identityDocument.back);
     }
     
     // ── Selfie ──
-    if (payload.selfie) {
+    if (payload.selfie && payload.selfie instanceof File) {
       formData.append('selfieImage', payload.selfie);
     }
     
@@ -164,7 +153,7 @@ export const kycApi = {
       formData.append('addressDocType', mappedAddressDocType);
     }
     
-    if (payload.addressProof?.file) {
+    if (payload.addressProof?.file && payload.addressProof.file instanceof File) {
       formData.append('addressDocImage', payload.addressProof.file);
     }
     if (payload.addressProof?.issueDate) {
@@ -175,38 +164,8 @@ export const kycApi = {
     const response = await apiClient.post('/panel/kyc', formData);
     
     // Clear draft local storage after successful submit
-    localStorage.removeItem('kyc_draft');
-    
-    // Cache the submitted state locally so status updates immediately
-    const submittedOverview = {
-      status: 'pending',
-      level: 'Basic',
-      progress: 100,
-      estimatedReviewTime: response?.estimatedReviewTime || '',
-      nextStep: 'Awaiting review',
-      reference: response?.reference || `KYC-LT-${Date.now().toString().slice(-5)}`,
-    };
-    
-    // Cache the serialized payload (without raw file objects)
-    const payloadToCache = {
-      ...payload,
-      identityDocument: {
-        ...(payload.identityDocument || {}),
-        front: payload.identityDocument?.front ? { name: payload.identityDocument.front.name, type: payload.identityDocument.front.type } : null,
-        back: payload.identityDocument?.back ? { name: payload.identityDocument.back.name, type: payload.identityDocument.back.type } : null,
-      },
-      addressProof: {
-        ...(payload.addressProof || {}),
-        file: payload.addressProof?.file ? { name: payload.addressProof.file.name, type: payload.addressProof.file.type } : null,
-      },
-      selfie: payload.selfie ? { name: payload.selfie.name, type: payload.selfie.type } : null,
-    };
-
-    try {
-      localStorage.setItem('submitted_kyc', JSON.stringify(submittedOverview));
-      localStorage.setItem('submitted_kyc_data', JSON.stringify(payloadToCache));
-    } catch (e) {
-      console.error(e);
+    if (userId) {
+      localStorage.removeItem(`kyc_draft_${userId}`);
     }
     
     return response;

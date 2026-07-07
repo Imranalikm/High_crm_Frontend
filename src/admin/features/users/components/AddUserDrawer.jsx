@@ -62,24 +62,11 @@ function PIconField({
   );
 }
 
-/* ── Country Selector Dropdown ── */
-const COUNTRIES = [
-  'United States',
-  'United Kingdom',
-  'Germany',
-  'France',
-  'Canada',
-  'Australia',
-  'Singapore',
-  'United Arab Emirates',
-  'Japan',
-  'India',
-  'Brazil',
-  'South Africa',
-];
+import { COUNTRIES } from '@/shared/config/constants/COUNTRIES';
 
 function PCountrySelector({ value, onChange, label, required = false, error = '' }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -91,6 +78,16 @@ function PCountrySelector({ value, onChange, label, required = false, error = ''
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearch('');
+    }
+  }, [isOpen]);
+
+  const filteredCountries = COUNTRIES.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div ref={dropdownRef} className="space-y-1.5 w-full relative">
@@ -119,24 +116,42 @@ function PCountrySelector({ value, onChange, label, required = false, error = ''
         </button>
 
         {isOpen && (
-          <div className="absolute top-[calc(100%+4px)] left-0 right-0 max-h-[160px] overflow-y-auto bg-surface-elevated border border-border/18 rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-50 p-1">
-            {COUNTRIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => {
-                  onChange(c);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-3 py-1.5 rounded-[6px] text-[12px] transition-colors cursor-pointer ${
-                  value === c
-                    ? 'bg-brand/15 text-brand font-semibold'
-                    : 'text-text-muted hover:bg-bg hover:text-text'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+          <div className="absolute top-[calc(100%+4px)] left-0 right-0 max-h-[220px] overflow-y-auto bg-surface-elevated border border-border/18 rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-50 p-1 flex flex-col">
+            <div className="p-1 border-b border-white/[0.05] bg-surface-elevated sticky top-0 z-10 mb-1">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search..."
+                className="w-full h-8 px-2.5 rounded-[6px] bg-bg border border-border/18 text-[12px] text-text outline-none focus:border-brand/50 placeholder:text-text-muted/20"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="overflow-y-auto max-h-40">
+              {filteredCountries.length === 0 ? (
+                <div className="px-3 py-2 text-[12px] text-text-muted/40 text-center">
+                  No countries found
+                </div>
+              ) : (
+                filteredCountries.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => {
+                      onChange(c.name);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 rounded-[6px] text-[12px] transition-colors cursor-pointer ${
+                      value === c.name
+                        ? 'bg-brand/15 text-brand font-semibold'
+                        : 'text-text-muted hover:bg-bg hover:text-text'
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         )}
       </div>

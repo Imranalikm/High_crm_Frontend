@@ -70,7 +70,6 @@ import { AnnouncementsPage } from '@/client/features/client-support/pages/Announ
 import { LiveChatPage } from '@/client/features/client-support/pages/LiveChatPage';
 import KycUploadPage from '@/client/features/client-kyc/pages/KycUploadPage';
 import KycStatusPage, { KycDispatcher } from '@/client/features/client-kyc/pages/KycStatusPage';
-import KycHistoryPage from '@/client/features/client-kyc/pages/KycHistoryPage';
 
 /* ─────────────────────────────────────────────────────────
    ADMIN PAGE REGISTRY
@@ -219,7 +218,6 @@ export const appRouter = createHashRouter([
       { path: 'kyc', element: <KycDispatcher /> },
       { path: 'kyc/upload', element: <KycUploadPage /> },
       { path: 'kyc/status', element: <KycStatusPage /> },
-      { path: 'kyc/history', element: <KycHistoryPage /> },
       // Support FAQ redirect → knowledge base
       { path: 'support/faq', element: <Navigate to="/client/support/kb" replace /> },
       // Stub routes for sidebar items not yet built (redirect to dashboard)

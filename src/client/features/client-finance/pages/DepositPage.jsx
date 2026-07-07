@@ -24,10 +24,10 @@ const STEPS = [
 ];
 
 const METHOD_NAMES = {
-  card: 'Card',
+  online: 'Online Payment',
   bank: 'Bank Wire',
   crypto: 'Crypto',
-  skrill: 'Skrill',
+  upi: 'UPI',
 };
 
 function parseFeePercent(feeString) {
@@ -105,7 +105,7 @@ function SummarySidebar({ method, amount, step }) {
   const { gateways } = clientSettings;
 
   const getGatewayConfig = (methodId) => {
-    const gatewayMap = { card: 'stripe', bank: 'swift', crypto: 'fireblocks', skrill: 'skrill' };
+    const gatewayMap = { online: 'stripe', bank: 'swift', crypto: 'fireblocks', upi: 'upi' };
     const gatewayId = gatewayMap[methodId];
     return gateways.find(g => g.id === gatewayId) || { fee: '0%' };
   };
@@ -159,7 +159,7 @@ function SummarySidebar({ method, amount, step }) {
 export function DepositPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [method, setMethod] = useState('card');
+  const [method, setMethod] = useState('online');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
   const [mt5Accounts, setMt5Accounts] = useState([]);
@@ -275,30 +275,20 @@ export function DepositPage() {
                   <DepositInstructions method={method} amount={amount} />
                 </div>
 
-                {(method === 'card' || method === 'skrill') && (
-                  <button
-                    id="deposit-final-confirm-btn"
-                    onClick={handleConfirm}
-                    disabled={isSubmitting}
-                    className="w-full h-12 rounded-[10px] font-bold text-[13.5px] transition-all duration-150 cursor-pointer bg-brand text-text-on-accent hover:opacity-90 active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <Lock size={14} strokeWidth={2.5} />
-                    {isSubmitting ? 'Processing...' : `Proceed to ${displayMethodName} Checkout — $${parseFloat(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                  </button>
-                )}
-
-                {(method === 'bank' || method === 'crypto' || method === 'upi') && (
+                {(method === 'bank' || method === 'crypto' || method === 'upi' || method === 'online') && (
                   <div className="flex flex-col gap-4 mt-2">
-                    {(method === 'bank' || method === 'upi') && (
+                    {(method === 'bank' || method === 'upi' || method === 'online') && (
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
-                          {method === 'upi' ? 'UPI Transaction ID (UTR) (Required)' : 'Bank Wire Transaction ID (Required)'}
+                          {method === 'upi' ? 'UPI Transaction ID (UTR) (Required)' 
+                            : method === 'online' ? 'Stripe Reference / Transaction ID (Required)'
+                            : 'Bank Wire Transaction ID (Required)'}
                         </label>
                         <input
                           type="text"
                           value={transactionId}
                           onChange={(e) => setTransactionId(e.target.value)}
-                          placeholder="e.g. TRN-9381..."
+                          placeholder={method === 'online' ? "e.g. pi_3M1..." : "e.g. TRN-9381..."}
                           className="w-full h-10 rounded-[8px] border border-border/20 bg-bg text-[13px] px-3 outline-none focus:border-brand/40 transition-colors"
                         />
                       </div>
@@ -316,11 +306,11 @@ export function DepositPage() {
                   </div>
                 )}
 
-                {(method === 'bank' || method === 'crypto' || method === 'upi') && (
+                {(method === 'bank' || method === 'crypto' || method === 'upi' || method === 'online') && (
                   <button
                     id="deposit-confirm-sent-btn"
                     onClick={handleConfirm}
-                    disabled={isSubmitting || ((method === 'bank' || method === 'upi') && !transactionId)}
+                    disabled={isSubmitting || ((method === 'bank' || method === 'upi' || method === 'online') && !transactionId)}
                     className="w-full h-12 rounded-[10px] font-bold text-[13px] transition-all duration-150 cursor-pointer border border-border bg-surface-elevated text-text hover:bg-muted-surface active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                   >
                     <Check size={14} strokeWidth={2.5} />

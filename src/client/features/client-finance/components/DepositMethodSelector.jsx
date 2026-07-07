@@ -27,28 +27,16 @@ const DEFAULT_METHODS = {
     fee: '0%',
     minDeposit: '₹100',
   },
-  card: {
-    id: 'card',
-    label: 'Credit / Debit Card',
-    sub: 'Visa, Mastercard, Amex',
+  online: {
+    id: 'online',
+    label: 'Online Payment',
+    sub: 'Visa, Mastercard, Stripe Checkout',
     icon: CreditCard,
     color: 'brand',
     processingLabel: 'Instant',
     processingIcon: Zap,
     processingColor: 'var(--positive)',
-    fee: '2.5%',
-    minDeposit: '$10',
-  },
-  skrill: {
-    id: 'skrill',
-    label: 'Skrill Wallet',
-    sub: 'Skrill Balance',
-    icon: Zap,
-    color: 'positive',
-    processingLabel: 'Instant',
-    processingIcon: Zap,
-    processingColor: 'var(--positive)',
-    fee: '1.9%',
+    fee: '2.9% + $0.30',
     minDeposit: '$10',
   }
 };
@@ -58,7 +46,7 @@ export function DepositMethodSelector({ value, onChange }) {
   const { gateways } = clientSettings;
 
   // Gateway ID → DEFAULT_METHODS key mapping
-  const gatewayToMethod = { swift: 'bank', upi: 'upi', stripe: 'card', skrill: 'skrill' };
+  const gatewayToMethod = { swift: 'bank', upi: 'upi', stripe: 'online' };
 
   // Build a fee lookup from enabled gateways
   const feeOverrides = {};
@@ -110,25 +98,7 @@ export function DepositMethodSelector({ value, onChange }) {
               <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text)' }}>{m.label}</p>
               <p className="text-[11.5px] mt-0.5" style={{ color: 'rgba(194,198,214,0.5)' }}>{m.sub}</p>
 
-              {/* Fee + processing */}
-              <div className="flex items-center gap-3 mt-2">
-                <span
-                  className="flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-[5px]"
-                  style={{ background: cssMuted, color: cssColor }}
-                >
-                  Fee: {m.fee}
-                </span>
-                <span
-                  className="flex items-center gap-1 text-[10.5px] font-medium"
-                  style={{ color: m.processingColor }}
-                >
-                  <ProcessIcon size={10} strokeWidth={2.2} />
-                  {m.processingLabel}
-                </span>
-                <span className="text-[10.5px]" style={{ color: 'rgba(194,198,214,0.35)' }}>
-                  Min {m.minDeposit}
-                </span>
-              </div>
+
             </div>
 
             {/* Radio indicator */}

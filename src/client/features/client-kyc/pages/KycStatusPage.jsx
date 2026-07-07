@@ -77,7 +77,16 @@ export function KycStatusPage() {
     );
   }
 
-  const status = overview.status ?? 'under-review';
+  let status = overview.status ?? 'under-review';
+  if (status === 'approved') {
+    status = 'verified';
+  }
+
+  // If status is draft or not started, redirect to upload page
+  if (status === 'draft' || status === 'not-started') {
+    return <Navigate to="/client/kyc/upload" replace />;
+  }
+
   const cfg = STATUS_CFG[status] ?? STATUS_CFG['under-review'];
   const isVerified = status === 'verified';
   const isRejected = status === 'rejected';
@@ -154,15 +163,23 @@ export function KycStatusPage() {
           </p>
         )}
 
-        {/* View Submitted Data Button */}
+        {/* View Submitted Data & Edit Request Buttons */}
         {overview?.kycData && (
-          <div className="mt-5">
+          <div className="mt-5 flex items-center justify-center gap-3">
             <button
               onClick={() => setDrawerOpen(true)}
               className="h-10 px-6 rounded-[14px] bg-[#a2c1f5] text-[#0a1e3f] hover:bg-[#92b3e8] transition-all font-bold text-[12.5px] inline-flex items-center gap-2 cursor-pointer shadow-sm select-none"
             >
               View Submitted Data <ArrowRight size={13} />
             </button>
+            {isActive && (
+              <button
+                onClick={() => navigate('/client/kyc/upload')}
+                className="h-10 px-6 rounded-[14px] border border-border/40 hover:bg-muted-surface/50 text-text transition-all font-bold text-[12.5px] inline-flex items-center gap-2 cursor-pointer shadow-sm select-none"
+              >
+                <RefreshCw size={13} /> Edit Request
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -213,7 +230,7 @@ export function KycStatusPage() {
             </p>
           )}
           <button
-            onClick={() => navigate('/client/kyc/upload?reupload=true')}
+            onClick={() => navigate('/client/kyc/upload')}
             className="h-10 px-4 rounded-[9px] bg-brand text-text-on-accent text-[12px] font-bold flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
             <RefreshCw size={13} /> Try again
@@ -221,23 +238,7 @@ export function KycStatusPage() {
         </div>
       )}
 
-      {/* ── Verified action ── */}
-      {isVerified && (
-        <div className="rounded-[12px] border border-positive/25 bg-positive/[0.05] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <ShieldCheck size={18} className="text-positive shrink-0" />
-            <p className="text-[12.5px] font-bold text-positive">
-              Verified! You can now trade.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/client/trading')}
-            className="h-9 px-4 rounded-[8px] bg-positive text-white text-[11.5px] font-bold flex items-center gap-2 hover:opacity-90 transition-opacity shrink-0"
-          >
-            Start trading <ArrowRight size={13} />
-          </button>
-        </div>
-      )}
+
 
       {/* ── Encryption note ── */}
       <div className="flex items-center gap-3 rounded-[11px] border border-border/30 bg-surface p-4">
@@ -287,7 +288,7 @@ export function KycDispatcher() {
 
   const status = overview.status ?? 'not-started';
 
-  if (status === 'verified' || status === 'under-review' || status === 'pending') {
+  if (status === 'verified' || status === 'under-review' || status === 'pending' || status === 'rejected') {
     return <Navigate to="/client/kyc/status" replace />;
   }
 

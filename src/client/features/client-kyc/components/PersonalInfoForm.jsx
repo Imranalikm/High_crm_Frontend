@@ -1,51 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertCircle, UserRound, Mail, MapPin, ChevronDown, Check } from 'lucide-react';
+import { AlertCircle, UserRound, Mail, MapPin, ChevronDown, Check, Calendar } from 'lucide-react';
 
 /* ─── Data ───────────────────────────────────────────────────────────────── */
 
-const COUNTRIES = [
-  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia', 'Australia', 'Austria',
-  'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belgium', 'Bolivia', 'Bosnia and Herzegovina', 'Brazil', 'Brunei',
-  'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic',
-  'Denmark', 'Ecuador', 'Egypt', 'Estonia', 'Ethiopia', 'Finland', 'France', 'Georgia', 'Germany', 'Ghana',
-  'Greece', 'Guatemala', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
-  'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kuwait', 'Latvia', 'Lebanon',
-  'Libya', 'Lithuania', 'Luxembourg', 'Malaysia', 'Malta', 'Mexico', 'Moldova', 'Morocco', 'Myanmar',
-  'Nepal', 'Netherlands', 'New Zealand', 'Nigeria', 'North Korea', 'Norway', 'Oman', 'Pakistan', 'Panama',
-  'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda',
-  'Saudi Arabia', 'Serbia', 'Singapore', 'Slovakia', 'Slovenia', 'Somalia', 'South Africa', 'South Korea',
-  'Spain', 'Sri Lanka', 'Sudan', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Thailand', 'Tunisia', 'Turkey',
-  'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan',
-  'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
-].sort();
-
-const PHONE_CODES = [
-  { code: '+1', label: 'US / CA' },
-  { code: '+44', label: 'UK' },
-  { code: '+91', label: 'IN' },
-  { code: '+971', label: 'UAE' },
-  { code: '+61', label: 'AU' },
-  { code: '+49', label: 'DE' },
-  { code: '+33', label: 'FR' },
-  { code: '+65', label: 'SG' },
-  { code: '+81', label: 'JP' },
-  { code: '+55', label: 'BR' },
-  { code: '+7', label: 'RU' },
-  { code: '+86', label: 'CN' },
-  { code: '+52', label: 'MX' },
-  { code: '+82', label: 'KR' },
-  { code: '+966', label: 'SA' },
-  { code: '+234', label: 'NG' },
-  { code: '+27', label: 'ZA' },
-];
+import { COUNTRIES as GLOBAL_COUNTRIES } from '@/shared/config/constants/COUNTRIES';
 
 /* ─── KycField ───────────────────────────────────────────────────────────── */
 
 const fieldBase = (err) =>
   `w-full h-11 px-3.5 rounded-[9px] bg-muted-surface border text-[13px] text-text outline-none transition-colors focus:border-brand/55 placeholder:text-text-muted/30 ${err ? 'border-negative/50 bg-negative/[0.03]' : 'border-border/40'}`;
-
-const selectBase = (err) =>
-  `w-full h-11 px-3.5 rounded-[9px] bg-muted-surface border text-[13px] text-text outline-none transition-colors focus:border-brand/55 ${err ? 'border-negative/50 bg-negative/[0.03]' : 'border-border/40'}`;
 
 export function KycField({ label, error, required, className = '', children, ...props }) {
   return (
@@ -85,8 +48,9 @@ function Section({ icon, title, children }) {
 
 /* ─── CustomSelect ───────────────────────────────────────────────────────── */
 
-export function CustomSelect({ value, onChange, options, placeholder, error, className = '' }) {
+export function CustomSelect({ value, onChange, options, placeholder, error, className = '', searchable = false }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -99,7 +63,17 @@ export function CustomSelect({ value, onChange, options, placeholder, error, cla
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!open) {
+      setSearch('');
+    }
+  }, [open]);
+
   const selectedOption = options.find((opt) => opt.value === value);
+
+  const filteredOptions = searchable
+    ? options.filter((opt) => opt.label.toLowerCase().includes(search.toLowerCase()))
+    : options;
 
   return (
     <div ref={containerRef} className={`relative min-w-0 ${className}`}>
@@ -122,33 +96,47 @@ export function CustomSelect({ value, onChange, options, placeholder, error, cla
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-[10px] border border-border/30 bg-surface-elevated/95 backdrop-blur-md shadow-lg shadow-black/20 z-[999] py-1">
-          {options.length === 0 ? (
-            <div className="px-3.5 py-2.5 text-[12px] text-text-muted/50 text-center">
-              No options available
+        <div className="absolute left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-[10px] border border-border/30 bg-surface-elevated/95 backdrop-blur-md shadow-lg shadow-black/20 z-[999] py-1 flex flex-col">
+          {searchable && (
+            <div className="px-2 py-1 border-b border-border/20 sticky top-0 bg-surface-elevated z-10">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search..."
+                className="w-full h-8 px-2.5 rounded-[6px] bg-muted-surface border border-border/45 text-[12px] text-text outline-none focus:border-brand/60"
+                onClick={(e) => e.stopPropagation()}
+              />
             </div>
-          ) : (
-            options.map((opt) => {
-              const active = opt.value === value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                  }}
-                  className={[
-                    'w-full px-3.5 py-2.5 text-[12.5px] text-left flex items-center justify-between gap-2 transition-colors duration-100 outline-none cursor-pointer',
-                    active ? 'bg-brand/[0.08] text-brand font-semibold' : 'text-text hover:bg-muted-surface/60 hover:text-text',
-                  ].join(' ')}
-                >
-                  <span className="truncate">{opt.label}</span>
-                  {active && <Check size={12} className="text-brand shrink-0" />}
-                </button>
-              );
-            })
           )}
+          <div className="overflow-y-auto max-h-48">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3.5 py-2.5 text-[12px] text-text-muted/50 text-center">
+                No options found
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const active = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className={[
+                      'w-full px-3.5 py-2.5 text-[12.5px] text-left flex items-center justify-between gap-2 transition-colors duration-100 outline-none cursor-pointer',
+                      active ? 'bg-brand/[0.08] text-brand font-semibold' : 'text-text hover:bg-muted-surface/60 hover:text-text',
+                    ].join(' ')}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {active && <Check size={12} className="text-brand shrink-0" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -160,106 +148,18 @@ export function CustomSelect({ value, onChange, options, placeholder, error, cla
 export function PersonalInfoForm({ value, onChange, errors = {} }) {
   const set = (key) => (e) => onChange({ ...value, [key]: e.target.value });
 
-  // Local state for temporary dropdown selection
-  const [selectedDay, setSelectedDay] = useState(() => {
-    if (value.dateOfBirth && value.dateOfBirth.includes('-')) {
-      return value.dateOfBirth.split('-')[2] || '';
-    }
-    return '';
-  });
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    if (value.dateOfBirth && value.dateOfBirth.includes('-')) {
-      return value.dateOfBirth.split('-')[1] || '';
-    }
-    return '';
-  });
-  const [selectedYear, setSelectedYear] = useState(() => {
-    if (value.dateOfBirth && value.dateOfBirth.includes('-')) {
-      return value.dateOfBirth.split('-')[0] || '';
-    }
-    return '';
-  });
-
-  // Sync state if dateOfBirth changes from parent (e.g. prefill)
-  useEffect(() => {
-    if (value.dateOfBirth && value.dateOfBirth.includes('-')) {
-      const parts = value.dateOfBirth.split('-');
-      if (parts.length === 3) {
-        setSelectedYear(parts[0]);
-        setSelectedMonth(parts[1]);
-        setSelectedDay(parts[2]);
-      }
-    } else if (!value.dateOfBirth) {
-      setSelectedYear('');
-      setSelectedMonth('');
-      setSelectedDay('');
-    }
-  }, [value.dateOfBirth]);
-
-  // Suffix/update function
-  const handleDateChange = (type, val) => {
-    let y = selectedYear;
-    let m = selectedMonth;
-    let d = selectedDay;
-    if (type === 'day') {
-      d = val;
-      setSelectedDay(val);
-    }
-    if (type === 'month') {
-      m = val;
-      setSelectedMonth(val);
-    }
-    if (type === 'year') {
-      y = val;
-      setSelectedYear(val);
-    }
-
-    if (y && m && d) {
-      onChange({ ...value, dateOfBirth: `${y}-${m}-${d}` });
-    } else {
-      onChange({ ...value, dateOfBirth: '' });
-    }
+  const handleCountryChange = (val) => {
+    const found = GLOBAL_COUNTRIES.find((c) => c.name === val);
+    onChange({ 
+      ...value, 
+      country: val,
+      phoneCode: found ? found.dialCode : value.phoneCode 
+    });
   };
 
-  const getDaysInMonth = (month, year) => {
-    if (!month) return 31;
-    const m = parseInt(month, 10);
-    if ([4, 6, 9, 11].includes(m)) return 30;
-    if (m === 2) {
-      const y = parseInt(year, 10);
-      if (y && ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0)) return 29;
-      return 28;
-    }
-    return 31;
-  };
-  
-  const daysCount = getDaysInMonth(selectedMonth, selectedYear);
-  const daysOptions = Array.from({ length: daysCount }, (_, i) => {
-    return String(i + 1).padStart(2, '0');
-  });
-
-  const MONTHS = [
-    { value: '01', label: 'January' },
-    { value: '02', label: 'February' },
-    { value: '03', label: 'March' },
-    { value: '04', label: 'April' },
-    { value: '05', label: 'May' },
-    { value: '06', label: 'June' },
-    { value: '07', label: 'July' },
-    { value: '08', label: 'August' },
-    { value: '09', label: 'September' },
-    { value: '10', label: 'October' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'December' }
-  ];
-
-  const currentYear = new Date().getFullYear();
-  const maxYear = currentYear - 18; // 2008
-  const minYear = currentYear - 100; // 1926
-  const YEARS = [];
-  for (let y = maxYear; y >= minYear; y--) {
-    YEARS.push(String(y));
-  }
+  const maxDate = new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+    .toISOString()
+    .split('T')[0];
 
   return (
     <div className="space-y-8">
@@ -273,40 +173,29 @@ export function PersonalInfoForm({ value, onChange, errors = {} }) {
           </KycField>
 
           <KycField label="Date of birth" required error={errors.dateOfBirth}>
-            <div className="grid grid-cols-3 gap-2.5">
-              <CustomSelect
-                value={selectedDay}
-                onChange={(val) => handleDateChange('day', val)}
-                options={daysOptions.map((d) => ({ value: d, label: d }))}
-                placeholder="Day"
-                error={errors.dateOfBirth}
+            <div className="relative flex items-center">
+              <input
+                type="date"
+                value={value.dateOfBirth ?? ''}
+                onChange={(e) => onChange({ ...value, dateOfBirth: e.target.value })}
+                max={maxDate}
+                className={`${fieldBase(errors.dateOfBirth)} cursor-pointer pr-10`}
+                style={{ colorScheme: 'dark' }}
               />
-
-              <CustomSelect
-                value={selectedMonth}
-                onChange={(val) => handleDateChange('month', val)}
-                options={MONTHS}
-                placeholder="Month"
-                error={errors.dateOfBirth}
-              />
-
-              <CustomSelect
-                value={selectedYear}
-                onChange={(val) => handleDateChange('year', val)}
-                options={YEARS.map((y) => ({ value: y, label: y }))}
-                placeholder="Year"
-                error={errors.dateOfBirth}
-              />
+              <div className="absolute right-3.5 text-text-muted/40 pointer-events-none">
+                <Calendar size={14} />
+              </div>
             </div>
           </KycField>
 
           <KycField label="Country" required error={errors.country} className="md:col-span-2">
             <CustomSelect
               value={value.country ?? ''}
-              onChange={(val) => onChange({ ...value, country: val })}
-              options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+              onChange={handleCountryChange}
+              options={GLOBAL_COUNTRIES.map((c) => ({ value: c.name, label: c.name }))}
               placeholder="Select a country…"
               error={errors.country}
+              searchable
             />
           </KycField>
         </div>
@@ -322,13 +211,15 @@ export function PersonalInfoForm({ value, onChange, errors = {} }) {
 
           <KycField label="Phone number" required error={errors.phone}>
             <div className="flex gap-2">
-              {/* <select value={value.phoneCode ?? ''} onChange={set('phoneCode')}
-                className="h-11 rounded-[9px] bg-muted-surface border border-border/40 text-[12px] text-text outline-none focus:border-brand/55 px-2.5 shrink-0 min-w-[105px]">
-                <option value="">+ Code</option>
-                {PHONE_CODES.map(({ code, label: l }) => (
-                  <option key={code} value={code}>{code} ({l})</option>
-                ))}
-              </select> */}
+              <CustomSelect
+                value={value.phoneCode ?? ''}
+                onChange={(val) => onChange({ ...value, phoneCode: val })}
+                options={GLOBAL_COUNTRIES.map((c) => ({ value: c.dialCode, label: `${c.dialCode} (${c.iso})` }))}
+                placeholder="+Code"
+                className="w-32 shrink-0 z-[100]"
+                error={errors.phone}
+                searchable
+              />
               <input type="tel" value={value.phone ?? ''} placeholder="000 000 0000"
                 onChange={set('phone')}
                 className={`flex-1 h-11 px-3.5 rounded-[9px] bg-muted-surface border text-[13px] text-text outline-none focus:border-brand/55 placeholder:text-text-muted/30 ${errors.phone ? 'border-negative/50' : 'border-border/40'}`}

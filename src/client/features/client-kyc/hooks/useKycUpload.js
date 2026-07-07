@@ -3,6 +3,8 @@ import { useAuth } from '@/auth/AuthContext';
 import { kycApi } from '../services/kyc.api';
 import { addressProofSchema, identityDocumentSchema, personalInfoSchema, validateSection, kycSubmissionSchema } from '../schemas/kyc.schema';
 
+import { COUNTRIES as GLOBAL_COUNTRIES } from '@/shared/config/constants/COUNTRIES';
+
 const defaultData = {
   personalInfo: {
     fullName: '', dateOfBirth: '', email: '', phone: '',
@@ -14,6 +16,34 @@ const defaultData = {
   declaration: false,
 };
 
+// Helper to parse phone number into dial code prefix and remainder
+function parsePhone(rawPhone) {
+  if (!rawPhone) return { phoneCode: '', phone: '' };
+  
+  const cleaned = rawPhone.trim();
+  
+  // Sort dial codes by length descending (e.g. +1268 before +1) to avoid partial prefix matching
+  const sortedCodes = [...GLOBAL_COUNTRIES]
+    .map(c => c.dialCode)
+    .filter(Boolean)
+    .filter((v, i, self) => self.indexOf(v) === i)
+    .sort((a, b) => b.length - a.length);
+
+  for (const code of sortedCodes) {
+    if (cleaned.startsWith(code)) {
+      return {
+        phoneCode: code,
+        phone: cleaned.slice(code.length).trim()
+      };
+    }
+  }
+
+  return {
+    phoneCode: '',
+    phone: cleaned
+  };
+}
+
 export function useKycUpload() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
@@ -21,42 +51,94 @@ export function useKycUpload() {
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Initialize data from localStorage draft if present
-  const [data, setData] = useState(() => {
-    try {
-      const draft = localStorage.getItem('kyc_draft');
-      if (draft) {
-        const parsed = JSON.parse(draft);
-        // Ensure files are null since they cannot be stored as JSON
-        if (parsed.identityDocument) {
-          parsed.identityDocument.front = null;
-          parsed.identityDocument.back = null;
-        }
-        if (parsed.addressProof) {
-          parsed.addressProof.file = null;
-        }
-        parsed.selfie = null;
-        return parsed;
-      }
-    } catch (e) {
-      console.warn('Failed to restore KYC draft:', e);
-    }
-    return defaultData;
-  });
+  // Initialize data
+  const [data, setData] = useState(defaultData);
 
-  // Prefill registration info from logged-in user profile
+  // Load draft and prefill registration info / database KYC details when user changes
   useEffect(() => {
-    if (user) {
-      setData((current) => ({
-        ...current,
-        personalInfo: {
-          ...current.personalInfo,
-          fullName: current.personalInfo.fullName || user.name || '',
-          email: current.personalInfo.email || user.email || '',
-          country: current.personalInfo.country || user.country || '',
-          phone: current.personalInfo.phone || user.phone || '',
-        },
-      }));
+    if (user && user.id) {
+      const loadKyc = async () => {
+        let loadedData = { ...defaultData };
+        
+        // 1. Try to load from database first (for edit/resubmission support)
+        try {
+          const overview = await kycApi.getOverview();
+          if (overview && overview.kycData) {
+            const dbKyc = overview.kycData;
+            const parsedPhone = parsePhone(dbKyc.phone);
+            loadedData = {
+              personalInfo: {
+                fullName: dbKyc.fullName || '',
+                dateOfBirth: dbKyc.dateOfBirth || '',
+                email: dbKyc.email || '',
+                phone: parsedPhone.phone,
+                country: dbKyc.country || '',
+                address: dbKyc.streetAddress || '',
+                city: dbKyc.city || '',
+                postalCode: dbKyc.postalCode || '',
+                phoneCode: parsedPhone.phoneCode,
+              },
+              identityDocument: {
+                type: dbKyc.idDocType === 'national_id' ? 'national-id' 
+                      : dbKyc.idDocType === 'driving_license' ? 'driving-license' 
+                      : dbKyc.idDocType || 'passport',
+                documentNumber: dbKyc.idDocNumber || '',
+                expiryDate: dbKyc.idExpiryDate || '',
+                issuingCountry: dbKyc.idCountryOfIssue || '',
+                front: dbKyc.idFrontImage ? { name: 'Front Document (uploaded)', fromDb: true } : null,
+                back: dbKyc.idBackImage ? { name: 'Back Document (uploaded)', fromDb: true } : null,
+              },
+              selfie: dbKyc.selfieImage ? { name: 'Selfie Image (captured)', fromDb: true } : null,
+              addressProof: {
+                type: dbKyc.addressDocType === 'utility_bill' ? 'utility-bill' 
+                      : dbKyc.addressDocType === 'bank_statement' ? 'bank-statement' 
+                      : dbKyc.addressDocType === 'rent_agreement' ? 'rent-agreement' 
+                      : dbKyc.addressDocType || 'utility-bill',
+                issueDate: dbKyc.addressDocIssueDate || '',
+                file: dbKyc.addressDocImage ? { name: 'Address Proof Document (uploaded)', fromDb: true } : null,
+              },
+              declaration: false,
+            };
+          }
+        } catch (e) {
+          console.warn('Failed to fetch existing KYC from DB for prefill:', e);
+        }
+
+        // 2. Override with local draft if present
+        try {
+          const draft = localStorage.getItem(`kyc_draft_${user.id}`);
+          if (draft) {
+            const parsed = JSON.parse(draft);
+            if (parsed.identityDocument) {
+              parsed.identityDocument.front = null;
+              parsed.identityDocument.back = null;
+            }
+            if (parsed.addressProof) {
+              parsed.addressProof.file = null;
+            }
+            parsed.selfie = null;
+            loadedData = { ...loadedData, ...parsed };
+          }
+        } catch (e) {
+          console.warn('Failed to restore KYC draft:', e);
+        }
+
+        // 3. Fallback to registration profile info
+        const parsedProfilePhone = parsePhone(user.phone);
+        setData({
+          ...loadedData,
+          personalInfo: {
+            ...loadedData.personalInfo,
+            fullName: loadedData.personalInfo.fullName || user.name || '',
+            email: loadedData.personalInfo.email || user.email || '',
+            country: loadedData.personalInfo.country || user.country || '',
+            phoneCode: loadedData.personalInfo.phoneCode || parsedProfilePhone.phoneCode || '',
+            phone: loadedData.personalInfo.phone || parsedProfilePhone.phone || '',
+          },
+        });
+      };
+      
+      loadKyc();
     }
   }, [user]);
 
@@ -120,7 +202,7 @@ export function useKycUpload() {
   const next = async () => {
     if (!validateCurrent()) return false;
     setSaving(true);
-    await kycApi.saveDraft(data);
+    await kycApi.saveDraft(data, user?.id);
     setSaving(false);
     setStep((value) => Math.min(value + 1, 6));
     return true;
@@ -155,7 +237,7 @@ export function useKycUpload() {
 
     setSaving(true);
     try {
-      await kycApi.submit(data);
+      await kycApi.submit(data, user?.id);
       setSaving(false);
       setSubmitted(true);
       setStep(6);

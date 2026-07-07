@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, CheckCircle2, Upload, X, AlertCircle, QrCode, Building2 } from 'lucide-react';
+import { Copy, CheckCircle2, Upload, X, AlertCircle, QrCode, Building2, ArrowRight } from 'lucide-react';
 
 /* ── Bank instructions ── */
 function BankInstructions() {
@@ -188,14 +188,12 @@ function CryptoInstructions() {
   );
 }
 
-/* ── Card & Skrill instructions ── */
-function CardInstructions({ method }) {
-  const isSkrill = method === 'skrill';
+/* ── Online Payment instructions ── */
+function OnlineInstructions({ amount }) {
+  const stripeLink = 'https://buy.stripe.com/5kQ7sEa0sdm55A4h229bO04';
+  
   return (
-    <div
-      className="flex flex-col items-center gap-4 py-4 text-center"
-      style={{ color: 'rgba(194,198,214,0.6)' }}
-    >
+    <div className="flex flex-col gap-4 text-center items-center py-2">
       <div
         className="w-14 h-14 rounded-[14px] flex items-center justify-center"
         style={{ background: 'color-mix(in srgb, var(--brand) 10%, transparent)' }}
@@ -204,21 +202,30 @@ function CardInstructions({ method }) {
       </div>
       <div>
         <p className="text-[14px] font-semibold mb-1" style={{ color: 'var(--text)' }}>
-          {isSkrill ? 'Skrill Secure Transfer' : 'Secure Checkout'}
+          Online Payment (Stripe Checkout)
         </p>
-        <p className="text-[12.5px] max-w-xs">
-          {isSkrill 
-            ? 'You will be redirected to Skrill payment gate to authorize this transfer. Safe and immediate crediting.'
-            : 'You will be redirected to our secure payment gateway. Your card details are never stored on our servers.'
-          }
+        <p className="text-[12.5px] max-w-sm leading-relaxed" style={{ color: 'rgba(194,198,214,0.6)' }}>
+          To complete your deposit of <strong style={{ color: 'var(--text)' }}>${parseFloat(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>, click the button below to pay securely via Stripe.
         </p>
       </div>
-      <div className="flex items-center gap-2 text-[11px]">
-        <CheckCircle2 size={13} style={{ color: 'var(--positive)' }} />
-        <span>Secure encryption</span>
-        <span style={{ color: 'rgba(194,198,214,0.25)' }}>·</span>
-        <CheckCircle2 size={13} style={{ color: 'var(--positive)' }} />
-        <span>PCI compliant</span>
+
+      <a
+        href={stripeLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="h-10 px-6 rounded-[9px] bg-brand text-text-on-accent text-[12px] font-bold flex items-center gap-2 hover:opacity-90 transition-opacity no-underline cursor-pointer shadow-md select-none"
+      >
+        Pay with Stripe <ArrowRight size={13} />
+      </a>
+
+      <div
+        className="flex items-start gap-2.5 p-3.5 rounded-[10px] text-[11.5px] text-left mt-2 w-full"
+        style={{ background: 'color-mix(in srgb, var(--warning) 7%, transparent)', color: 'rgba(194,198,214,0.65)' }}
+      >
+        <AlertCircle size={13} className="shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} strokeWidth={2} />
+        <span>
+          After paying on Stripe, copy your payment confirmation reference code, paste it in the Transaction ID box below, and upload your proof to confirm.
+        </span>
       </div>
     </div>
   );
@@ -304,7 +311,7 @@ export function DepositInstructions({ method, amount }) {
       {method === 'bank'   && <BankInstructions amount={amount} />}
       {method === 'crypto' && <CryptoInstructions amount={amount} />}
       {method === 'upi'    && <UpiInstructions amount={amount} />}
-      {(method === 'card' || method === 'skrill') && <CardInstructions method={method} amount={amount} />}
+      {method === 'online' && <OnlineInstructions amount={amount} />}
     </div>
   );
 }
