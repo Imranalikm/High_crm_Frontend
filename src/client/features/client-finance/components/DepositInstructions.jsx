@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Copy, CheckCircle2, Upload, X, AlertCircle, QrCode, Building2, ArrowRight } from 'lucide-react';
 
 /* ── Bank instructions ── */
-function BankInstructions() {
+function BankInstructions({ onProofUpload, proofFile }) {
   const details = [
     { label: 'Bank Name',       value: 'CitiBank N.A.' },
     { label: 'Account Name',    value: 'Smatams' },
@@ -73,22 +73,43 @@ function BankInstructions() {
       {/* Proof upload */}
       <div className="flex flex-col gap-2">
         <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(194,198,214,0.4)' }}>
-          Upload Payment Proof (Optional but recommended)
+          Upload Payment Proof <span style={{ color: 'var(--negative, #ef4444)' }}>(Required)</span>
         </p>
-        <label
-          id="deposit-proof-upload"
-          className="flex flex-col items-center gap-2 p-5 rounded-[12px] border-2 border-dashed cursor-pointer transition-all duration-200 hover:scale-[1.01]"
-          style={{ borderColor: 'rgba(173,198,255,0.15)', background: 'color-mix(in srgb, var(--brand) 3%, transparent)' }}
-        >
-          <Upload size={22} style={{ color: 'rgba(194,198,214,0.35)' }} strokeWidth={1.5} />
-          <span className="text-[12px] font-medium" style={{ color: 'rgba(194,198,214,0.5)' }}>
-            Click to upload receipt or screenshot
-          </span>
-          <span className="text-[10.5px]" style={{ color: 'rgba(194,198,214,0.3)' }}>
-            JPG, PNG or PDF — max 5MB
-          </span>
-          <input type="file" accept="image/*,application/pdf" className="hidden" />
-        </label>
+        {proofFile ? (
+          <div
+            className="flex items-center justify-between p-4 rounded-[12px] border-2 border-dashed"
+            style={{ borderColor: 'color-mix(in srgb, var(--positive) 30%, transparent)', background: 'color-mix(in srgb, var(--positive) 5%, transparent)' }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 size={18} style={{ color: 'var(--positive)' }} />
+              <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text)' }}>
+                {proofFile.name}
+              </span>
+            </div>
+            <button
+              onClick={() => onProofUpload(null)}
+              className="shrink-0 p-1.5 rounded-[6px] transition-colors cursor-pointer hover:bg-[rgba(255,255,255,0.05)]"
+              style={{ color: 'rgba(194,198,214,0.5)' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <label
+            id="deposit-proof-upload"
+            className="flex flex-col items-center gap-2 p-5 rounded-[12px] border-2 border-dashed cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+            style={{ borderColor: 'rgba(173,198,255,0.15)', background: 'color-mix(in srgb, var(--brand) 3%, transparent)' }}
+          >
+            <Upload size={22} style={{ color: 'rgba(194,198,214,0.35)' }} strokeWidth={1.5} />
+            <span className="text-[12px] font-medium" style={{ color: 'rgba(194,198,214,0.5)' }}>
+              Click to upload receipt or screenshot
+            </span>
+            <span className="text-[10.5px]" style={{ color: 'rgba(194,198,214,0.3)' }}>
+              JPG, PNG or PDF — max 5MB
+            </span>
+            <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { if (e.target.files[0]) onProofUpload(e.target.files[0]); }} />
+          </label>
+        )}
       </div>
     </div>
   );
@@ -189,7 +210,7 @@ function CryptoInstructions() {
 }
 
 /* ── Online Payment instructions ── */
-function OnlineInstructions({ amount }) {
+function OnlineInstructions({ amount, onProofUpload, proofFile }) {
   const stripeLink = 'https://buy.stripe.com/5kQ7sEa0sdm55A4h229bO04';
   
   return (
@@ -224,15 +245,57 @@ function OnlineInstructions({ amount }) {
       >
         <AlertCircle size={13} className="shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} strokeWidth={2} />
         <span>
-          After paying on Stripe, copy your payment confirmation reference code, paste it in the Transaction ID box below, and upload your proof to confirm.
+          After paying on Stripe, upload your payment receipt below to confirm your deposit.
         </span>
+      </div>
+
+      {/* Proof upload */}
+      <div className="flex flex-col gap-2 w-full text-left">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(194,198,214,0.4)' }}>
+          Upload Payment Proof <span style={{ color: 'var(--negative, #ef4444)' }}>(Required)</span>
+        </p>
+        {proofFile ? (
+          <div
+            className="flex items-center justify-between p-4 rounded-[12px] border-2 border-dashed"
+            style={{ borderColor: 'color-mix(in srgb, var(--positive) 30%, transparent)', background: 'color-mix(in srgb, var(--positive) 5%, transparent)' }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 size={18} style={{ color: 'var(--positive)' }} />
+              <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text)' }}>
+                {proofFile.name}
+              </span>
+            </div>
+            <button
+              onClick={() => onProofUpload(null)}
+              className="shrink-0 p-1.5 rounded-[6px] transition-colors cursor-pointer hover:bg-[rgba(255,255,255,0.05)]"
+              style={{ color: 'rgba(194,198,214,0.5)' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <label
+            id="deposit-proof-upload-online"
+            className="flex flex-col items-center gap-2 p-5 rounded-[12px] border-2 border-dashed cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+            style={{ borderColor: 'rgba(173,198,255,0.15)', background: 'color-mix(in srgb, var(--brand) 3%, transparent)' }}
+          >
+            <Upload size={22} style={{ color: 'rgba(194,198,214,0.35)' }} strokeWidth={1.5} />
+            <span className="text-[12px] font-medium" style={{ color: 'rgba(194,198,214,0.5)' }}>
+              Click to upload receipt or screenshot
+            </span>
+            <span className="text-[10.5px]" style={{ color: 'rgba(194,198,214,0.3)' }}>
+              JPG, PNG or PDF — max 5MB
+            </span>
+            <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { if (e.target.files[0]) onProofUpload(e.target.files[0]); }} />
+          </label>
+        )}
       </div>
     </div>
   );
 }
 
 /* ── UPI instructions ── */
-function UpiInstructions() {
+function UpiInstructions({ onProofUpload, proofFile }) {
   const details = [
     { label: 'UPI ID',          value: 'smatams@ybl' },
     { label: 'Merchant Name',   value: 'Smatams Trading' },
@@ -297,6 +360,48 @@ function UpiInstructions() {
           </div>
         ))}
       </div>
+
+      {/* Proof upload */}
+      <div className="flex flex-col gap-2">
+        <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(194,198,214,0.4)' }}>
+          Upload Payment Proof <span style={{ color: 'var(--negative, #ef4444)' }}>(Required)</span>
+        </p>
+        {proofFile ? (
+          <div
+            className="flex items-center justify-between p-4 rounded-[12px] border-2 border-dashed"
+            style={{ borderColor: 'color-mix(in srgb, var(--positive) 30%, transparent)', background: 'color-mix(in srgb, var(--positive) 5%, transparent)' }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 size={18} style={{ color: 'var(--positive)' }} />
+              <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text)' }}>
+                {proofFile.name}
+              </span>
+            </div>
+            <button
+              onClick={() => onProofUpload(null)}
+              className="shrink-0 p-1.5 rounded-[6px] transition-colors cursor-pointer hover:bg-[rgba(255,255,255,0.05)]"
+              style={{ color: 'rgba(194,198,214,0.5)' }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <label
+            id="deposit-proof-upload-upi"
+            className="flex flex-col items-center gap-2 p-5 rounded-[12px] border-2 border-dashed cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+            style={{ borderColor: 'rgba(173,198,255,0.15)', background: 'color-mix(in srgb, var(--brand) 3%, transparent)' }}
+          >
+            <Upload size={22} style={{ color: 'rgba(194,198,214,0.35)' }} strokeWidth={1.5} />
+            <span className="text-[12px] font-medium" style={{ color: 'rgba(194,198,214,0.5)' }}>
+              Click to upload receipt or screenshot
+            </span>
+            <span className="text-[10.5px]" style={{ color: 'rgba(194,198,214,0.3)' }}>
+              JPG, PNG or PDF — max 5MB
+            </span>
+            <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { if (e.target.files[0]) onProofUpload(e.target.files[0]); }} />
+          </label>
+        )}
+      </div>
     </div>
   );
 }
@@ -305,13 +410,13 @@ function UpiInstructions() {
  * DepositInstructions
  * Conditionally renders method-specific instructions.
  */
-export function DepositInstructions({ method, amount }) {
+export function DepositInstructions({ method, amount, onProofUpload, proofFile }) {
   return (
     <div className="animate-in fade-in duration-300">
-      {method === 'bank'   && <BankInstructions amount={amount} />}
+      {method === 'bank'   && <BankInstructions amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
       {method === 'crypto' && <CryptoInstructions amount={amount} />}
-      {method === 'upi'    && <UpiInstructions amount={amount} />}
-      {method === 'online' && <OnlineInstructions amount={amount} />}
+      {method === 'upi'    && <UpiInstructions amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
+      {method === 'online' && <OnlineInstructions amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
     </div>
   );
 }

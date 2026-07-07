@@ -272,7 +272,7 @@ export function DepositPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/40 mb-3">
                     Instructions
                   </p>
-                  <DepositInstructions method={method} amount={amount} />
+                  <DepositInstructions method={method} amount={amount} onProofUpload={setDepositProof} proofFile={depositProof} />
                 </div>
 
                 {(method === 'bank' || method === 'crypto' || method === 'upi' || method === 'online') && (
@@ -280,9 +280,9 @@ export function DepositPage() {
                     {(method === 'bank' || method === 'upi' || method === 'online') && (
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
-                          {method === 'upi' ? 'UPI Transaction ID (UTR) (Required)' 
-                            : method === 'online' ? 'Stripe Reference / Transaction ID (Required)'
-                            : 'Bank Wire Transaction ID (Required)'}
+                          {method === 'upi' ? 'UPI Transaction ID (UTR) (Optional)' 
+                            : method === 'online' ? 'Stripe Reference / Transaction ID (Optional)'
+                            : 'Bank Wire Transaction ID (Optional)'}
                         </label>
                         <input
                           type="text"
@@ -293,16 +293,6 @@ export function DepositPage() {
                         />
                       </div>
                     )}
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
-                        Upload Proof of Transfer
-                      </label>
-                      <input
-                        type="file"
-                        onChange={(e) => setDepositProof(e.target.files[0])}
-                        className="w-full text-[13px] text-text file:mr-4 file:py-2 file:px-4 file:rounded-[8px] file:border-0 file:text-[12px] file:font-semibold file:bg-surface-elevated file:text-text hover:file:bg-muted-surface transition-colors cursor-pointer"
-                      />
-                    </div>
                   </div>
                 )}
 
@@ -310,7 +300,7 @@ export function DepositPage() {
                   <button
                     id="deposit-confirm-sent-btn"
                     onClick={handleConfirm}
-                    disabled={isSubmitting || ((method === 'bank' || method === 'upi' || method === 'online') && !transactionId)}
+                    disabled={isSubmitting || ((method === 'bank' || method === 'upi' || method === 'online') && !depositProof)}
                     className="w-full h-12 rounded-[10px] font-bold text-[13px] transition-all duration-150 cursor-pointer border border-border bg-surface-elevated text-text hover:bg-muted-surface active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                   >
                     <Check size={14} strokeWidth={2.5} />

@@ -161,8 +161,8 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Group Name is required';
-    if (!formData.firstDeposit.toString().trim()) {
-      newErrors.firstDeposit = 'Please fill the First Deposit';
+    if (formData.minDeposit === '' || formData.minDeposit === null || formData.minDeposit === undefined) {
+      newErrors.minDeposit = 'Min Deposit is required';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -173,7 +173,7 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
     onSubmit(formData);
   };
 
-  const isValid = formData.name.trim() && formData.firstDeposit.toString().trim();
+  const isValid = formData.name.trim() && formData.minDeposit !== '' && formData.minDeposit !== null && formData.minDeposit !== undefined;
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden animate-in fade-in duration-200">
@@ -271,7 +271,6 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.currencyUnit}
               onChange={(val) => handleChange('currencyUnit', val)}
               options={CURRENCY_OPTIONS}
-              required
             />
             <div>
               <PField
@@ -279,13 +278,7 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
                 value={formData.firstDeposit}
                 onChange={(val) => handleChange('firstDeposit', val)}
                 placeholder="Enter First Deposit"
-                required
               />
-              {errors.firstDeposit && (
-                <p className="text-negative text-[11px] mt-1.5 font-medium leading-none font-heading">
-                  Please fill the First Deposit
-                </p>
-              )}
             </div>
             <PField
               label="Min First Deposit"
@@ -293,23 +286,28 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.minFirstDeposit}
               onChange={(val) => handleChange('minFirstDeposit', val)}
               placeholder="0"
-              required
             />
-            <PField
-              label="Min Deposit"
-              type="number"
-              value={formData.minDeposit}
-              onChange={(val) => handleChange('minDeposit', val)}
-              placeholder="0"
-              required
-            />
+            <div>
+              <PField
+                label="Min Deposit"
+                type="number"
+                value={formData.minDeposit}
+                onChange={(val) => handleChange('minDeposit', val)}
+                placeholder="0"
+                required
+              />
+              {errors.minDeposit && (
+                <p className="text-negative text-[11px] mt-1.5 font-medium leading-none font-heading">
+                  {errors.minDeposit}
+                </p>
+              )}
+            </div>
             <PField
               label="Min Withdrawal"
               type="number"
               value={formData.minWithdrawal}
               onChange={(val) => handleChange('minWithdrawal', val)}
               placeholder="0"
-              required
             />
             <PField
               label="Max Withdrawal / Day"
@@ -317,7 +315,6 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.maxWithdrawalPerDay}
               onChange={(val) => handleChange('maxWithdrawalPerDay', val)}
               placeholder="5000"
-              required
             />
           </PGrid>
         </Section>
@@ -330,28 +327,24 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.accountOpenPolicy}
               onChange={(val) => handleChange('accountOpenPolicy', val)}
               options={policies.accountOpenPolicies}
-              required
             />
             <PSelect
               label="Deposit Policy"
               value={formData.depositPolicy}
               onChange={(val) => handleChange('depositPolicy', val)}
               options={policies.depositPolicies}
-              required
             />
             <PSelect
               label="Withdrawal Policy"
               value={formData.withdrawalPolicy}
               onChange={(val) => handleChange('withdrawalPolicy', val)}
               options={policies.withdrawalPolicies}
-              required
             />
             <PSelect
               label="Trading Type"
               value={formData.tradingType}
               onChange={(val) => handleChange('tradingType', val)}
               options={policies.tradingTypes}
-              required
             />
           </PGrid>
         </Section>
@@ -364,7 +357,6 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.spreadStartFrom}
               onChange={(val) => handleChange('spreadStartFrom', val)}
               placeholder="0.0"
-              required
             />
             <PField
               label="Max Accounts / User"
@@ -372,7 +364,6 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.perProfileMaxAccount}
               onChange={(val) => handleChange('perProfileMaxAccount', val)}
               placeholder="5"
-              required
             />
           </PGrid>
           <div className="pt-2">
@@ -381,7 +372,6 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
               value={formData.maxLeverage}
               onChange={(val) => handleChange('maxLeverage', val)}
               options={LEVERAGE_OPTIONS}
-              required
             />
           </div>
         </Section>
@@ -395,7 +385,7 @@ function GroupFormContent({ mode, group, onSubmit, onClose }) {
           <div className="flex items-center gap-2.5 mx-6 mt-4 rounded-[9px] border border-warning/22 bg-warning/6 px-3.5 py-2.5">
             <AlertTriangle size={13} className="text-warning flex-shrink-0" />
             <span className="text-[11.5px] font-medium text-warning leading-tight">
-              Group name and first deposit are required.
+              Group name and min deposit are required.
             </span>
           </div>
         )}
