@@ -153,36 +153,6 @@ export const adminRouteModules = [
           { pattern: '/admin/finance/withdrawals/:id', title: 'Withdrawal Details', section: 'Finance', permission: PERMISSIONS.finance.view },
         ],
       },
-      {
-        id: 'finance-transactions',
-        path: 'finance/transactions',
-        pageKey: 'finance/transactions',
-        navLabel: 'Transactions',
-        permission: PERMISSIONS.finance.view,
-        meta: [
-          { pattern: '/admin/finance/transactions', title: 'Transaction Stream', section: 'Finance', permission: PERMISSIONS.finance.view },
-        ],
-      },
-      {
-        id: 'finance-failed',
-        path: 'finance/failed-payments',
-        pageKey: 'finance/failed-payments',
-        navLabel: 'Failed Payments',
-        permission: PERMISSIONS.finance.view,
-        meta: [
-          { pattern: '/admin/finance/failed-payments', title: 'Failed Payments', section: 'Finance', permission: PERMISSIONS.finance.view },
-        ],
-      },
-      {
-        id: 'finance-approvals',
-        path: 'finance/approvals',
-        pageKey: 'finance/approvals',
-        navLabel: 'Approvals',
-        permission: PERMISSIONS.finance.approve,
-        meta: [
-          { pattern: '/admin/finance/approvals', title: 'Manual Approvals', section: 'Finance', permission: PERMISSIONS.finance.approve },
-        ],
-      },
     ],
   },
   {

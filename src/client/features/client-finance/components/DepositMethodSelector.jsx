@@ -73,12 +73,17 @@ export function DepositMethodSelector({ value, onChange }) {
         const csBorder      = `color-mix(in srgb, var(--${m.color}) 25%, transparent)`;
         const cssMuted      = `color-mix(in srgb, var(--${m.color}) 12%, transparent)`;
 
+        const isDisabled    = m.id === 'upi' || m.id === 'bank';
+
         return (
           <button
             key={m.id}
             id={`deposit-method-${m.id}`}
+            disabled={isDisabled}
             onClick={() => onChange(m.id)}
-            className="w-full flex items-center gap-4 p-4 rounded-[13px] transition-all duration-200 cursor-pointer outline-none text-left hover:scale-[1.005]"
+            className={`w-full flex items-center gap-4 p-4 rounded-[13px] transition-all duration-200 outline-none text-left ${
+              isDisabled ? 'opacity-35 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.005]'
+            }`}
             style={{
               background: isSelected ? cssBg : 'var(--muted-surface)',
               border: `1px solid ${isSelected ? csBorder : 'transparent'}`,
