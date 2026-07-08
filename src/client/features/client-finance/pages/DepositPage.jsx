@@ -120,9 +120,7 @@ function SummarySidebar({ method, amount, step }) {
 
   const rows = [
     { label: 'Method', value: m ? (METHOD_NAMES[m.id] || m.label) : '—' },
-    { label: 'Amount', value: num > 0 ? `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—' },
-    { label: 'Fee', value: num > 0 ? (fee > 0 ? `-$${fee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Free') : '—' },
-    { label: 'You Receive', value: num > 0 ? `$${net.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—', accent: true },
+    { label: 'Amount', value: num > 0 ? `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—', accent: true },
     { label: 'Step', value: `${step} of ${STEPS.length}` },
   ];
 
