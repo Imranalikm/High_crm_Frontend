@@ -13,12 +13,13 @@ const PRIORITIES = [
   { value: 'HIGH', label: 'High'     },
 ];
 
-export function CreateTicketDrawer({ open, onClose }) {
+export function CreateTicketDrawer({ open, onClose, onSuccess }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ subject: '', category: '', priority: 'MED', message: '' });
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState(null);
+  const [error, setError] = useState(null);
 
   const upd = (k) => (v) => setForm((p) => ({ ...p, [k]: v }));
   const isValid = form.subject.trim() && form.category && form.message.trim();
@@ -27,22 +28,31 @@ export function CreateTicketDrawer({ open, onClose }) {
     if (e) e.preventDefault();
     if (!isValid) return;
     setSubmitting(true);
+    setError(null);
     try {
       const ticket = await supportApi.createTicket({ 
         ...form, 
-        attachments: files.map((f) => f.name) 
+        files 
       });
       setCreated(ticket);
+    } catch (err) {
+      console.error('Error creating ticket:', err);
+      setError(err.message || 'Failed to submit ticket. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleClose = () => {
+    const successCreated = created;
     setCreated(null);
+    setError(null);
     setForm({ subject: '', category: '', priority: 'MED', message: '' });
     setFiles([]);
     onClose();
+    if (successCreated) {
+      onSuccess?.();
+    }
   };
 
   return (
@@ -69,7 +79,7 @@ export function CreateTicketDrawer({ open, onClose }) {
               Ticket Sent Successfully
             </h2>
             <p className="text-[13px] text-text-muted leading-relaxed mb-6 max-w-[380px]">
-              Ticket <span className="font-mono font-bold text-brand">{created.id}</span> has been opened. Our support team typically replies within 4 hours.
+              Ticket <span className="font-mono font-bold text-brand">{created.ticketId}</span> has been opened. Our support team typically replies within 4 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[320px]">
               <button
@@ -171,6 +181,16 @@ export function CreateTicketDrawer({ open, onClose }) {
                   <AlertTriangle size={13} className="text-warning flex-shrink-0" />
                   <span className="text-[11.5px] font-medium text-warning leading-tight">
                     Please select a category, and fill in the subject and message.
+                  </span>
+                </div>
+              )}
+
+              {/* API Submission Error */}
+              {error && (
+                <div className="flex items-center gap-2.5 mx-6 mt-4 rounded-[9px] border border-negative/22 bg-negative/6 px-3.5 py-2.5">
+                  <AlertTriangle size={13} className="text-negative flex-shrink-0" />
+                  <span className="text-[11.5px] font-medium text-negative leading-tight">
+                    {error}
                   </span>
                 </div>
               )}

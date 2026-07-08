@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supportApi } from '../services/support.api';
+import { socketClient } from '@/shared/api/client/socketClient';
 
 export function useTickets() {
   const [tickets, setTickets] = useState([]);
@@ -12,18 +13,19 @@ export function useTickets() {
   const [priorityFilter, setPriorityFilter] = useState('ALL');
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    let active = true;
+  const fetchTickets = () => {
+    setLoading(true);
     supportApi.getTickets().then((data) => {
-      if (!active) return;
       setTickets(data);
       setLoading(false);
     }).catch((err) => {
-      if (!active) return;
       setError(err);
       setLoading(false);
     });
-    return () => { active = false; };
+  };
+
+  useEffect(() => {
+    fetchTickets();
   }, []);
 
   const filtered = useMemo(() => {
@@ -44,6 +46,7 @@ export function useTickets() {
     categoryFilter, setCategoryFilter,
     priorityFilter, setPriorityFilter,
     search, setSearch,
+    refresh: fetchTickets
   };
 }
 
@@ -62,6 +65,30 @@ export function useTicket(id) {
   useEffect(() => {
     if (!id) return;
     let active = true;
+
+    // Connect socket
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+    const socket = socketClient.connect(token);
+    
+    socket.emit('join_ticket', id);
+
+    const handleNewMessage = (msg) => {
+      setMessages((prev) => {
+        if (prev.some(m => m.id === msg.id)) return prev;
+        return [...prev, {
+          id: msg.id,
+          from: msg.type === 'user' ? 'user' : 'support',
+          name: msg.author?.name || (msg.type === 'user' ? 'You' : 'Support'),
+          initials: msg.type === 'user' ? 'ME' : 'SA',
+          ts: new Date(msg.createdAt).toLocaleString('en-GB').replace(',', ''),
+          text: msg.body,
+          attachments: msg.attachments || []
+        }];
+      });
+    };
+
+    socket.on('new_message', handleNewMessage);
+
     supportApi.getTicket(id).then((data) => {
       if (!active) return;
       const { conversation = [], ...meta } = data;
@@ -73,12 +100,25 @@ export function useTicket(id) {
       setError(err);
       setLoading(false);
     });
-    return () => { active = false; };
+
+    return () => { 
+      active = false; 
+      socket.off('new_message', handleNewMessage);
+      socket.emit('leave_ticket', id);
+    };
   }, [id]);
 
-  const sendMessage = async (text) => {
-    const msg = await supportApi.sendMessage(id, text);
-    setMessages((prev) => [...prev, msg]);
+  const sendMessage = async (text, files = []) => {
+    let msg;
+    if (files.length > 0) {
+      const formData = new FormData();
+      if (text?.trim()) formData.append('body', text.trim());
+      formData.append('type', 'user');
+      files.forEach((f) => formData.append('attachments', f));
+      msg = await supportApi.sendMessageWithFiles(id, formData);
+    } else {
+      msg = await supportApi.sendMessage(id, text);
+    }
     return msg;
   };
 

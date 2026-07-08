@@ -57,40 +57,75 @@ export const supportApi = {
       updated: new Date(t.updatedAt).toLocaleDateString(),
       conversation: [
         {
-          id: 1,
+          id: `${t.id}-init`,
           from: 'user',
           name: t.user?.name || 'You',
           initials: 'ME',
-          ts: new Date(t.createdAt).toLocaleDateString(),
+          ts: new Date(t.createdAt).toLocaleString('en-GB').replace(',', ''),
           text: t.description,
-          attachments: []
-        }
+          attachments: t.attachments || []
+        },
+        ...(t.messages || []).map(msg => ({
+          id: msg.id,
+          from: msg.type === 'user' ? 'user' : 'support',
+          name: msg.author?.name || 'Support',
+          initials: msg.type === 'user' ? 'ME' : 'SA',
+          ts: new Date(msg.createdAt).toLocaleString('en-GB').replace(',', ''),
+          text: msg.body,
+          attachments: msg.attachments || []
+        }))
       ]
     };
   },
 
   async createTicket(payload) {
-    const data = await apiClient.post('/tickets', {
-      subject: payload.subject,
-      category: payload.category,
-      priority: payload.priority,
-      description: payload.message // mapped from payload.message
-    });
-    return data.data;
+    if (payload.files && payload.files.length > 0) {
+      const formData = new FormData();
+      formData.append('subject', payload.subject);
+      formData.append('category', payload.category);
+      formData.append('priority', payload.priority);
+      formData.append('description', payload.message);
+      payload.files.forEach((file) => {
+        formData.append('attachments', file);
+      });
+      const data = await apiClient.post('/tickets', formData);
+      return data.data;
+    } else {
+      const data = await apiClient.post('/tickets', {
+        subject: payload.subject,
+        category: payload.category,
+        priority: payload.priority,
+        description: payload.message
+      });
+      return data.data;
+    }
   },
 
   async sendMessage(ticketId, message) {
-    // Chat disabled for now per user request. 
-    // This will just mock the success so UI doesn't crash if they try to use it.
-    await wait(400);
+    const res = await apiClient.post(`/tickets/${ticketId}/messages`, { body: message, type: 'user' });
+    const msg = res.data;
     return {
-      id: Date.now(),
+      id: msg.id,
       from: 'user',
-      name: 'You',
+      name: msg.author?.name || 'You',
       initials: 'ME',
-      ts: 'Just now',
-      text: message,
-      attachments: [],
+      ts: new Date(msg.createdAt).toLocaleString('en-GB').replace(',', ''),
+      text: msg.body,
+      attachments: msg.attachments || [],
+    };
+  },
+
+  async sendMessageWithFiles(ticketId, formData) {
+    const res = await apiClient.post(`/tickets/${ticketId}/messages`, formData);
+    const msg = res.data;
+    return {
+      id: msg.id,
+      from: 'user',
+      name: msg.author?.name || 'You',
+      initials: 'ME',
+      ts: new Date(msg.createdAt).toLocaleString('en-GB').replace(',', ''),
+      text: msg.body,
+      attachments: msg.attachments || [],
     };
   },
 

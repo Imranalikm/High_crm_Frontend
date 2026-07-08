@@ -48,7 +48,7 @@ export function TicketDetailPage() {
     );
   }
 
-  const metaValues = { id: ticket.id, category: ticket.category, priority: ticket.priority, status: ticket.status, created: ticket.created, updated: ticket.updated };
+  const metaValues = { id: ticket.ticketId, category: ticket.category, priority: ticket.priority, status: ticket.status, created: ticket.created, updated: ticket.updated };
 
   return (
     <PageShell className="space-y-5 max-w-[1100px] w-full mx-auto">
@@ -63,7 +63,7 @@ export function TicketDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <span className="font-mono text-[11px] font-bold text-text-muted/60">{ticket.id}</span>
+          <span className="font-mono text-[11px] font-bold text-text-muted/60">{ticket.ticketId}</span>
           <h1 className="font-heading font-semibold text-[22px] tracking-[-0.03em] text-text mt-1">
             {ticket.subject}
           </h1>

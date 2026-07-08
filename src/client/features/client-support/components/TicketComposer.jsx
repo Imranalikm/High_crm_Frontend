@@ -7,8 +7,8 @@ export function TicketComposer({ onSend, sending = false, disabled = false }) {
   const fileRef = useRef();
 
   const handleSend = async () => {
-    if (!text.trim() || sending) return;
-    await onSend?.(text.trim());
+    if ((!text.trim() && files.length === 0) || sending) return;
+    await onSend?.(text.trim(), files);
     setText('');
     setFiles([]);
   };
@@ -73,7 +73,7 @@ export function TicketComposer({ onSend, sending = false, disabled = false }) {
         {/* Send button */}
         <button
           type="button"
-          disabled={!text.trim() || sending || disabled}
+          disabled={(!text.trim() && files.length === 0) || sending || disabled}
           onClick={handleSend}
           className="w-10 h-10 rounded-[9px] bg-brand text-text-on-accent flex items-center justify-center hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
         >

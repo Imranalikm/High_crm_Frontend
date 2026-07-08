@@ -587,15 +587,6 @@ export const adminRouteModules = [
         ],
       },
       {
-        id: 'support-escalated',
-        path: 'support/escalated',
-        pageKey: 'support/support-workspace',
-        permission: PERMISSIONS.support.escalate,
-        meta: [
-          { pattern: '/admin/support/escalated', title: 'Urgent Tickets', section: 'Support', permission: PERMISSIONS.support.escalate },
-        ],
-      },
-      {
         id: 'support-detail',
         path: 'support/tickets/:ticketId',
         pageKey: 'support/ticket-detail',

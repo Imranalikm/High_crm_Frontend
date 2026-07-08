@@ -49,13 +49,49 @@ export function TicketTimeline({ messages = [] }) {
                 {msg.text}
               </div>
               {msg.attachments?.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {msg.attachments.map((att) => (
-                    <span key={att} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[7px] bg-muted-surface border border-border/30 text-[10.5px] text-text-muted">
-                      <Paperclip size={10} />
-                      {att}
-                    </span>
-                  ))}
+                <div className="mt-2 space-y-1.5 w-full">
+                  {msg.attachments.map((att, idx) => {
+                    const base = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
+                    const url = `${base}${att.url}`;
+                    const isImage = att.mimetype?.startsWith('image/');
+                    const sizeStr = att.size
+                      ? att.size > 1024 * 1024
+                        ? `${(att.size / (1024 * 1024)).toFixed(1)} MB`
+                        : `${Math.round(att.size / 1024)} KB`
+                      : '';
+
+                    if (isImage) {
+                      return (
+                        <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block group/img max-w-full">
+                          <img
+                            src={url}
+                            alt={att.name}
+                            className="rounded-[8px] border border-border/20 max-w-[200px] max-h-[150px] object-cover hover:border-brand/40 transition-all cursor-pointer"
+                          />
+                          <span className="text-[10px] text-text-muted/50 mt-1 block group-hover/img:text-brand transition-colors">
+                            {att.name} {sizeStr && `· ${sizeStr}`}
+                          </span>
+                        </a>
+                      );
+                    }
+
+                    return (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={att.name}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[8px] border border-border/15 bg-bg/25 hover:border-brand/30 hover:bg-brand/[0.04] transition-all group/file max-w-[280px]"
+                      >
+                        <Paperclip size={11} className="text-brand shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-text/75 truncate group-hover/file:text-brand transition-colors">{att.name}</p>
+                          {sizeStr && <p className="text-[9.5px] text-text-muted/40 mt-0.5">{sizeStr}</p>}
+                        </div>
+                      </a>
+                    );
+                  })}
                 </div>
               )}
             </div>

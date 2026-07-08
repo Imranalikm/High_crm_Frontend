@@ -102,29 +102,11 @@ function TicketsPage() {
       sub: 'In progress',
     },
     {
-      label: 'Escalated',
-      value: ticketsData.filter((t) => t.status === 'ESCALATED').length,
-      accent: 'var(--negative)',
-      Icon: AlertOctagon,
-      sub: 'Needs review',
-      trend: 'Urgent',
-      trendUp: false,
-    },
-    {
       label: 'Resolved',
       value: ticketsData.filter((t) => t.status === 'RESOLVED').length,
       accent: 'var(--positive)',
       Icon: CheckCircle2,
       sub: 'Done',
-    },
-    {
-      label: 'Overdue',
-      value: breachedCount,
-      accent: 'var(--negative)',
-      Icon: ShieldAlert,
-      sub: 'Past due',
-      trend: breachedCount > 0 ? 'Act now' : 'On track',
-      trendUp: breachedCount > 0 ? false : undefined,
     },
   ];
 
@@ -151,17 +133,10 @@ function TicketsPage() {
           >
             <Download size={12} /> Export
           </button>
-          <button
-            type="button"
-            onClick={() => showToast('New ticket form opened')}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] bg-brand text-text-on-accent border border-brand/20 text-[11px] font-bold transition-all duration-300 ease-out transform-gpu will-change-transform hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
-          >
-            <Plus size={12} /> New ticket
-          </button>
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((stat) => (
           <KpiCard key={stat.label} {...stat} />
         ))}
@@ -227,7 +202,6 @@ function TicketsPage() {
                   <option value="all">All</option>
                   <option value="OPEN">Open</option>
                   <option value="PENDING">Pending</option>
-                  <option value="ESCALATED">Escalated</option>
                   <option value="RESOLVED">Resolved</option>
                 </select>
               </div>
@@ -321,7 +295,6 @@ function TicketsPage() {
                     })
                   }
                   onAssign={(t) => showToast(`Assigned: ${t.id}`)}
-                  onEscalate={(t) => showToast(`Escalated: ${t.id}`)}
                   onResolve={(t) => showToast(`Closed: ${t.id}`)}
                 />
               ))}

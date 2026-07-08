@@ -12,6 +12,8 @@ export const adminSupportApi = {
       status: t.status,
       user: t.user?.name || 'Unknown User',
       uid: t.user ? `U-${t.user.id}` : 'U-???',
+      email: t.user?.email || '',
+      phone: t.user?.phone || '',
       unread: false,
       messages: t.messages?.length || 1,
       created: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -19,6 +21,16 @@ export const adminSupportApi = {
       owner: t.agent ? { name: t.agent.name, id: t.agent.id } : null,
       slaMins: 120 // mock SLA for now
     }));
+  },
+
+  async getAgents() {
+    try {
+      const res = await apiClient.get('/users');
+      return (res.data || []).filter(u => u.role?.name?.toLowerCase().includes('admin'));
+    } catch (err) {
+      console.error('Failed to get agents:', err);
+      return [];
+    }
   },
 
   async getTicket(id) {
@@ -35,6 +47,8 @@ export const adminSupportApi = {
       status: t.status,
       user: t.user?.name || 'Unknown User',
       uid: t.user ? `U-${t.user.id}` : 'U-???',
+      email: t.user?.email || '',
+      phone: t.user?.phone || '',
       created: new Date(t.createdAt).toLocaleDateString(),
       updated: new Date(t.updatedAt).toLocaleDateString(),
       owner: t.agent ? { name: t.agent.name, id: t.agent.id } : null,
@@ -46,6 +60,7 @@ export const adminSupportApi = {
           role: 'Client',
           ts: new Date(t.createdAt).toLocaleString('en-GB').replace(',', ''),
           body: t.description,
+          attachments: t.attachments || [],
         },
         ...(t.messages || []).map(msg => ({
           id: msg.id,
@@ -53,7 +68,8 @@ export const adminSupportApi = {
           author: msg.author?.name || 'Unknown',
           role: msg.author?.role?.type === 'admin' ? 'Admin' : (msg.type === 'user' ? 'Client' : 'Support'),
           ts: new Date(msg.createdAt).toLocaleString('en-GB').replace(',', ''),
-          body: msg.body
+          body: msg.body,
+          attachments: msg.attachments || []
         }))
       ]
     };
@@ -61,6 +77,11 @@ export const adminSupportApi = {
 
   async replyToTicket(uuid, text, type) {
     const res = await apiClient.post(`/tickets/${uuid}/messages`, { body: text, type });
+    return res.data;
+  },
+
+  async replyToTicketWithFiles(uuid, formData) {
+    const res = await apiClient.post(`/tickets/${uuid}/messages`, formData);
     return res.data;
   },
 

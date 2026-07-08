@@ -40,3 +40,4 @@ export function applyTableQuery(items = [], query = {}, options = {}) {
   const filtered = searched.filter((item) => matchesFilters(item, query.filters));
   return sortItems(filtered, query.sort);
 }
+

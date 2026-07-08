@@ -2,11 +2,9 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { PageShell } from '@/components/layout/PageShell';
 import TicketsPage from '@/features/support/pages/TicketsPage';
-import EscalatedPage from '@/features/support/pages/EscalatedPage';
 
 const PAGE_MAP = {
   tickets: TicketsPage,
-  escalated: EscalatedPage,
 };
 
 function SupportPage() {

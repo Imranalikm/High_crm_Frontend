@@ -112,10 +112,9 @@ export const clientNavigation = [
     id: 'client-support',
     label: 'Support Center',
     icon: LifeBuoy,
-    path: '/client/support/overview',
+    path: '/client/support/tickets',
     navSection: 'help',
     subItems: [
-      { id: 'client-support-overview',  label: 'Overview',          path: '/client/support/overview',       icon: LayoutGrid          },
       { id: 'client-support-tickets',   label: 'My Tickets',        path: '/client/support/tickets',        icon: Inbox               },
     ],
   },

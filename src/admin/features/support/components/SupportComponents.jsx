@@ -170,7 +170,7 @@ export function SlaCheckRow({ label, sla, met }) {
 }
 
 /* ── Support-specific: TicketCard ────────────────────────────── */
-export function TicketCard({ ticket, onView, onAssign, onEscalate, onResolve, showEscalate = true }) {
+export function TicketCard({ ticket, onView, onAssign, onResolve }) {
   const navigate = useNavigate();
   const priorityColor = PRIORITY_COLORS[ticket.priority] || 'var(--text-muted)';
   const isBreached = ticket.slaMins != null && ticket.slaMins < 0;
@@ -219,79 +219,23 @@ export function TicketCard({ ticket, onView, onAssign, onEscalate, onResolve, sh
           <UserAvatar name={ticket.user} />
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] font-semibold text-text/85 truncate font-heading">{ticket.user}</div>
-            <div className="text-[11px] font-mono text-text-muted/75 truncate mt-0.5">{ticket.uid} · {ticket.region}</div>
+            <div className="text-[11px] font-mono text-text-muted/75 truncate mt-0.5">
+              {ticket.email}{ticket.phone ? ` · ${ticket.phone}` : ''}
+            </div>
           </div>
         </div>
 
-        {/* Row 4: Category & SLA */}
-        <div className="flex items-center justify-between gap-3 border-t border-border/10 pt-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-text-muted/70">Type</span>
-            <CatTag value={ticket.category} />
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-text-muted/70">Due</span>
-            <SlaBar pct={ticket.sla} slaMins={ticket.slaMins} />
-          </div>
-        </div>
-
-        {/* Row 5: Assignee & Replies */}
-        <div className="flex items-center justify-between gap-3 border-t border-border/10 pt-3">
-          <div className="flex items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: ticket.owner === 'Unassigned' ? 'var(--negative)' : 'var(--positive)' }}
-            />
-            <span className="text-[11px] font-semibold text-text-muted/75 truncate max-w-[150px]">
-              {ticket.owner === 'Unassigned' ? 'Unassigned' : `${ticket.owner}`}
-            </span>
-          </div>
-          {ticket.replies > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-text-muted/70 font-mono">
-              <MessageCircle size={10} /> {ticket.replies}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Footer Quick Actions */}
       <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-t border-border/12 bg-bg/15 mt-auto">
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); navigate(`/admin/support/tickets/${ticket.id}`, { state: { fromEscalated: ticket.status === 'ESCALATED' } }); }}
+          onClick={(e) => { e.stopPropagation(); navigate(`/admin/support/tickets/${ticket.uuid}`); }}
           className="flex items-center gap-1 h-8 px-3 rounded-[8px] bg-brand text-text-on-accent text-[11.5px] font-semibold uppercase tracking-[0.05em] hover:brightness-110 transition-all cursor-pointer"
         >
           <Eye size={11} /> Open
         </button>
-
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            onClick={() => onAssign?.(ticket)}
-            className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-cyan/20 text-cyan/50 hover:bg-cyan/8 hover:text-cyan cursor-pointer transition-colors"
-            title="Assign"
-          >
-            <UserPlus size={11} />
-          </button>
-          {showEscalate && (
-            <button
-              type="button"
-              onClick={() => onEscalate?.(ticket)}
-              className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-orange-500/20 text-orange-400/60 hover:bg-orange-400/8 hover:text-orange-400 cursor-pointer transition-colors"
-              title="Escalate"
-            >
-              <ArrowUp size={11} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onResolve?.(ticket)}
-            className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-positive/20 text-positive/50 hover:bg-positive/8 hover:text-positive cursor-pointer transition-colors"
-            title="Resolve"
-          >
-            <Check size={11} />
-          </button>
-        </div>
       </div>
     </div>
   );

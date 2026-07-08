@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertOctagon,
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { TableToolbar } from '@/components/common/table';
 import { KpiCard } from '@/components/cards';
-import { escalatedData } from '@/config/constants/support/mockData';
+import { adminSupportApi } from '../services/support.api';
 import {
   SupportIconBtn,
   SupportToast,
@@ -29,8 +29,21 @@ function EscalatedPage() {
 
   const showToast = (msg) => setToast(msg);
 
+  const [ticketsData, setTicketsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    adminSupportApi.getTickets().then(data => {
+      setTicketsData(data.filter(t => t.status === 'ESCALATED'));
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  }, []);
+
   const filtered = useMemo(() => {
-    let rows = [...escalatedData];
+    let rows = [...ticketsData];
 
     if (priorityF !== 'all') rows = rows.filter((r) => r.priority === priorityF);
     if (catF !== 'all') rows = rows.filter((r) => r.category === catF);
@@ -46,7 +59,7 @@ function EscalatedPage() {
     }
 
     return rows.sort((a, b) => (a.slaMins ?? 9999) - (b.slaMins ?? 9999));
-  }, [search, priorityF, catF]);
+  }, [search, priorityF, catF, ticketsData]);
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -54,42 +67,42 @@ function EscalatedPage() {
   const stats = [
     {
       label: 'Total',
-      value: escalatedData.length,
+      value: ticketsData.length,
       accent: 'var(--negative)',
       Icon: AlertOctagon,
       sub: 'Needs review',
     },
     {
       label: 'Critical',
-      value: escalatedData.filter((t) => t.priority === 'CRITICAL').length,
+      value: ticketsData.filter((t) => t.priority === 'CRITICAL').length,
       accent: 'var(--negative)',
       Icon: AlertOctagon,
       sub: 'Urgent action required',
     },
     {
       label: 'Overdue',
-      value: escalatedData.filter((t) => t.slaMins != null && t.slaMins < 0).length,
+      value: ticketsData.filter((t) => t.slaMins != null && t.slaMins < 0).length,
       accent: 'var(--negative)',
       Icon: Timer,
       sub: 'Past deadline',
     },
     {
       label: 'Compliance',
-      value: escalatedData.filter((t) => t.category === 'Compliance').length,
+      value: ticketsData.filter((t) => t.category === 'Compliance').length,
       accent: 'var(--warning)',
       Icon: ShieldAlert,
       sub: 'Needs verification',
     },
     {
       label: 'Finance',
-      value: escalatedData.filter((t) => ['Finance', 'Prop'].includes(t.category)).length,
+      value: ticketsData.filter((t) => ['Finance', 'Prop'].includes(t.category)).length,
       accent: 'var(--warning)',
       Icon: Wallet,
       sub: 'Payment issues',
     },
     {
       label: 'Unassigned',
-      value: escalatedData.filter((t) => t.owner === 'Unassigned').length,
+      value: ticketsData.filter((t) => !t.owner).length,
       accent: 'var(--negative)',
       Icon: UserPlus,
       sub: 'No owner yet',
@@ -112,7 +125,7 @@ function EscalatedPage() {
         </div>
       </header>
 
-      {escalatedData.length > 0 && (
+      {ticketsData.length > 0 && (
         <div
           className="flex items-start gap-3 rounded-[12px] border border-negative/25 bg-negative/[0.06] px-5 py-4"
           style={{ boxShadow: '0 0 24px rgba(239,68,68,0.07)' }}
@@ -120,12 +133,12 @@ function EscalatedPage() {
           <AlertOctagon size={16} className="text-negative flex-shrink-0 mt-0.5 animate-pulse" />
           <div className="flex-1">
             <div className="text-[13px] font-semibold text-negative font-heading tracking-[-0.01em]">
-              {escalatedData.length} ticket{escalatedData.length > 1 ? 's' : ''} need attention
+              {ticketsData.length} ticket{ticketsData.length > 1 ? 's' : ''} need attention
             </div>
             <div className="text-[12px] text-negative/80 font-heading mt-1">
-              {escalatedData.filter((t) => t.priority === 'CRITICAL').length} critical ·{' '}
-              {escalatedData.filter((t) => t.slaMins != null && t.slaMins < 0).length} overdue ·{' '}
-              {escalatedData.filter((t) => t.owner === 'Unassigned').length} unassigned
+              {ticketsData.filter((t) => t.priority === 'CRITICAL').length} critical ·{' '}
+              {ticketsData.filter((t) => t.slaMins != null && t.slaMins < 0).length} overdue ·{' '}
+              {ticketsData.filter((t) => !t.owner).length} unassigned
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">

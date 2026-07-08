@@ -18,6 +18,7 @@
 
 ## Current Splits
 
+
 - KYC is isolated under `src/features/kyc` while keeping the `/users/kyc` URL.
 - Admin management is split into `src/features/roles-permissions` and `src/features/audit-logs`.
 - Trading, copy trading, IB system, prop trading, finance, reports, support, and settings all own their service layer inside their feature folder.

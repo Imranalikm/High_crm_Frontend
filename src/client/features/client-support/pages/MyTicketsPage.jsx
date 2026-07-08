@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronDown } from 'lucide-react';
+import { Plus, ChevronDown, Inbox, MessageCircle, Timer, CheckCircle2 } from 'lucide-react';
 import { useTickets } from '../hooks/useTickets';
 import { TicketTable } from '../components/TicketTable';
 import { PageShell } from '@/shared/components/layout/PageShell';
@@ -61,6 +61,31 @@ function SelectFilter({ label, value, onChange, options, minWidth }) {
   );
 }
 
+function KpiCard({ label, value, accent, Icon, sub }) {
+  return (
+    <div className="relative rounded-[16px] border border-border/35 bg-surface-elevated p-5 shadow-card-subtle overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 group">
+      {/* Accent Top Bar */}
+      <div className="absolute top-0 left-0 h-[2.5px] w-full" style={{ backgroundColor: accent }} />
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[11.5px] font-black uppercase tracking-[0.08em] text-text-muted/65 font-heading">
+          {label}
+        </span>
+        <div className="h-8 w-8 rounded-[8px] bg-bg flex items-center justify-center border border-border/12 group-hover:border-border/30 transition-all duration-300">
+          <Icon size={14} className="text-text-muted/85 group-hover:text-brand transition-all duration-300" />
+        </div>
+      </div>
+      <div className="mt-3 flex items-baseline gap-2">
+        <span className="text-[28px] font-bold tracking-tight text-text leading-none font-heading">
+          {value}
+        </span>
+      </div>
+      <p className="text-[11.5px] text-text-muted/50 mt-1 font-heading font-medium truncate leading-relaxed">
+        {sub}
+      </p>
+    </div>
+  );
+}
+
 export function MyTicketsPage() {
   const navigate = useNavigate();
   const { openDrawer } = useUniversalDrawer();
@@ -70,6 +95,7 @@ export function MyTicketsPage() {
     categoryFilter, setCategoryFilter,
     priorityFilter, setPriorityFilter,
     search, setSearch,
+    refresh,
   } = useTickets();
 
   const [page, setPage] = React.useState(1);
@@ -103,6 +129,39 @@ export function MyTicketsPage() {
   };
 
   const openCount = tickets.filter((t) => t.status === 'OPEN').length;
+  const pendingCount = tickets.filter((t) => t.status === 'PENDING').length;
+  const resolvedCount = tickets.filter((t) => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
+
+  const stats = [
+    {
+      label: 'Total',
+      value: tickets.length,
+      accent: 'var(--brand)',
+      Icon: Inbox,
+      sub: 'All tickets',
+    },
+    {
+      label: 'Open',
+      value: openCount,
+      accent: 'var(--positive)',
+      Icon: MessageCircle,
+      sub: 'Needs reply',
+    },
+    {
+      label: 'Pending',
+      value: pendingCount,
+      accent: 'var(--warning)',
+      Icon: Timer,
+      sub: 'In progress',
+    },
+    {
+      label: 'Resolved',
+      value: resolvedCount,
+      accent: 'var(--positive)',
+      Icon: CheckCircle2,
+      sub: 'Done',
+    },
+  ];
 
   return (
     <PageShell className="max-w-[1400px] w-full">
@@ -116,12 +175,19 @@ export function MyTicketsPage() {
           </p>
         </div>
         <button
-          onClick={() => openDrawer(CreateTicketDrawer)}
+          onClick={() => openDrawer(CreateTicketDrawer, { onSuccess: refresh })}
           className="h-10 px-4 rounded-[9px] bg-brand text-text-on-accent text-[12.5px] font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all duration-150 shadow-sm"
         >
           <Plus size={14} /> New Ticket
         </button>
       </div>
+
+      {/* Stats Cards Section */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 my-6">
+        {stats.map((stat) => (
+          <KpiCard key={stat.label} {...stat} />
+        ))}
+      </section>
 
       {/* Table card */}
       <div className="rounded-[16px] border border-border/35 bg-surface-elevated overflow-hidden shadow-sm">

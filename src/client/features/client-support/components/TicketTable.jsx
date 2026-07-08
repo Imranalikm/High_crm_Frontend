@@ -17,7 +17,7 @@ function CategoryTag({ category }) {
 export function TicketTable({ tickets = [], onSelect, loading = false, pagination }) {
   const columns = useMemo(() => [
     {
-      key: 'id',
+      key: 'ticketId',
       label: 'Ticket ID',
       render: (val, row) => (
         <div className="flex items-center gap-2">
@@ -27,7 +27,7 @@ export function TicketTable({ tickets = [], onSelect, loading = false, paginatio
           <span className="font-mono text-[12px] font-bold text-brand tracking-tight">{val}</span>
         </div>
       ),
-      width: '100px',
+      width: '120px',
     },
     {
       key: 'subject',
