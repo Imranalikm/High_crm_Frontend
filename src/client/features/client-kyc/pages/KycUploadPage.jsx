@@ -117,7 +117,7 @@ export function KycUploadPage() {
           Sent successfully
         </h1>
         <p className="text-[13px] text-text-muted leading-relaxed max-w-sm mb-8">
-          We are checking your documents. This usually takes 1 to 3 business days. We will email you once we are done.
+          We are checking your documents. We will email you once we are done. 
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">

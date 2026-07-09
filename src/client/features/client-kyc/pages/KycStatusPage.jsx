@@ -34,7 +34,7 @@ const STATUS_CFG = {
   pending: {
     eyebrow: 'In progress',
     headline: 'Checking your documents',
-    sub: 'Your documents are currently being checked. This usually takes 1 to 3 business days.',
+    sub: 'Your documents are currently being checked. We will Update Soon.', 
     iconCls: 'bg-brand/12 text-brand',
     Icon: Clock3,
   },
