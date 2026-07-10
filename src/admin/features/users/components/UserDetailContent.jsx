@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import {
   CheckCircle,
@@ -130,6 +131,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
   const [contrastInverted, setContrastInverted] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
   const [newNoteText, setNewNoteText] = useState('');
 
   const location = useLocation();
@@ -488,7 +490,12 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
     const isRejected = kycRecord.status === 'REJECTED';
     const isDraft = kycRecord.status === 'DRAFT';
 
-    const handleApprove = async () => {
+    const handleApprove = () => {
+      setShowApproveModal(true);
+    };
+
+    const confirmApprove = async () => {
+      setShowApproveModal(false);
       setKycActionLoading(true);
       try {
         await kycService.approve(kycRecord.id);
@@ -684,6 +691,40 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
               </div>
             </Panel>
           </div>
+
+          {/* Approve Confirmation Modal */}
+          {showApproveModal && createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="relative w-full max-w-md rounded-[12px] border border-border/15 bg-surface-elevated shadow-2xl overflow-hidden flex flex-col text-left">
+                <div className="px-6 py-5 border-b border-border/10">
+                  <h3 className="text-[16px] font-bold font-heading text-text flex items-center gap-2">
+                    <CheckCircle className="text-brand" size={18} />
+                    Approve KYC Verification
+                  </h3>
+                </div>
+                <div className="px-6 py-6">
+                  <p className="text-[13px] text-text-muted/80 leading-relaxed">
+                    Are you sure you want to approve this KYC application? This action will verify the user's identity and automatically send an approval email to them.
+                  </p>
+                </div>
+                <div className="px-6 py-4 border-t border-border/10 bg-bg/30 flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowApproveModal(false)}
+                    className="px-4 py-2 text-[12px] font-bold text-text-muted hover:text-text cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmApprove}
+                    className="px-5 py-2 text-[12px] font-bold rounded-[8px] bg-brand text-text-on-accent cursor-pointer hover:brightness-110 transition-all shadow-lg shadow-brand/20 flex items-center gap-2"
+                  >
+                    Confirm Approval
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
 
         </div>
 
