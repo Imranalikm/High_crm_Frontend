@@ -76,6 +76,8 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
 
   const groupOptions = crmGroups.map(g => ({ label: g.name, value: g.name }));
   const leverageOptions = [
+    { label: '1:100', value: '1:100' },
+    { label: '1:200', value: '1:200' },
     { label: '1:500', value: '1:500' }
   ];
 
