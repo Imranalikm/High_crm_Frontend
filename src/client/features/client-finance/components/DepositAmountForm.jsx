@@ -31,7 +31,12 @@ export function DepositAmountForm({ method, amount, onChange, accountId, onAccou
   const feeRate = parseFeePercent(g.fee);
   
   const minAmounts = { card: 10, bank: 50, crypto: 20, skrill: 10 };
-  const minAmount = minAmounts[method] ?? 10;
+  const selectedAccount = mt5Accounts?.find(a => String(a.accountid) === String(accountId));
+  const accountMin = selectedAccount?.minDeposit;
+  
+  const minAmount = (accountMin !== undefined && accountMin !== null && Number(accountMin) > 0) 
+    ? Number(accountMin) 
+    : (minAmounts[method] ?? 10);
 
   const num       = parseFloat(amount) || 0;
   const fee       = num * feeRate;
@@ -88,6 +93,11 @@ export function DepositAmountForm({ method, amount, onChange, accountId, onAccou
             type="number"
             value={amount}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={() => {
+              if (amount && parseFloat(amount) < minAmount) {
+                onChange(minAmount.toString());
+              }
+            }}
             placeholder="0.00"
             min={minAmount}
             className="w-full h-16 pl-10 pr-5 rounded-[13px] font-mono font-black text-[24px] tracking-[-0.03em] outline-none transition-all duration-200"
