@@ -9,7 +9,7 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
   const [crmGroups, setCrmGroups] = useState([]);
   
   const [selectedGroup, setSelectedGroup] = useState('');
-  const [leverage, setLeverage] = useState('1:100');
+  const [leverage, setLeverage] = useState('1:500');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +40,7 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
 
   const resetForm = () => {
     setSelectedGroup('');
-    setLeverage('1:100');
+    setLeverage('1:500');
     setError('');
     setShowSuccess(false);
   };
@@ -76,11 +76,6 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
 
   const groupOptions = crmGroups.map(g => ({ label: g.name, value: g.name }));
   const leverageOptions = [
-    { label: '1:10', value: '1:10' },
-    { label: '1:30', value: '1:30' },
-    { label: '1:50', value: '1:50' },
-    { label: '1:100', value: '1:100' },
-    { label: '1:200', value: '1:200' },
     { label: '1:500', value: '1:500' }
   ];
 
