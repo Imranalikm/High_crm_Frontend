@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'What address documents are accepted?',
-    a: 'We accept utility bills (electricity, gas, water) or bank statements. They must be less than 90 days old and match the name and address you entered in Step 1.',
+    a: 'We accept utility bills (electricity, gas, water) or bank statements. They must match the name and address you entered in Step 1.',
   },
   {
     q: 'Is my personal data safe?',

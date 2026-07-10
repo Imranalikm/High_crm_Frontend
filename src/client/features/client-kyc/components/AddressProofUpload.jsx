@@ -53,7 +53,7 @@ export function AddressProofUpload({ value, onChange, errors = {} }) {
           <p className="text-[10px] font-black uppercase tracking-[0.12em] text-text-muted mb-3">Upload document</p>
           <UploadArea
             label="Upload proof of address"
-            hint="Dated within the last 90 days · PNG, JPG or PDF up to 10 MB"
+            hint="PNG, JPG or PDF up to 10 MB"
             file={value.file}
             error={errors.file}
             onChange={(f) => onChange({ ...value, file: f })}
@@ -85,14 +85,6 @@ export function AddressProofUpload({ value, onChange, errors = {} }) {
             </p>
           </div>
 
-          <div className="rounded-[10px] bg-brand/[0.06] border border-brand/20 p-4">
-            <p className="flex items-center gap-2 text-[11.5px] font-bold text-brand mb-1.5">
-              <Info size={13} className="shrink-0" /> Dated within 90 days
-            </p>
-            <p className="text-[11px] text-text-muted leading-relaxed">
-              Documents older than 90 days will be rejected. Check the issue date before uploading.
-            </p>
-          </div>
         </div>
       </div>
     </div>
