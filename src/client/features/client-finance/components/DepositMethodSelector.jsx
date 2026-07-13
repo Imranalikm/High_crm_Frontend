@@ -29,7 +29,7 @@ const DEFAULT_METHODS = {
   },
   online: {
     id: 'online',
-    label: 'Online Payment',
+    label: 'USD Payment',
     sub: 'Visa, Mastercard, Stripe Checkout',
     icon: CreditCard,
     color: 'brand',
@@ -73,7 +73,7 @@ export function DepositMethodSelector({ value, onChange }) {
         const csBorder      = `color-mix(in srgb, var(--${m.color}) 25%, transparent)`;
         const cssMuted      = `color-mix(in srgb, var(--${m.color}) 12%, transparent)`;
 
-        const isDisabled    = m.id === 'upi' || m.id === 'bank';
+        const isDisabled    = m.id === 'bank';
 
         return (
           <button

@@ -24,7 +24,7 @@ const STEPS = [
 ];
 
 const METHOD_NAMES = {
-  online: 'Online Payment',
+  online: 'USD Payment',
   bank: 'Bank Wire',
   crypto: 'Crypto',
   upi: 'UPI',
@@ -278,7 +278,7 @@ export function DepositPage() {
                     {(method === 'bank' || method === 'upi' || method === 'online') && (
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
-                          {method === 'upi' ? 'UPI Transaction ID (UTR) (Optional)' 
+                          {method === 'upi' ? 'Stripe Reference / UPI Transaction ID (UTR) (Optional)' 
                             : method === 'online' ? 'Stripe Reference / Transaction ID (Optional)'
                             : 'Bank Wire Transaction ID (Optional)'}
                         </label>
