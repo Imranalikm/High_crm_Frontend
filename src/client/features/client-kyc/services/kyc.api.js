@@ -160,8 +160,8 @@ export const kycApi = {
       formData.append('addressDocIssueDate', payload.addressProof.issueDate);
     }
     
-    // Call POST API
-    const response = await apiClient.post('/panel/kyc', formData);
+    // Call POST API with extended timeout for large image payloads
+    const response = await apiClient.post('/panel/kyc', formData, { timeout: 60000 });
     
     // Clear draft local storage after successful submit
     if (userId) {

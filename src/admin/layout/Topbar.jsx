@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Bell,
   ChevronLeft,
@@ -15,13 +15,61 @@ import { useRouteMeta } from '@/app/routes/use-route-meta';
 import { useNavigate } from 'react-router-dom';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useAuth } from '@/shared/features/auth/AuthContext';
+import { socketClient } from '@/shared/api/client/socketClient';
+import { apiClient } from '@/shared/api/client/apiClient';
 
 export function Topbar({ collapsed, setCollapsed, theme, toggleTheme, onOpenCommand }) {
   const routeMeta = useRouteMeta();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const profileRef = useClickOutside(() => setIsProfileOpen(false));
+  const notificationsRef = useClickOutside(() => setIsNotificationsOpen(false));
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize audio with the file from public folder
+    audioRef.current = new Audio('/mixkit-bell-notification-933.wav');
+
+    // Fetch initial notifications
+    const fetchNotifications = async () => {
+      try {
+        const res = await apiClient.get('/notifications/unread');
+        if (res.success) {
+          setNotifications(res.data || []);
+          setUnreadCount(res.data.length || 0);
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications', err);
+      }
+    };
+    fetchNotifications();
+
+    // Connect socket
+    const token = localStorage.getItem('admin_token');
+    const socket = socketClient.connect(token);
+
+    const handleNewNotification = (notif) => {
+      setNotifications(prev => [notif, ...prev].slice(0, 10)); // Keep only 10
+      setUnreadCount(prev => prev + 1);
+      
+      // Play sound
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.log('Audio play blocked:', e));
+      }
+    };
+
+    socket.on('new_notification', handleNewNotification);
+
+    return () => {
+      socket.off('new_notification', handleNewNotification);
+    };
+  }, []);
 
   const handleSignOut = () => {
     setIsProfileOpen(false);
@@ -182,28 +230,98 @@ export function Topbar({ collapsed, setCollapsed, theme, toggleTheme, onOpenComm
         </button>
 
         {/* ── Notifications ── */}
-        <button
-          aria-label="Notifications"
-          className="
-            group relative flex items-center justify-center w-8 h-8 rounded-[7px]
-            text-text-muted/75 hover:text-text
-            hover:bg-text/[0.04] border border-transparent hover:border-border/[0.12]
-            transition-all duration-200 cursor-pointer
-          "
-        >
-          <Bell
-            size={17}
-            strokeWidth={2}
-            className="transition-transform duration-300 group-hover:[transform:rotate(10deg)]"
-          />
-          {/* Badge */}
-          <span
-            className="absolute top-[3.5px] right-[3.5px] w-[14px] h-[14px] rounded-full text-[8.5px] font-bold text-white flex items-center justify-center tracking-normal leading-none pt-[0.5px] select-none"
-            style={{ background: '#FF3B30', boxShadow: '0 0 0 1.5px var(--surface-2)' }}
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            aria-label="Notifications"
+            className="
+              group relative flex items-center justify-center w-8 h-8 rounded-[7px]
+              text-text-muted/75 hover:text-text
+              hover:bg-text/[0.04] border border-transparent hover:border-border/[0.12]
+              transition-all duration-200 cursor-pointer outline-none
+            "
           >
-            3
-          </span>
-        </button>
+            <Bell
+              size={17}
+              strokeWidth={2}
+              className="transition-transform duration-300 group-hover:[transform:rotate(10deg)]"
+            />
+            {/* Badge */}
+            {unreadCount > 0 && (
+              <span
+                className="absolute top-[3.5px] right-[3.5px] w-[14px] h-[14px] rounded-full text-[8.5px] font-bold text-white flex items-center justify-center tracking-normal leading-none pt-[0.5px] select-none"
+                style={{ background: '#FF3B30', boxShadow: '0 0 0 1.5px var(--surface-2)' }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown */}
+          {isNotificationsOpen && (
+            <div
+              className="absolute top-full right-0 mt-2 w-[280px] sm:w-[320px] rounded-[10px] overflow-hidden z-[100] animate-in fade-in zoom-in-95 slide-in-from-top-1.5 duration-150"
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 16px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              <div className="px-3 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-text-muted/60 select-none">
+                  Notifications
+                </p>
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={async () => {
+                      try {
+                        await apiClient.put('/notifications/mark-all-read');
+                        setNotifications([]);
+                        setUnreadCount(0);
+                      } catch (err) {}
+                    }}
+                    className="text-[10px] font-semibold text-primary hover:text-primary-hover cursor-pointer"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-[300px] overflow-y-auto flex flex-col">
+                {notifications.length === 0 ? (
+                  <div className="p-5 text-center text-[12px] text-text-muted/50 font-medium">
+                    No new notifications
+                  </div>
+                ) : (
+                  notifications.map((notif, i) => (
+                    <div 
+                      key={notif.id || i}
+                      className="p-3 border-b border-border/30 hover:bg-text/[0.02] cursor-pointer transition-colors"
+                      onClick={async () => {
+                        if (!notif.isRead && notif.id) {
+                          try {
+                            await apiClient.put(`/notifications/${notif.id}/read`);
+                            setNotifications(prev => prev.filter(n => n.id !== notif.id));
+                            setUnreadCount(prev => Math.max(0, prev - 1));
+                          } catch (err) {}
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <Bell size={12} className="text-primary" />
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[12px] font-semibold text-text leading-tight">{notif.title}</span>
+                          <span className="text-[11px] text-text-muted/70 leading-snug line-clamp-2">{notif.message}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Vertical rule */}
         <div
