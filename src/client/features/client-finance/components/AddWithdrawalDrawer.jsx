@@ -49,7 +49,7 @@ export function AddWithdrawalDrawer({ open, onClose, onSuccess }) {
       return;
     }
 
-    if (formData.type !== 'cash' && !formData.bankAccount) {
+    if (!formData.bankAccount) {
       setError('Destination details are required.');
       return;
     }
@@ -125,20 +125,17 @@ export function AddWithdrawalDrawer({ open, onClose, onSuccess }) {
                 className="w-full h-10 px-3 rounded-[8px] border border-border/20 bg-bg text-[13px] text-text outline-none focus:border-brand/40 transition-colors"
               >
                 <option value="bank">Bank Transfer</option>
-                <option value="cash">Cash</option>
                 <option value="upi">UPI</option>
               </select>
             </div>
             
-            {formData.type !== 'cash' && (
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1.5">Destination Details</label>
-                <input 
-                  name="bankAccount" value={formData.bankAccount} onChange={handleChange} placeholder={formData.type === 'upi' ? 'UPI ID (e.g. user@upi)' : 'Bank Account Details'} 
-                  className="w-full h-10 px-3 rounded-[8px] border border-border/20 bg-bg text-[13px] text-text outline-none focus:border-brand/40 transition-colors"
-                />
-              </div>
-            )}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted mb-1.5">Destination Details</label>
+              <input 
+                name="bankAccount" value={formData.bankAccount} onChange={handleChange} placeholder={formData.type === 'upi' ? 'UPI ID (e.g. user@upi)' : 'Bank Account Details'} 
+                className="w-full h-10 px-3 rounded-[8px] border border-border/20 bg-bg text-[13px] text-text outline-none focus:border-brand/40 transition-colors"
+              />
+            </div>
           </form>
         )}
       </div>

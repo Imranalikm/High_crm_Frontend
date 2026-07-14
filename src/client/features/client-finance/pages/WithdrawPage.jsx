@@ -91,7 +91,6 @@ function SummarySidebar({ method, destination, amount, availableBalance, step })
 
   const methodNames = {
     bank: 'Bank Transfer',
-    cash: 'Cash',
     upi: 'UPI'
   };
 

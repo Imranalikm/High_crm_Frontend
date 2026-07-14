@@ -89,7 +89,7 @@ export function WithdrawConfirmStep({ method, amount, onSubmit, isSubmitting }) 
           </p>
         </div>
         {[
-          { label: 'Method',        value: method === 'bank' ? 'Bank Transfer' : method === 'cash' ? 'Cash' : method === 'upi' ? 'UPI' : method },
+          { label: 'Method',        value: method === 'bank' ? 'Bank Transfer' : method === 'upi' ? 'UPI' : method },
           { label: 'Amount',        value: `$${num.toFixed(2)}`, bold: true, color: 'var(--positive)' },
         ].map((row, i, arr) => (
           <div

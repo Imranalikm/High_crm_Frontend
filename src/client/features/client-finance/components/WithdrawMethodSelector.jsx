@@ -11,15 +11,6 @@ const DEFAULT_WITHDRAW_METHODS = {
     processingLabel: '1–3 Business Days',
     processingIcon: Clock,
   },
-  cash: {
-    id: 'cash',
-    label: 'Cash',
-    sub: 'Physical Cash',
-    icon: Banknote,
-    color: 'warning',
-    processingLabel: 'Instant',
-    processingIcon: Zap,
-  },
   upi: {
     id: 'upi',
     label: 'UPI',
