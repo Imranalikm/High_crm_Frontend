@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X, ChevronRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { MainDrawer } from '@/components/common/drawer';
 import { PaymentMethodForm } from './PaymentMethodForm';
@@ -11,8 +11,16 @@ import { FIELDS } from './paymentForm.constants';
  */
 export function AddPaymentMethodDrawer({ open, onClose, onSave, editMethod }) {
   const [type,   setType]   = useState(editMethod?.type ?? 'bank');
-  const [form,   setForm]   = useState(editMethod?.formData ?? {});
+  const [form,   setForm]   = useState(editMethod?.rawDetails ?? {});
   const [saved,  setSaved]  = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setType(editMethod?.type ?? 'bank');
+      setForm(editMethod?.rawDetails ?? {});
+      setSaved(false);
+    }
+  }, [open, editMethod]);
 
   const fields = FIELDS[type] ?? [];
   const allFilled = fields.filter(f => f.key !== 'label').every(f => (form[f.key] ?? '').trim().length > 0);

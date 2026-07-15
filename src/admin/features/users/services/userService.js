@@ -469,4 +469,14 @@ export const usersService = {
   export() {
     return localUsersCache;
   },
+
+  async getBankAccountsByUserId(userId) {
+    try {
+      const response = await apiClient.get(`/bank-accounts/user/${userId}`);
+      return response?.bankAccounts || response?.data || [];
+    } catch (error) {
+      console.warn(`Failed to fetch bank accounts for user ${userId}:`, error);
+      throw error;
+    }
+  },
 };

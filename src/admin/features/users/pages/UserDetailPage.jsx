@@ -23,6 +23,7 @@ import {
   Clock,
   ExternalLink,
   ChevronRight,
+  CreditCard,
 } from 'lucide-react';
 import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
@@ -44,6 +45,7 @@ const tabIcons = {
   profile: User,
   kyc: FileCheck,
   wallet: Wallet,
+  'payment-methods': CreditCard,
   'mt5-accounts': Monitor,
   'trading-history': TrendingUp,
   'activity-logs': Activity,

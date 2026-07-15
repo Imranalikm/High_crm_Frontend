@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, CreditCard, Bitcoin, Star, Trash2, Pencil } from 'lucide-react';
+import { Building2, CreditCard, Bitcoin, Star, Trash2, Pencil, Smartphone } from 'lucide-react';
 
 const METHOD_META = {
   bank: {
@@ -16,6 +16,11 @@ const METHOD_META = {
     icon: Bitcoin,
     color: 'warning',
     label: 'Crypto Wallet',
+  },
+  upi: {
+    icon: Smartphone,
+    color: 'positive',
+    label: 'UPI',
   },
 };
 

@@ -25,6 +25,7 @@ import { StatusBadge, SecureImage } from '@/components/ui';
 import { DrawerField, DrawerFormGrid, DrawerSection, SelectField } from '@/components/common/drawer';
 import { usersService } from '../services/userService';
 import { kycService } from '../services/kycService';
+import { PaymentMethodsTab } from './PaymentMethodsTab';
 
 /* ─────────────────────────────────────────────────────────────
    INTERNAL DESIGN PRIMITIVES
@@ -750,6 +751,11 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
   }
 
   /* ── 3. WALLET ── */
+
+  if (activeTab === 'payment-methods') {
+    return <PaymentMethodsTab user={user} />;
+  }
+
   if (activeTab === 'wallet') {
     return (
       <div className="space-y-5 animate-fade-up">

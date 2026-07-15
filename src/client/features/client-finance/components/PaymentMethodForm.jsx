@@ -111,27 +111,7 @@ export function PaymentMethodForm({ type, setType, form, setForm }) {
         </div>
       </Section>
 
-      {/* Section 3: Guidelines & Security */}
-      <Section step={3} icon={Info} title="Guidelines & Security" collapsible>
-        {type === 'bank' && (
-          <div className="flex items-start gap-2.5 rounded-[10px] border border-cyan/25 bg-cyan/5 px-3.5 py-3 shadow-sm text-[11.5px] text-cyan/90 leading-relaxed">
-            <Info size={14} className="shrink-0 mt-0.5 text-cyan" />
-            <span>Please ensure that the bank account name matches your registered client account name to avoid processing delays. We do not support third-party transfers.</span>
-          </div>
-        )}
-        {type === 'card' && (
-          <div className="flex items-start gap-2.5 rounded-[10px] border border-brand/25 bg-brand/5 px-3.5 py-3 shadow-sm text-[11.5px] text-brand/90 leading-relaxed">
-            <Info size={14} className="shrink-0 mt-0.5 text-brand" />
-            <span>Cards must be in your name. We support Visa, Mastercard, and American Express. 3D Secure verification is required during deposit checks.</span>
-          </div>
-        )}
-        {type === 'crypto' && (
-          <div className="flex items-start gap-2.5 rounded-[10px] border border-warning/25 bg-warning/5 px-3.5 py-3 shadow-sm text-[11.5px] text-warning/90 leading-relaxed">
-            <Info size={14} className="shrink-0 mt-0.5 text-warning" />
-            <span>Verify network selection carefully. Sending assets to the wrong blockchain or address will result in permanent loss of funds. We recommend a test transfer first.</span>
-          </div>
-        )}
-      </Section>
+
     </div>
   );
 }

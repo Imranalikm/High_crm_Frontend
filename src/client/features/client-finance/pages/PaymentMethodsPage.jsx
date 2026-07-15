@@ -1,45 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-import { Plus, CreditCard, Wallet2 } from 'lucide-react';
+import { Plus, CreditCard, Wallet2, Loader2, AlertTriangle } from 'lucide-react';
 import { PaymentMethodCard }      from '../components/PaymentMethodCard';
 import { AddPaymentMethodDrawer } from '../components/AddPaymentMethodDrawer';
+import { financeApi }             from '../services/finance.api';
 
-/* ── Mock saved methods — TODO: replace with API call ── */
-const INITIAL_METHODS = [
-  {
-    id: 'pm-1',
-    type: 'bank',
-    name: 'HDFC Bank',
-    isDefault: true,
-    details: [
-      { label: 'Account Number', value: '••••  ••••  5678' },
-      { label: 'Account Name',   value: 'John Doe'          },
-      { label: 'IFSC Code',      value: 'HDFC0001234'       },
-      { label: 'Country',        value: 'India'              },
-    ],
-  },
-  {
-    id: 'pm-2',
-    type: 'card',
-    name: 'Visa Debit',
-    isDefault: false,
-    details: [
-      { label: 'Card Number', value: '•••• •••• •••• 4242' },
-      { label: 'Expiry',      value: '08 / 27'              },
-      { label: 'Name',        value: 'John Doe'              },
-    ],
-  },
-  {
-    id: 'pm-3',
-    type: 'crypto',
-    name: 'USDT Wallet',
-    isDefault: false,
-    details: [
-      { label: 'Network', value: 'TRC-20 (TRON)'                      },
-      { label: 'Address', value: 'TQn9Y2…hfNa'                        },
-    ],
-  },
-];
+import { FIELDS }                 from '../components/paymentForm.constants';
 
 function EmptyState({ onAdd }) {
   return (
@@ -58,7 +24,7 @@ function EmptyState({ onAdd }) {
           No Payment Methods Saved
         </p>
         <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>
-          Add a bank account, card, or crypto wallet to speed up deposits & withdrawals.
+          Add a bank account to speed up your withdrawals.
         </p>
       </div>
       <button
@@ -75,16 +41,65 @@ function EmptyState({ onAdd }) {
 }
 
 export function PaymentMethodsPage() {
-  const [methods, setMethods] = useState(INITIAL_METHODS);
+  const [methods, setMethods] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editMethod, setEditMethod] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState('');
 
-  const handleSetDefault = (id) => {
-    setMethods((prev) => prev.map((m) => ({ ...m, isDefault: m.id === id })));
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3500);
   };
 
-  const handleRemove = (id) => {
-    setMethods((prev) => prev.filter((m) => m.id !== id));
+  const fetchMethods = async () => {
+    try {
+      setLoading(true);
+      const data = await financeApi.getBankAccounts();
+      // Map API response to the format expected by PaymentMethodCard
+      const mapped = (data || []).map(acc => ({
+        id: acc.id,
+        type: acc.type,
+        name: acc.name,
+        isDefault: acc.isDefault,
+        details: acc.details
+          ? Object.entries(acc.details)
+              .filter(([, v]) => v)
+              .map(([k, v]) => {
+                const fieldDef = (FIELDS[acc.type] || []).find(f => f.key === k);
+                return { label: fieldDef ? fieldDef.label : k, value: v };
+              })
+          : [],
+        rawDetails: acc.details || {},
+      }));
+      setMethods(mapped);
+    } catch (err) {
+      console.error('Failed to load payment methods:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMethods();
+  }, []);
+
+  const handleSetDefault = async (id) => {
+    try {
+      await financeApi.setDefaultBankAccount(id);
+      setMethods((prev) => prev.map((m) => ({ ...m, isDefault: m.id === id })));
+    } catch (err) {
+      console.error('Failed to set default:', err);
+    }
+  };
+
+  const handleRemove = async (id) => {
+    try {
+      await financeApi.deleteBankAccount(id);
+      await fetchMethods();
+    } catch (err) {
+      console.error('Failed to remove:', err);
+    }
   };
 
   const handleEdit = (method) => {
@@ -97,29 +112,36 @@ export function PaymentMethodsPage() {
     setDrawerOpen(true);
   };
 
-  const handleSave = (data) => {
-    // TODO: persist via API
-    if (editMethod) {
-      setMethods((prev) =>
-        prev.map((m) => m.id === editMethod.id ? { ...m, ...data } : m)
-      );
-    } else {
-      setMethods((prev) => [
-        ...prev,
-        {
-          id:        `pm-${Date.now()}`,
-          type:      data.type,
-          name:      data.formData.bankName || data.formData.cardName || data.formData.label || 'New Method',
-          isDefault: false,
-          details:   Object.entries(data.formData)
-            .filter(([, v]) => v)
-            .map(([k, v]) => ({ label: k, value: v })),
-        },
-      ]);
+  const handleSave = async (data) => {
+    try {
+      const payload = {
+        type: data.type,
+        name: data.formData.bankName || data.formData.cardName || data.formData.label || data.formData.network || 'New Method',
+        details: data.formData,
+      };
+
+      if (editMethod) {
+        await financeApi.updateBankAccount(editMethod.id, payload);
+      } else {
+        await financeApi.createBankAccount(payload);
+      }
+      await fetchMethods();
+    } catch (err) {
+      console.error('Failed to save payment method:', err);
+      showToast(err?.response?.data?.message || err?.message || 'Failed to save payment method');
     }
     setDrawerOpen(false);
     setEditMethod(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3 animate-fade-up">
+        <Loader2 size={24} className="animate-spin text-brand" />
+        <span className="text-[12px] font-bold text-text-muted uppercase tracking-widest">Loading payment methods...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -178,19 +200,25 @@ export function PaymentMethodsPage() {
                 Add Payment Method
               </p>
               <p className="text-[11.5px] mt-1 text-text-muted">
-                Bank, card, or crypto
+                Bank Account
               </p>
             </div>
           </button>
         </div>
       )}
-      {/* Drawer */}
       <AddPaymentMethodDrawer
         open={drawerOpen}
         onClose={() => { setDrawerOpen(false); setEditMethod(null); }}
         onSave={handleSave}
         editMethod={editMethod}
       />
+      {toast && (
+        <div className="fixed bottom-6 right-6 px-4 py-2.5 rounded-[9px] font-bold text-[12px] flex items-center gap-2 z-50 animate-fade-up shadow-xl"
+             style={{ background: 'var(--warning)', color: 'var(--bg)' }}>
+          <AlertTriangle size={14} />
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
