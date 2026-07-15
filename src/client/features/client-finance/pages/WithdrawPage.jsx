@@ -152,7 +152,7 @@ function BankAccountSelector({ bankAccounts, selectedId, onSelect }) {
         </div>
         <div>
           <p className="text-[13px] font-bold" style={{ color: 'var(--text)' }}>
-            No Payment Methods Found
+            No Bank Account Found
           </p>
           <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
             You need to add a bank account before you can make a withdrawal.
@@ -164,7 +164,7 @@ function BankAccountSelector({ bankAccounts, selectedId, onSelect }) {
           style={{ background: 'var(--brand)', color: 'var(--text-on-accent)' }}
         >
           <Wallet2 size={14} strokeWidth={2} />
-          Add Payment Method
+          Add Bank Account
         </Link>
       </div>
     );
@@ -236,20 +236,7 @@ function BankAccountSelector({ bankAccounts, selectedId, onSelect }) {
         );
       })}
 
-      <Link
-        to="/client/finance/payment-methods"
-        className="mt-1 w-full flex items-center justify-center gap-2 p-3.5 rounded-[11px] font-bold text-[12.5px] cursor-pointer transition-all duration-200 no-underline hover:scale-[1.005]"
-        style={{
-          background: 'var(--muted-surface)',
-          border: '1px dashed color-mix(in srgb, var(--brand) 30%, var(--border))',
-          color: 'var(--text-muted)'
-        }}
-      >
-        <span className="flex items-center justify-center w-6 h-6 rounded-full shrink-0" style={{ background: 'color-mix(in srgb, var(--brand) 12%, transparent)', color: 'var(--brand)' }}>
-          <Plus size={14} strokeWidth={2.5} />
-        </span>
-        Add Another Payment Method
-      </Link>
+      {/* Removed add another payment method button since only 1 is allowed */}
     </div>
   );
 }
@@ -367,7 +354,7 @@ export function WithdrawPage() {
                   </p>
                   {bankAccountsLoading ? (
                     <div className="flex items-center justify-center py-6">
-                      <span className="text-[11px] font-bold text-text-muted animate-pulse">Loading payment methods...</span>
+                      <span className="text-[11px] font-bold text-text-muted animate-pulse">Loading bank account...</span>
                     </div>
                   ) : (
                     <BankAccountSelector

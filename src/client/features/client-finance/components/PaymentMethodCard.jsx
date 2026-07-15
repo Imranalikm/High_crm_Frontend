@@ -28,7 +28,7 @@ const METHOD_META = {
  * PaymentMethodCard
  * Displays a single saved payment method (bank / card / crypto) with actions.
  */
-export function PaymentMethodCard({ method, onEdit, onRemove, onSetDefault }) {
+export function PaymentMethodCard({ method, onEdit, onRequestEdit, onRemove, onSetDefault }) {
   const meta    = METHOD_META[method.type] ?? METHOD_META.bank;
   const Icon    = meta.icon;
   const cssColor = `var(--${meta.color})`;
@@ -95,34 +95,35 @@ export function PaymentMethodCard({ method, onEdit, onRemove, onSetDefault }) {
         className="flex items-center gap-2 pt-3"
         style={{ borderTop: '1px solid var(--border)' }}
       >
-        {!method.isDefault && (
+        {(!method.editStatus || method.editStatus === 'none') && (
           <button
-            id={`payment-method-default-${method.id}`}
-            onClick={() => onSetDefault?.(method.id)}
-            className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer hover:opacity-90 active:scale-95"
-            style={{ color: cssColor, background: cssMuted }}
+            onClick={() => onRequestEdit?.(method.id)}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer hover:opacity-90 active:scale-95 text-text-on-accent"
+            style={{ background: 'var(--brand)' }}
           >
-            <Star size={10} />
-            Set Default
+            <Pencil size={10} />
+            Request Edit Access
           </button>
         )}
-        <button
-          id={`payment-method-edit-${method.id}`}
-          onClick={() => onEdit?.(method)}
-          className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer hover:opacity-90 active:scale-95 ml-auto text-text bg-muted-surface border border-border/20"
-        >
-          <Pencil size={10} />
-          Edit
-        </button>
-        <button
-          id={`payment-method-remove-${method.id}`}
-          onClick={() => onRemove?.(method.id)}
-          className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer hover:opacity-90 active:scale-95 text-negative"
-          style={{ background: 'color-mix(in srgb, var(--negative) 8%, transparent)' }}
-        >
-          <Trash2 size={10} />
-          Remove
-        </button>
+        
+        {method.editStatus === 'pending' && (
+          <button
+            disabled
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-[7px] cursor-not-allowed opacity-60 text-text-muted bg-muted-surface border border-border/20"
+          >
+            Pending Admin Approval...
+          </button>
+        )}
+
+        {method.editStatus === 'approved' && (
+          <button
+            onClick={() => onEdit?.(method)}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer hover:opacity-90 active:scale-95 text-text bg-muted-surface border border-brand/50"
+          >
+            <Pencil size={10} className="text-brand" />
+            Edit Bank Account
+          </button>
+        )}
       </div>
     </div>
   );

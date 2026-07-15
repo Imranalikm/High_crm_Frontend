@@ -10,7 +10,7 @@ const METHOD_META = {
   upi: { icon: Smartphone, color: 'positive', label: 'UPI' },
 };
 
-function AdminPaymentMethodCard({ method }) {
+function AdminPaymentMethodCard({ method, onApprove, onReject }) {
   const meta = METHOD_META[method.type] ?? METHOD_META.bank;
   const Icon = meta.icon;
   const cssColor = `var(--${meta.color})`;
@@ -77,6 +77,24 @@ function AdminPaymentMethodCard({ method }) {
           </div>
         ))}
       </div>
+
+      {method.editStatus === 'pending' && (
+        <div className="flex items-center gap-2 mt-2 pt-3 border-t border-border/10">
+          <span className="text-[12px] font-bold text-warning flex-1">Edit Requested</span>
+          <button
+            onClick={() => onApprove(method.id)}
+            className="px-3 py-1.5 text-[11px] font-bold rounded-[6px] bg-positive/10 text-positive hover:bg-positive/20 transition-colors"
+          >
+            Approve
+          </button>
+          <button
+            onClick={() => onReject(method.id)}
+            className="px-3 py-1.5 text-[11px] font-bold rounded-[6px] bg-negative/10 text-negative hover:bg-negative/20 transition-colors"
+          >
+            Reject
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -108,6 +126,24 @@ export function PaymentMethodsTab({ user }) {
     }
   }, [user?.id, user?.uid]);
 
+  const handleApprove = async (id) => {
+    try {
+      await usersService.approveBankAccountEdit(id);
+      setMethods(methods.map(m => m.id === id ? { ...m, editStatus: 'approved' } : m));
+    } catch (err) {
+      setError(err.message || 'Failed to approve edit');
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      await usersService.rejectBankAccountEdit(id);
+      setMethods(methods.map(m => m.id === id ? { ...m, editStatus: 'none' } : m));
+    } catch (err) {
+      setError(err.message || 'Failed to reject edit');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-text-muted">
@@ -129,9 +165,9 @@ export function PaymentMethodsTab({ user }) {
   if (!methods || methods.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-border/40 rounded-[16px] bg-bg/20">
-        <CreditCard size={32} className="text-text-muted/30 mb-3" />
-        <p className="text-[14px] font-bold text-text">No Payment Methods</p>
-        <p className="text-[12.5px] text-text-muted mt-1">This user has not added any payment methods yet.</p>
+        <Building2 size={32} className="text-text-muted/30 mb-3" />
+        <p className="text-[14px] font-bold text-text">No Bank Account</p>
+        <p className="text-[12.5px] text-text-muted mt-1">This user has not added a bank account yet.</p>
       </div>
     );
   }
@@ -139,12 +175,12 @@ export function PaymentMethodsTab({ user }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-bold text-text">Payment Methods</h3>
-        <span className="text-[12px] font-bold text-text-muted">{methods.length} Saved Method{methods.length !== 1 ? 's' : ''}</span>
+        <h3 className="text-[16px] font-bold text-text">Bank Account</h3>
+        <span className="text-[12px] font-bold text-text-muted">{methods.length} Saved Account{methods.length !== 1 ? 's' : ''}</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {methods.map((m) => (
-          <AdminPaymentMethodCard key={m.id} method={m} />
+          <AdminPaymentMethodCard key={m.id} method={m} onApprove={handleApprove} onReject={handleReject} />
         ))}
       </div>
     </div>

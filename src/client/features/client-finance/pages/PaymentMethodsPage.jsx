@@ -34,7 +34,7 @@ function EmptyState({ onAdd }) {
         style={{ background: 'var(--brand)', color: 'var(--text-on-accent)' }}
       >
         <Plus size={15} strokeWidth={2.5} />
-        Add Your First Method
+        Add Bank Account
       </button>
     </div>
   );
@@ -62,6 +62,7 @@ export function PaymentMethodsPage() {
         type: acc.type,
         name: acc.name,
         isDefault: acc.isDefault,
+        editStatus: acc.editStatus,
         details: acc.details
           ? Object.entries(acc.details)
               .filter(([, v]) => v)
@@ -112,6 +113,17 @@ export function PaymentMethodsPage() {
     setDrawerOpen(true);
   };
 
+  const handleRequestEdit = async (id) => {
+    try {
+      await financeApi.requestEditBankAccount(id);
+      showToast('Edit access requested successfully. Waiting for admin approval.');
+      await fetchMethods();
+    } catch (err) {
+      console.error('Failed to request edit:', err);
+      showToast(err?.response?.data?.message || err?.message || 'Failed to request edit access');
+    }
+  };
+
   const handleSave = async (data) => {
     try {
       const payload = {
@@ -151,21 +163,23 @@ export function PaymentMethodsPage() {
         <div>
           <p className="text-section-eyebrow">Financials</p>
           <h1 className="font-heading font-semibold text-[26px] tracking-[-0.03em] leading-tight text-text mt-0.5">
-            Payment Methods
+            Bank Account
           </h1>
           <p className="text-[13.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Manage your saved bank accounts, cards, and crypto wallets.
+            Manage your saved bank account for withdrawals.
           </p>
         </div>
-        <button
-          id="payment-methods-add-btn"
-          onClick={handleAdd}
-          className="flex items-center gap-2 h-9 px-4 rounded-[9px] font-semibold text-[12.5px] transition-all duration-200 cursor-pointer active:scale-95 hover:scale-[1.02] shrink-0"
-          style={{ background: 'var(--brand)', color: 'var(--text-on-accent)' }}
-        >
-          <Plus size={14} strokeWidth={2.5} />
-          Add Method
-        </button>
+        {methods.length === 0 && (
+          <button
+            id="payment-methods-add-btn"
+            onClick={handleAdd}
+            className="flex items-center gap-2 h-9 px-4 rounded-[9px] font-semibold text-[12.5px] transition-all duration-200 cursor-pointer active:scale-95 hover:scale-[1.02] shrink-0"
+            style={{ background: 'var(--brand)', color: 'var(--text-on-accent)' }}
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Add Bank Account
+          </button>
+        )}
       </div>
 
       {/* Methods grid or empty state */}
@@ -178,32 +192,32 @@ export function PaymentMethodsPage() {
               key={m.id}
               method={m}
               onEdit={handleEdit}
+              onRequestEdit={handleRequestEdit}
               onRemove={handleRemove}
               onSetDefault={handleSetDefault}
             />
           ))}
 
           {/* Add tile */}
-          <button
-            id="payment-methods-add-tile"
-            onClick={handleAdd}
-            className="flex flex-col items-center justify-center gap-3 rounded-[16px] p-6 border-2 border-dashed transition-all duration-200 cursor-pointer hover:scale-[1.01] min-h-[200px] bg-surface-elevated/20 border-border/30 hover:border-brand/40 text-text-muted hover:text-text"
-          >
-            <div
-              className="w-12 h-12 rounded-[12px] flex items-center justify-center transition-all duration-200"
-              style={{ background: 'color-mix(in srgb, var(--brand) 6%, transparent)' }}
+          {methods.length === 0 && (
+            <button
+              id="payment-methods-add-tile"
+              onClick={handleAdd}
+              className="flex flex-col items-center justify-center gap-3 rounded-[16px] p-6 border-2 border-dashed transition-all duration-200 cursor-pointer hover:scale-[1.01] min-h-[200px] bg-surface-elevated/20 border-border/30 hover:border-brand/40 text-text-muted hover:text-text"
             >
-              <Plus size={22} style={{ color: 'var(--brand)' }} strokeWidth={1.8} />
-            </div>
-            <div className="text-center">
-              <p className="text-[13.5px] font-bold text-text">
-                Add Payment Method
-              </p>
-              <p className="text-[11.5px] mt-1 text-text-muted">
-                Bank Account
-              </p>
-            </div>
-          </button>
+              <div
+                className="w-12 h-12 rounded-[12px] flex items-center justify-center transition-all duration-200"
+                style={{ background: 'color-mix(in srgb, var(--brand) 6%, transparent)' }}
+              >
+                <Plus size={22} style={{ color: 'var(--brand)' }} strokeWidth={1.8} />
+              </div>
+              <div className="text-center">
+                <p className="text-[13.5px] font-bold text-text">
+                  Add Bank Account
+                </p>
+              </div>
+            </button>
+          )}
         </div>
       )}
       <AddPaymentMethodDrawer

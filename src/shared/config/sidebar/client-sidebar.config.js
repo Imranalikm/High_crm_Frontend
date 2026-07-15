@@ -62,7 +62,7 @@ export const clientNavigation = [
       { id: 'client-wallet-overview',  label: 'Overview',         path: '/client/finance/wallets',          icon: LayoutGrid      },
       { id: 'client-deposit',          label: 'Deposit Funds',    path: '/client/finance/deposit',          icon: ArrowDownToLine },
       { id: 'client-withdraw',         label: 'Withdraw',         path: '/client/finance/withdraw',         icon: ArrowUpFromLine },
-      // { id: 'client-payment-methods',  label: 'Payment Methods',  path: '/client/finance/payment-methods',  icon: CreditCard      },
+      { id: 'client-payment-methods',  label: 'Bank Account',  path: '/client/finance/payment-methods',  icon: CreditCard      },
       // { id: 'client-limits',           label: 'Limits & Fees',    path: '/client/finance/limits',           icon: BarChart3       },
     ],
   },

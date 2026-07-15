@@ -52,4 +52,9 @@ export const financeApi = {
     const data = await apiClient.patch(`/bank-accounts/${id}/default`);
     return data;
   },
+
+  async requestEditBankAccount(id) {
+    const data = await apiClient.post(`/bank-accounts/${id}/request-edit`);
+    return data;
+  },
 };

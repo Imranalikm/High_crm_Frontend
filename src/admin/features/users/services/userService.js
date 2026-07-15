@@ -479,4 +479,24 @@ export const usersService = {
       throw error;
     }
   },
+
+  async approveBankAccountEdit(id) {
+    try {
+      const response = await apiClient.post(`/bank-accounts/${id}/approve-edit`);
+      return response;
+    } catch (error) {
+      console.warn(`Failed to approve bank account edit ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async rejectBankAccountEdit(id) {
+    try {
+      const response = await apiClient.post(`/bank-accounts/${id}/reject-edit`);
+      return response;
+    } catch (error) {
+      console.warn(`Failed to reject bank account edit ${id}:`, error);
+      throw error;
+    }
+  },
 };
