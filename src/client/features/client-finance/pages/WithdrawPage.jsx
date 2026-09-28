@@ -8,10 +8,11 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, Check, AlertTriangle, Building2, CreditCard, Bitcoin, Wallet2, Plus, Smartphone } from 'lucide-react';
+import { ChevronRight, Check, AlertTriangle, Building2, CreditCard, Bitcoin, Wallet2, Plus, Smartphone, ChevronDown, Monitor } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { WithdrawAmountForm } from '../components/WithdrawAmountForm';
 import { WithdrawConfirmStep } from '../components/WithdrawConfirmStep';
+import { Mt5AccountSelector } from '../components/Mt5AccountSelector';
 import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
 import { financeApi } from '../services/finance.api';
 import { apiClient } from '@/shared/api/client/apiClient';
@@ -128,6 +129,7 @@ function SummarySidebar({ method, destination, amount, availableBalance, step, s
     </Card>
   );
 }
+
 
 /* ── Bank Account Selector for Withdrawal ── */
 function BankAccountSelector({ bankAccounts, selectedId, onSelect }) {
@@ -337,17 +339,11 @@ export function WithdrawPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/40 mb-3">
                     Select MT5 Account
                   </p>
-                  <select
-                    value={accountId}
-                    onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full h-12 rounded-[10px] border border-border/20 bg-bg text-[13.5px] px-3 mb-5 outline-none focus:border-brand/40 transition-colors"
-                  >
-                    {mt5Accounts.map(acc => (
-                      <option key={acc.accountid} value={acc.accountid}>
-                        {acc.accountid} (Balance: ${parseFloat(acc.balance || 0).toFixed(2)})
-                      </option>
-                    ))}
-                  </select>
+                  <Mt5AccountSelector 
+                    accounts={mt5Accounts}
+                    selectedId={accountId}
+                    onSelect={setAccountId}
+                  />
 
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/40 mb-3">
                     Select Withdrawal Method

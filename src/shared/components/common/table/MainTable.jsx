@@ -87,7 +87,9 @@ export function MainTable({
           <Pagination
             page={pagination.page}
             totalPages={pagination.totalPages}
-            onPageChange={pagination.onPageChange}
+            total={pagination.total}
+            // Accept both the canonical shape and useTableState's setPage
+            onPageChange={pagination.onPageChange ?? pagination.setPage}
             pageSize={pagination.pageSize}
             onPageSizeChange={pagination.onPageSizeChange}
           />

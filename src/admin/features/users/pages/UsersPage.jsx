@@ -182,6 +182,18 @@ function UsersPage() {
     }
   };
 
+  const handleVerifyOtp = async (user) => {
+    if (!window.confirm(`Verify ${user.name} and set their status to Active?`)) return;
+    try {
+      await usersService.verifyOtp(user.id);
+      triggerToast(`${user.name} verified and activated`);
+      await fetchUsers(false);
+    } catch (err) {
+      console.error('Failed to verify OTP:', err);
+      triggerToast(err.message || 'Failed to verify user OTP.');
+    }
+  };
+
   if (loading) {
     return (
       <PageShell>
@@ -315,6 +327,7 @@ function UsersPage() {
             onEditUser={(u) => { setFormMode('edit'); setEditingUserId(u.id); setUserDraft(buildUserDraft(u)); setFormOpen(true); }}
             onSuspendUser={handleToggleSuspend}
             onOpenMt5={(entry) => mt5Drawer.open(entry)}
+            onVerifyOtp={handleVerifyOtp}
           />
         </Card>
       </div>

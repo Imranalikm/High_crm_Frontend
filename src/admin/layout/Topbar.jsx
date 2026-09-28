@@ -400,11 +400,8 @@ export function Topbar({ collapsed, setCollapsed, theme, toggleTheme, onOpenComm
                 className="px-3.5 py-3"
                 style={{ borderBottom: '1px solid var(--border)' }}
               >
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-text-muted/55 leading-none mb-1.5 select-none">
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-text-muted/55 leading-none select-none">
                   Administration
-                </p>
-                <p className="text-[12.5px] font-semibold tracking-[-0.02em] text-text leading-tight truncate">
-                  Arjun Sathia
                 </p>
               </div>
 

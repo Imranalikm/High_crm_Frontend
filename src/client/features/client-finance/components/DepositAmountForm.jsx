@@ -1,6 +1,7 @@
 import React from 'react';
 import { Info, ChevronRight } from 'lucide-react';
 import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
+import { Mt5AccountSelector } from './Mt5AccountSelector';
 
 const QUICK_AMOUNTS = ['100', '500', '1000', '5000'];
 
@@ -41,7 +42,7 @@ export function DepositAmountForm({ method, amount, onChange, accountId, onAccou
   const num       = parseFloat(amount) || 0;
   const fee       = num * feeRate;
   const netCredit = num - fee;
-  const isValid   = num >= minAmount;
+  const isValid   = num >= minAmount && !!accountId;
 
   const methodLabels = { card: 'Checkout', online: 'Checkout', bank: 'Bank Details', crypto: 'Generate Address', upi: 'Checkout', skrill: 'Skrill Login' };
 
@@ -52,28 +53,11 @@ export function DepositAmountForm({ method, amount, onChange, accountId, onAccou
         <label className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(194,198,214,0.4)' }}>
           Select MT5 Account
         </label>
-        <div className="relative">
-          <select
-            value={accountId}
-            onChange={(e) => onAccountChange(e.target.value)}
-            className="w-full h-14 pl-4 pr-10 rounded-[13px] font-mono font-semibold text-[15px] outline-none transition-all duration-200 appearance-none"
-            style={{
-              background: 'var(--muted-surface)',
-              border: '1.5px solid rgba(173,198,255,0.09)',
-              color: 'var(--text)',
-            }}
-          >
-            <option value="" disabled>Select an account</option>
-            {mt5Accounts.map((acc) => (
-              <option key={acc.accountid} value={acc.accountid}>
-                {acc.accountid} ({acc.groupName || acc.server})
-              </option>
-            ))}
-          </select>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-             <ChevronRight size={14} className="rotate-90 text-text-muted/50" />
-          </div>
-        </div>
+        <Mt5AccountSelector 
+          accounts={mt5Accounts}
+          selectedId={accountId}
+          onSelect={onAccountChange}
+        />
       </div>
 
       {/* Amount input */}

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Ban, Edit2, Eye, Monitor, MoreHorizontal } from 'lucide-react';
+import { Ban, CheckCircle2, Edit2, Eye, Monitor, MoreHorizontal } from 'lucide-react';
 import { MainTable } from '@/components/common/table';
 import { StatusBadge } from '@/components/ui';
 
@@ -49,7 +49,7 @@ function UserAvatar({ name, avatar }) {
   );
 }
 
-function RowActionsMenu({ user, onOpenUser, onQuickView, onEditUser, onSuspendUser, onOpenMt5 }) {
+function RowActionsMenu({ user, onOpenUser, onQuickView, onEditUser, onSuspendUser, onOpenMt5, onVerifyOtp }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef(null);
@@ -100,6 +100,7 @@ function RowActionsMenu({ user, onOpenUser, onQuickView, onEditUser, onSuspendUs
     { label: 'Quick View', Icon: MoreHorizontal, onClick: () => onQuickView(user) },
     { label: 'Edit User', Icon: Edit2, onClick: () => onEditUser(user) },
     { label: 'Create MT5 Account', Icon: Monitor, onClick: () => onOpenMt5(user) },
+    ...(!user.otpVerified ? [{ label: 'Verify User', Icon: CheckCircle2, onClick: () => onVerifyOtp(user) }] : []),
     { label: user.suspended ? 'Unsuspend' : 'Suspend', Icon: Ban, onClick: () => onSuspendUser(user), danger: true },
   ];
 
@@ -149,6 +150,7 @@ export function UsersListTable({
   onEditUser,
   onSuspendUser,
   onOpenMt5,
+  onVerifyOtp,
 }) {
   const columns = [
     {
@@ -176,6 +178,34 @@ export function UsersListTable({
       key: 'kyc',
       label: 'Verification',
       render: (_, row) => <StatusBadge status={row.kycStatus} />,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_, row) => (
+        <div className="flex flex-col items-start gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <span
+            className={`px-1.5 py-0.5 rounded-[4px] text-[11px] font-semibold uppercase tracking-[0.05em] font-mono border ${
+              row.suspended
+                ? 'border-negative/25 text-negative bg-negative/5'
+                : row.otpVerified
+                  ? 'border-positive/25 text-positive bg-positive/5'
+                  : 'border-warning/25 text-warning bg-warning/5'
+            }`}
+          >
+            {row.suspended ? 'Blocked' : row.otpVerified ? 'Active' : 'Pending'}
+          </span>
+          {!row.otpVerified && (
+            <button
+              type="button"
+              onClick={() => onVerifyOtp(row)}
+              className="text-[11px] font-bold uppercase tracking-wider text-brand hover:text-brand-hover transition-colors cursor-pointer"
+            >
+              Verify user
+            </button>
+          )}
+        </div>
+      ),
     },
     {
       key: 'wallet',
@@ -216,6 +246,7 @@ export function UsersListTable({
             onEditUser={onEditUser}
             onSuspendUser={onSuspendUser}
             onOpenMt5={onOpenMt5}
+            onVerifyOtp={onVerifyOtp}
           />
         </div>
       ),

@@ -16,7 +16,7 @@ const mapUserRecord = (rawUser) => {
     address: rawUser.address || '',
     tier: rawUser.tier || 'Standard',
     segment: rawUser.segment || 'Retail',
-    fundingState: rawUser.fundingState || 'PENDING',
+    fundingState: rawUser.fundingState || (parseFloat(rawUser.wallet_balance) > 0 ? 'FUNDED' : 'UNFUNDED'),
     kycStatus: rawUser.kyc ? (rawUser.kyc.status === 'approved' ? 'VERIFIED' : rawUser.kyc.status === 'rejected' ? 'REJECTED' : rawUser.kyc.status === 'pending' ? 'PENDING' : 'DRAFT') : 'DRAFT',
     riskStatus: rawUser.riskStatus || 'LOW',
     walletBalance: rawUser.wallet_balance ? `$${parseFloat(rawUser.wallet_balance).toLocaleString()}` : '$0.00',
@@ -28,6 +28,7 @@ const mapUserRecord = (rawUser) => {
     lastSeen: rawUser.updatedAt || 'N/A',
     source: 'Direct Registration',
     suspended: rawUser.status === 'blocked',
+    otpVerified: rawUser.status !== 'pending',
     notesSummary: '',
     kyc: rawUser.kyc || null,
     wallet: [],
@@ -194,6 +195,21 @@ export const usersService = {
       return mapped;
     } catch (error) {
       console.warn(`Failed to toggle block state for user ID ${userId} on API:`, error);
+      throw error;
+    }
+  },
+
+  async verifyOtp(userId) {
+    try {
+      const response = await apiClient.patch(`/user-management/${userId}/verify-otp`);
+
+      if (response && response.success === false) {
+        throw new Error(response.message || 'Failed to verify user OTP');
+      }
+
+      return response?.data ?? response;
+    } catch (error) {
+      console.warn(`Failed to verify OTP for user ID ${userId} on API:`, error);
       throw error;
     }
   },
