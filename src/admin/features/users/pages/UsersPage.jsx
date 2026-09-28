@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageShell } from '@/components/layout/PageShell';
+import { ConfirmDialog } from '@/components/overlays/ConfirmDialog';
 import { useDrawerState } from '@/hooks/useDrawerState';
 import { useTableState } from '@/hooks/useTableState';
 import { exportRows } from '@/utils/exporters';
@@ -57,6 +58,8 @@ function UsersPage() {
   const quickDrawer = useDrawerState(null);
   const mt5Drawer = useDrawerState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [verifyTarget, setVerifyTarget] = useState(null);
+  const [verifying, setVerifying] = useState(false);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -182,15 +185,20 @@ function UsersPage() {
     }
   };
 
-  const handleVerifyOtp = async (user) => {
-    if (!window.confirm(`Verify ${user.name} and set their status to Active?`)) return;
+  const handleVerifyOtp = async () => {
+    const user = verifyTarget;
+    if (!user) return;
+    setVerifying(true);
     try {
       await usersService.verifyOtp(user.id);
       triggerToast(`${user.name} verified and activated`);
+      setVerifyTarget(null);
       await fetchUsers(false);
     } catch (err) {
       console.error('Failed to verify OTP:', err);
       triggerToast(err.message || 'Failed to verify user OTP.');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -327,7 +335,7 @@ function UsersPage() {
             onEditUser={(u) => { setFormMode('edit'); setEditingUserId(u.id); setUserDraft(buildUserDraft(u)); setFormOpen(true); }}
             onSuspendUser={handleToggleSuspend}
             onOpenMt5={(entry) => mt5Drawer.open(entry)}
-            onVerifyOtp={handleVerifyOtp}
+            onVerifyOtp={(user) => setVerifyTarget(user)}
           />
         </Card>
       </div>
@@ -335,6 +343,19 @@ function UsersPage() {
       <AddUserDrawer open={formOpen} mode={formMode} draft={userDraft} setDraft={setUserDraft} onSubmit={handleSaveUser} onClose={() => setFormOpen(false)} />
       <QuickUserDrawer open={quickDrawer.isOpen} user={quickDrawer.value} onClose={quickDrawer.close} onExpand={(uid) => { quickDrawer.close(); openUser(uid); }} />
       <Mt5AccountDrawer open={mt5Drawer.isOpen} entry={mt5Drawer.value} onClose={mt5Drawer.close} onSave={handleSaveMt5Account} />
+      <ConfirmDialog
+        open={!!verifyTarget}
+        actionLabel="User Verification"
+        title="Verify user?"
+        description={verifyTarget
+          ? `${verifyTarget.name} (${verifyTarget.email}) hasn't confirmed their email OTP yet. Verifying will change their status from Pending to Active without the OTP.`
+          : ''}
+        confirmLabel={verifying ? 'Verifying...' : 'Verify & Activate'}
+        confirmVariant="success"
+        busy={verifying}
+        onClose={() => { if (!verifying) setVerifyTarget(null); }}
+        onConfirm={handleVerifyOtp}
+      />
     </PageShell>
   );
 }

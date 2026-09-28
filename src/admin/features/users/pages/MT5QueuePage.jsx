@@ -92,15 +92,16 @@ function MT5QueuePage() {
       return acc + val;
     }, 0);
     const uniqueServers = [...new Set(list.map((t) => t.server))].filter(Boolean);
-    
+    // Only accounts actually provisioned on MT5 — excludes PENDING and FAILED
+    const liveCount = list.filter((t) => String(t.status).toUpperCase() === 'LIVE').length;
+
     return [
-      { label: 'Total Accounts', value: list.length, subtext: 'active accounts', trend: 'Active Accounts', positive: true, Icon: Layers, accent: 'var(--brand)' },
+      { label: 'Live Accounts', value: liveCount, subtext: `of ${list.length} total (excl. pending/failed)`, trend: 'Live', positive: true, Icon: Layers, accent: 'var(--brand)' },
       { label: 'Total Balance', value: `$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, subtext: 'total pool of user funds', trend: 'Total Assets', positive: true, Icon: Landmark, accent: 'var(--positive)' },
       { label: 'Active Servers', value: uniqueServers.length, subtext: 'running server nodes', trend: 'MT5 Servers', positive: true, Icon: Cpu, accent: 'var(--cyan)' },
       { label: 'Connection Health', value: '99.8%', subtext: 'stable ping', trend: 'Healthy', positive: true, Icon: Clock, accent: 'var(--warning)', pulse: true },
     ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredMt5]);
+  }, [accounts]);
 
   const mt5Table = useTableState(filteredMt5, { searchFields: [], initialPageSize: 10 });
 
