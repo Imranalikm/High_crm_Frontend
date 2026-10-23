@@ -82,6 +82,18 @@ export const kycService = {
     }
   },
 
+  async approveByUserId(userId) {
+    if (!userId) return null;
+    try {
+      const response = await apiClient.put(`/kyc/user/${userId}/approve`);
+      const rawKyc = response?.data?.kyc ?? response?.kyc ?? response?.data ?? response;
+      return mapKycRecord(rawKyc);
+    } catch (error) {
+      console.error(`Failed to approve KYC for user ${userId}`, error);
+      throw error;
+    }
+  },
+
   async reject(id, reason) {
     if (!id) return null;
     try {

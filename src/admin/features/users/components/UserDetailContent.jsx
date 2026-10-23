@@ -90,7 +90,7 @@ const Chip = ({ label, variant = 'neutral' }) => {
 
 /** Pill button */
 const PillBtn = ({ onClick, children, variant = 'ghost', disabled = false, className = '' }) => {
-  const base = 'inline-flex items-center justify-center gap-1.5 px-3.5 h-8 rounded-[6px] text-[11px] font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] border';
+  const base = 'inline-flex items-center justify-center gap-1.5 px-3.5 h-8 rounded-[6px] text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] border';
   const variants = {
     ghost: 'border-border/20 bg-bg/25 text-text-muted hover:text-text hover:border-border/40 hover:bg-bg/50',
     danger: 'border-negative/20 bg-negative/5 text-negative hover:bg-negative/12 hover:border-negative/35',
@@ -133,6 +133,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [kycResult, setKycResult] = useState(null); // { type: 'success' | 'error', title, message }
   const [newNoteText, setNewNoteText] = useState('');
 
   const location = useLocation();
@@ -217,10 +218,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
     docTabs.push({ id: 'address', label: 'Address Proof', file: addressFile });
   }
 
-  if (docTabs.length === 0) {
-    docTabs.push({ id: 'passport', label: 'Passport ID', file: '/mock_passport.png' });
-    docTabs.push({ id: 'address', label: 'Proof of Address', file: '/mock_utility_bill.png' });
-  }
+  const hasDocs = docTabs.length > 0;
 
   useEffect(() => {
     if (activeTab === 'kyc' && docTabs.length > 0) {
@@ -475,22 +473,6 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
       );
     }
 
-    if (!kycRecord) {
-      return (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3 animate-fade-in">
-          <Clock size={32} className="text-text-muted/30" />
-          <h4 className="text-[14px] font-bold text-text">No Submissions Found</h4>
-          <p className="text-[12.5px] text-text-muted/60 max-w-xs leading-relaxed">
-            This user has not submitted any KYC verification documents yet.
-          </p>
-        </div>
-      );
-    }
-
-    const isVerified = kycRecord.status === 'VERIFIED';
-    const isRejected = kycRecord.status === 'REJECTED';
-    const isDraft = kycRecord.status === 'DRAFT';
-
     const handleApprove = () => {
       setShowApproveModal(true);
     };
@@ -499,26 +481,122 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
       setShowApproveModal(false);
       setKycActionLoading(true);
       try {
-        await kycService.approve(kycRecord.id);
+        // Without an existing record, verify by user ID (backend creates the record)
+        let approved = kycRecord;
+        if (kycRecord) {
+          await kycService.approve(kycRecord.id);
+        } else {
+          approved = await kycService.approveByUserId(user.id);
+        }
         if (onUpdateUser) {
           onUpdateUser({
             kycStatus: 'VERIFIED',
-            kyc: { 
-              ...user.kyc, 
-              status: 'VERIFIED', 
-              reviewer: 'Compliance Officer', 
-              submittedAt: kycRecord.raw?.updatedAt || kycRecord.raw?.createdAt || new Date().toISOString().replace('T', ' ').substring(0, 16) 
+            kyc: {
+              ...user.kyc,
+              status: 'VERIFIED',
+              reviewer: 'Compliance Officer',
+              submittedAt: approved?.raw?.updatedAt || approved?.raw?.createdAt || new Date().toISOString().replace('T', ' ').substring(0, 16)
             }
           });
         }
-        const updated = await kycService.getById(kycRecord.id);
+        const updated = await kycService.getById(approved.id);
         setKycRecord(updated);
+        setKycResult({ type: 'success', title: 'KYC Approved', message: 'The user has been verified and an approval email has been sent.' });
       } catch (err) {
-        alert(err.message || 'Failed to approve KYC submission');
+        setKycResult({ type: 'error', title: 'Approval Failed', message: err.message || 'Failed to approve KYC submission' });
       } finally {
         setKycActionLoading(false);
       }
     };
+
+    const approveModal = showApproveModal && createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="relative w-full max-w-md rounded-[12px] border border-border/15 bg-surface-elevated shadow-2xl overflow-hidden flex flex-col text-left">
+          <div className="px-6 py-5 border-b border-border/10">
+            <h3 className="text-[16px] font-bold font-heading text-text flex items-center gap-2">
+              <CheckCircle className="text-brand" size={18} />
+              {hasDocs ? 'Approve KYC Verification' : 'Verify Without Documents'}
+            </h3>
+          </div>
+          <div className="px-6 py-6 space-y-3">
+            {!hasDocs && (
+              <div className="flex items-start gap-2 rounded-[8px] border-l-2 border-l-warning border border-warning/15 bg-warning/[0.04] px-3 py-2.5">
+                <AlertCircle size={13} className="text-warning mt-0.5 shrink-0" />
+                <p className="text-[12px] text-warning/90 leading-relaxed">
+                  No documents have been uploaded by this user. You are manually verifying this account without any supporting documents.
+                </p>
+              </div>
+            )}
+            <p className="text-[13px] text-text-muted/80 leading-relaxed">
+              Are you sure you want to approve this KYC application? This action will verify the user's identity and automatically send an approval email to them.
+            </p>
+          </div>
+          <div className="px-6 py-4 border-t border-border/10 bg-bg/30 flex justify-end gap-3">
+            <button
+              onClick={() => setShowApproveModal(false)}
+              className="px-4 py-2 text-[12px] font-bold text-text-muted hover:text-text cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmApprove}
+              className="px-5 py-2 text-[12px] font-bold rounded-[8px] bg-brand text-text-on-accent cursor-pointer hover:brightness-110 transition-all shadow-lg shadow-brand/20 flex items-center gap-2"
+            >
+              Confirm Approval
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+
+    const resultModal = kycResult && createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="relative w-full max-w-md rounded-[12px] border border-border/15 bg-surface-elevated shadow-2xl overflow-hidden flex flex-col text-left">
+          <div className="px-6 py-5 border-b border-border/10">
+            <h3 className="text-[16px] font-bold font-heading text-text flex items-center gap-2">
+              {kycResult.type === 'success'
+                ? <CheckCircle className="text-positive" size={18} />
+                : <ShieldAlert className="text-negative" size={18} />}
+              {kycResult.title}
+            </h3>
+          </div>
+          <div className="px-6 py-6">
+            <p className="text-[13px] text-text-muted/80 leading-relaxed">{kycResult.message}</p>
+          </div>
+          <div className="px-6 py-4 border-t border-border/10 bg-bg/30 flex justify-end">
+            <button
+              onClick={() => setKycResult(null)}
+              className="px-5 py-2 text-[12px] font-bold rounded-[8px] bg-brand text-text-on-accent cursor-pointer hover:brightness-110 transition-all shadow-lg shadow-brand/20"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+
+    if (!kycRecord) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-3 animate-fade-in">
+          <Clock size={32} className="text-text-muted/30" />
+          <h4 className="text-[14px] font-bold text-text">No Submissions Found</h4>
+          <p className="text-[12.5px] text-text-muted/60 max-w-xs leading-relaxed">
+            This user has not submitted any KYC verification documents yet.
+          </p>
+          <PillBtn onClick={handleApprove} variant="brand" disabled={kycActionLoading} className="mt-2">
+            {kycActionLoading ? 'Verifying...' : 'Verify Without Documents'}
+          </PillBtn>
+          {approveModal}
+          {resultModal}
+        </div>
+      );
+    }
+
+    const isVerified = kycRecord.status === 'VERIFIED';
+    const isRejected = kycRecord.status === 'REJECTED';
+    const isDraft = kycRecord.status === 'DRAFT';
 
     const handleReject = async () => {
       if (!rejectionReason.trim()) { 
@@ -544,8 +622,9 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
         setRejectionReason('');
         const updated = await kycService.getById(kycRecord.id);
         setKycRecord(updated);
+        setKycResult({ type: 'success', title: 'KYC Rejected', message: 'The submission has been rejected.' });
       } catch (err) {
-        alert(err.message || 'Failed to reject KYC submission');
+        setKycResult({ type: 'error', title: 'Rejection Failed', message: err.message || 'Failed to reject KYC submission' });
       } finally {
         setKycActionLoading(false);
       }
@@ -555,7 +634,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
     const docSrc = currentTab ? getImageUrl(currentTab.file) : '';
 
     const statusConfig = isVerified
-      ? { border: 'border-l-positive border-positive/12 bg-positive/[0.03]', icon: <CheckCircle size={13} className="text-positive" />, titleCls: 'text-positive', text: 'Verification Complete: The identity document and address bill have been reviewed and approved.' }
+      ? { border: 'border-l-positive border-positive/12 bg-positive/[0.03]', icon: <CheckCircle size={13} className="text-positive" />, titleCls: 'text-positive', text: hasDocs ? 'Verification Complete: The identity document and address bill have been reviewed and approved.' : 'Verification Complete: This account was manually verified by an administrator without documents.' }
       : isRejected
       ? { border: 'border-l-negative border-negative/12 bg-negative/[0.03]', icon: <ShieldAlert size={13} className="text-negative" />, titleCls: 'text-negative', text: `Verification Rejected: This account did not pass review. Reason: ${kycRecord.raw?.rejectionReason || user.kyc?.rejectionReason || 'Operator rejection'}` }
       : isDraft
@@ -583,7 +662,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
               <PanelHead
                 title="Documents"
                 right={
-                  <div className="flex items-center gap-2">
+                  hasDocs && <div className="flex items-center gap-2">
                     {/* Doc tabs */}
                     <div className="flex bg-bg/40 rounded-[5px] border border-border/15 overflow-hidden">
                       {docTabs.map((tab) => (
@@ -628,7 +707,13 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
                     style={{ transform: `rotate(${rotation}deg) scale(${zoom})`, filter: contrastInverted ? 'invert(1) contrast(1.2)' : 'none' }}
                   />
                 ) : (
-                  <div className="text-[11.5px] text-text-muted/40 italic animate-pulse">No document image available.</div>
+                  <div className="flex flex-col items-center justify-center text-center gap-2">
+                    <FileText size={28} className="text-text-muted/30" />
+                    <h5 className="text-[13px] font-bold text-text">No Documents Uploaded</h5>
+                    <p className="text-[11.5px] text-text-muted/60 max-w-xs leading-relaxed">
+                      This user has not uploaded any verification documents. You can still verify the account manually.
+                    </p>
+                  </div>
                 )}
                 <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-[3px] bg-bg/90 border border-border/12 text-[8.5px] font-mono text-text-muted/50 uppercase tracking-wide select-none">
                   Secure Connection · Safe
@@ -644,7 +729,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
               <PanelHead title="Checklist" />
               <div className="divide-y divide-border/8">
                 {[
-                  [`Identity Document`, `Type: ${idDocType.replace('_', ' ').toUpperCase()}`],
+                  [`Identity Document`, hasDocs && raw.idDocType ? `Type: ${idDocType.replace('_', ' ').toUpperCase()}` : 'No identity document uploaded.'],
                   ['Liveness Check', raw.selfieImage ? 'Selfie image provided.' : 'Pending liveness check.'],
                   ['Name Match', `Name matches identity document: "${raw.fullName || user.name}"`],
                   ['Address Match', `Address matches utility bill/bank statement: "${raw.streetAddress || user.address || 'Standard Address'}"`],
@@ -684,8 +769,8 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
                 ) : (
                   <div className="flex gap-2">
                     <PillBtn onClick={() => setShowRejectionForm(true)} variant="danger" disabled={kycActionLoading || isRejected || isVerified || isDraft} className="flex-1">Reject</PillBtn>
-                    <PillBtn onClick={handleApprove} variant="brand" disabled={kycActionLoading || isVerified || isDraft} className="flex-1">
-                      {kycActionLoading ? 'Approving...' : 'Approve'}
+                    <PillBtn onClick={handleApprove} variant="brand" disabled={kycActionLoading || isVerified} className="flex-1">
+                      {kycActionLoading ? 'Approving...' : (hasDocs ? 'Approve' : 'Verify')}
                     </PillBtn>
                   </div>
                 )}
@@ -694,38 +779,8 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
           </div>
 
           {/* Approve Confirmation Modal */}
-          {showApproveModal && createPortal(
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-              <div className="relative w-full max-w-md rounded-[12px] border border-border/15 bg-surface-elevated shadow-2xl overflow-hidden flex flex-col text-left">
-                <div className="px-6 py-5 border-b border-border/10">
-                  <h3 className="text-[16px] font-bold font-heading text-text flex items-center gap-2">
-                    <CheckCircle className="text-brand" size={18} />
-                    Approve KYC Verification
-                  </h3>
-                </div>
-                <div className="px-6 py-6">
-                  <p className="text-[13px] text-text-muted/80 leading-relaxed">
-                    Are you sure you want to approve this KYC application? This action will verify the user's identity and automatically send an approval email to them.
-                  </p>
-                </div>
-                <div className="px-6 py-4 border-t border-border/10 bg-bg/30 flex justify-end gap-3">
-                  <button
-                    onClick={() => setShowApproveModal(false)}
-                    className="px-4 py-2 text-[12px] font-bold text-text-muted hover:text-text cursor-pointer transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmApprove}
-                    className="px-5 py-2 text-[12px] font-bold rounded-[8px] bg-brand text-text-on-accent cursor-pointer hover:brightness-110 transition-all shadow-lg shadow-brand/20 flex items-center gap-2"
-                  >
-                    Confirm Approval
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body
-          )}
+          {approveModal}
+          {resultModal}
 
         </div>
 
