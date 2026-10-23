@@ -56,7 +56,11 @@ export function NewDepositDrawer({ open, onClose, onCreated }) {
     }
   };
 
-  const userAccounts = mt5Accounts.filter(acc => acc.userId == formData.userId);
+  const userAccounts = mt5Accounts.filter(acc =>
+    acc.userId == formData.userId &&
+    acc.status === 'LIVE' &&
+    !String(acc.accountid).startsWith('PENDING-')
+  );
 
   return (
     <FinanceDrawer
@@ -115,7 +119,7 @@ export function NewDepositDrawer({ open, onClose, onCreated }) {
                 ))}
               </select>
               {formData.userId && userAccounts.length === 0 && (
-                <span className="text-[10px] text-warning mt-1">This user has no MT5 accounts.</span>
+                <span className="text-[10px] text-warning mt-1">This user has no live MT5 accounts.</span>
               )}
             </div>
           </div>
