@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Download, Layers, Landmark, Clock, Cpu, PlusCircle } from 'lucide-react';
+import { Download, Layers, Landmark, Cpu, PlusCircle, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { PageShell } from '@/components/layout/PageShell';
@@ -33,6 +33,7 @@ function MT5QueuePage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [serverFilter, setServerFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const [accounts, setAccounts] = useState([]);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -42,8 +43,13 @@ function MT5QueuePage() {
       const data = await tradingAccountsService.list();
       const mapped = data.map(a => ({
         login: a.accountid,
-        user: a.user?.name || 'Unknown',
+        type: (a.accountType || 'LIVE').toUpperCase(),
+        user: a.user?.name || a.contactName || 'Unknown',
+        email: a.user?.email || a.contactEmail || '',
         uid: a.userId,
+        userId: a.userId,
+        mPassword: a.mPassword,
+        iPassword: a.iPassword,
         server: a.server,
         group: a.groupName,
         leverage: a.leverage,
@@ -73,7 +79,10 @@ function MT5QueuePage() {
 
   const filteredMt5 = useMemo(
     () => {
-      let rows = filterBySearch(accounts, search, ['login', 'user', 'server', 'group', 'status']);
+      let rows = filterBySearch(accounts, search, ['login', 'user', 'email', 'server', 'group', 'status', 'type']);
+      if (typeFilter !== 'all') {
+        rows = rows.filter((r) => r.type === typeFilter);
+      }
       if (statusFilter !== 'all') {
         rows = rows.filter((r) => r.status === statusFilter);
       }
@@ -82,7 +91,18 @@ function MT5QueuePage() {
       }
       return rows;
     },
-    [accounts, search, statusFilter, serverFilter]
+    [accounts, search, typeFilter, statusFilter, serverFilter]
+  );
+
+  // Passwords are shown in the table but never exported
+  const exportableRows = useMemo(
+    () => filteredMt5.map((row) => {
+      const rest = { ...row };
+      delete rest.mPassword;
+      delete rest.iPassword;
+      return rest;
+    }),
+    [filteredMt5]
   );
 
   const kpis = useMemo(() => {
@@ -93,14 +113,15 @@ function MT5QueuePage() {
     }, 0);
     const uniqueServers = [...new Set(list.map((t) => t.server))].filter(Boolean);
     // Only accounts actually provisioned on MT5 — excludes PENDING and FAILED
-    const liveCount = list.filter((t) => String(t.status).toUpperCase() === 'LIVE').length;
+    const provisioned = list.filter((t) => String(t.status).toUpperCase() === 'LIVE');
+    const liveCount = provisioned.filter((t) => t.type !== 'DEMO').length;
+    const demoCount = provisioned.filter((t) => t.type === 'DEMO').length;
 
     return [
-      { label: 'Live Accounts', value: liveCount, subtext: `of ${list.length} total (excl. pending/failed)`, trend: 'Live', positive: true, Icon: Layers, accent: 'var(--brand)' },
+      { label: 'Live Accounts', value: liveCount, subtext: `of ${list.length} total (excl. demo/pending/failed)`, trend: 'Live', positive: true, Icon: Layers, accent: 'var(--brand)' },
+      { label: 'Demo Accounts', value: demoCount, subtext: 'instant demo accounts', trend: 'Demo', positive: true, Icon: FlaskConical, accent: 'var(--warning)' },
       { label: 'Total Balance', value: `$${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, subtext: 'total pool of user funds', trend: 'Total Assets', positive: true, Icon: Landmark, accent: 'var(--positive)' },
-      { label: 'Active Servers', value: uniqueServers.length, subtext: 'running server nodes', trend: 'MT5 Servers', positive: true, Icon: Cpu, accent: 'var(--cyan)' },
-      { label: 'Connection Health', value: '99.8%', subtext: 'stable ping', trend: 'Healthy', positive: true, Icon: Clock, accent: 'var(--warning)', pulse: true },
-    ];
+      { label: 'Active Servers', value: uniqueServers.length, subtext: 'running server nodes', trend: 'MT5 Servers', positive: true, Icon: Cpu, accent: 'var(--cyan)' },    ];
   }, [accounts]);
 
   const mt5Table = useTableState(filteredMt5, { searchFields: [], initialPageSize: 10 });
@@ -125,7 +146,7 @@ function MT5QueuePage() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => exportRows(filteredMt5, `mt5-accounts.csv`)}
+              onClick={() => exportRows(exportableRows, `mt5-accounts.csv`)}
               className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-border/20 bg-surface-elevated text-text-muted hover:text-text hover:border-border/40 text-[11px] font-semibold transition-all cursor-pointer"
             >
               <Download size={12} /> Export
@@ -154,7 +175,22 @@ function MT5QueuePage() {
             searchPlaceholder="Search accounts..."
             filters={
               <>
-                {/* 1. Status Filter */}
+                {/* 1. Account Type Filter */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-text-muted/70 font-bold uppercase tracking-wider shrink-0 select-none">Type:</span>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => { setTypeFilter(e.target.value); mt5Table.setPage(1); }}
+                    className="h-7 rounded-[7px] border border-border/20 bg-bg text-[12.5px] font-semibold text-text px-2 pr-5 outline-none focus:border-brand/40 transition-all cursor-pointer appearance-none"
+                    style={{ minWidth: '76px' }}
+                  >
+                    <option value="all">ALL</option>
+                    <option value="LIVE">LIVE</option>
+                    <option value="DEMO">DEMO</option>
+                  </select>
+                </div>
+
+                {/* 2. Status Filter */}
                 <div className="flex items-center gap-1.5">
                   <span className="text-[11px] text-text-muted/70 font-bold uppercase tracking-wider shrink-0 select-none">Status:</span>
                   <select
@@ -164,13 +200,13 @@ function MT5QueuePage() {
                     style={{ minWidth: '76px' }}
                   >
                     <option value="all">ALL</option>
-                    {['CONNECTED', 'DISCONNECTED', 'SYNC_DELAY', 'BLOCKED', 'READONLY'].map((status) => (
+                    {['LIVE', 'PENDING', 'FAILED'].map((status) => (
                       <option key={status} value={status}>{status}</option>
                     ))}
                   </select>
                 </div>
 
-                {/* 2. Server Node Filter */}
+                {/* 3. Server Node Filter */}
                 {servers.length > 0 && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-text-muted/70 font-bold uppercase tracking-wider shrink-0 select-none">Server:</span>

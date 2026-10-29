@@ -7,7 +7,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
-import { registerUser, sendOtp, verifyOtp, forgotPassword, resetPassword } from './authApiService';
+import { registerUser, sendOtp, verifyOtp, forgotPassword, resetPassword, createDemoAccount } from './authApiService';
 
 /* ─────────────────────────────────────────────
    1.  REGISTER
@@ -86,6 +86,19 @@ export function useForgotPassword(options = {}) {
 export function useResetPassword(options = {}) {
   return useMutation({
     mutationFn: ({ email, otp, newPassword }) => resetPassword(email, otp, newPassword),
+    ...options,
+  });
+}
+
+/* ─────────────────────────────────────────────
+   7.  CREATE DEMO ACCOUNT
+   ───────────────────────────────────────────── */
+/**
+ * Mutation to instantly create an MT5 demo account (no login required).
+ */
+export function useCreateDemoAccount(options = {}) {
+  return useMutation({
+    mutationFn: (payload) => createDemoAccount(payload),
     ...options,
   });
 }

@@ -2,7 +2,7 @@
  * users/pages/MT5AccountReviewPage.jsx
  * Standalone review and administration page for a single MT5 account bridge.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, RefreshCw, KeyRound, Check,
@@ -12,6 +12,8 @@ import { PageShell } from '@/components/layout/PageShell';
 import { Card } from '@/components/ui/Card';
 import { StatusChip } from '@/components/ui';
 import { usersService } from '../services/userService';
+import { tradingAccountsService } from '@/admin/features/trading/services/tradingAccountsService';
+import { MaskedSecret, AccountTypeBadge } from '../components/UsersTable';
 
 /* ─── Premium Glassy Panel Primitive ─────────────────────────── */
 function DetailPanel({ children, className = '' }) {
@@ -101,6 +103,39 @@ export function MT5AccountReviewPage() {
     setLeverage(originalAccount.leverage || '1:100');
     setStatus(originalAccount.status || 'CONNECTED');
   }
+
+  // Load the real account record from the backend
+  useEffect(() => {
+    let cancelled = false;
+    tradingAccountsService.getByLogin(login).then((a) => {
+      if (cancelled || !a) return;
+      const type = (a.accountType || 'LIVE').toUpperCase();
+      const realStatus = type === 'DEMO' && a.status === 'LIVE' ? 'DEMO' : a.status;
+      setAccount((prev) => ({
+        ...prev,
+        login: a.accountid,
+        type,
+        userId: a.userId,
+        user: a.user?.name || a.contactName || 'Unknown',
+        email: a.user?.email || a.contactEmail || '',
+        phone: a.contactPhone || '',
+        country: a.user?.country || a.contactCountry || '',
+        server: a.server,
+        group: a.groupName,
+        leverage: a.leverage,
+        balance: a.balance,
+        equity: a.balance,
+        freeMargin: a.balance,
+        status: realStatus,
+        mPassword: a.mPassword,
+        iPassword: a.iPassword,
+        lastSync: a.updatedAt ? new Date(a.updatedAt).toISOString().replace('T', ' ').slice(0, 16) : prev.lastSync,
+      }));
+      setLeverage(a.leverage || '1:100');
+      setStatus(realStatus);
+    });
+    return () => { cancelled = true; };
+  }, [login]);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -208,12 +243,13 @@ export function MT5AccountReviewPage() {
                     Account #{account.login}
                   </h2>
                   <StatusChip value={status} />
+                  <AccountTypeBadge type={account.type} />
                   <span className="text-[10px] border border-border/25 rounded-[4px] px-1.5 py-0.5 text-text-muted font-mono bg-surface-elevated/40">
                     {account.server}
                   </span>
                 </div>
                 <p className="text-[13px] text-text-muted/80 font-medium mt-2 font-heading">
-                  Trader: <span className="text-text font-semibold">{account.user}</span> · <span className="font-mono text-text-muted/80">{account.userId}</span>
+                  Trader: <span className="text-text font-semibold">{account.user}</span> · <span className="font-mono text-text-muted/80">{account.userId || account.email || 'No CRM user'}</span>
                 </p>
               </div>
             </div>
@@ -252,9 +288,36 @@ export function MT5AccountReviewPage() {
                 <InfoRow label="Login ID" value={account.login} mono copyable />
                 <InfoRow label="Server" value={account.server} mono />
                 <InfoRow label="Group" value={account.group || 'retail_usd_std'} mono copyable />
-                <InfoRow label="Type" value={account.type || 'Live'} />
+                <InfoRow label="Type" value={account.type || 'LIVE'} accent={account.type === 'DEMO' ? 'var(--warning)' : undefined} />
+                <InfoRow label="Leverage" value={account.leverage} mono />
                 <InfoRow label="Currency" value={account.currency || 'USD'} />
                 <InfoRow label="Last Synced" value={account.lastSync} mono />
+                {!account.userId && account.email && (
+                  <>
+                    <InfoRow label="Contact Email" value={account.email} copyable />
+                    <InfoRow label="Contact Phone" value={account.phone} mono copyable />
+                    <InfoRow label="Country" value={account.country} />
+                  </>
+                )}
+              </div>
+            </DetailPanel>
+
+            {/* Credentials */}
+            <DetailPanel>
+              <PanelHead title="Credentials" subtitle="MT5 master and investor passwords." />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 select-none font-heading">Master Password</span>
+                  <div className="flex h-10 items-center rounded-[10px] border border-border/20 bg-bg/25 px-3">
+                    <MaskedSecret value={account.mPassword} />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 select-none font-heading">Investor Password</span>
+                  <div className="flex h-10 items-center rounded-[10px] border border-border/20 bg-bg/25 px-3">
+                    <MaskedSecret value={account.iPassword} />
+                  </div>
+                </div>
               </div>
             </DetailPanel>
 
@@ -328,7 +391,7 @@ export function MT5AccountReviewPage() {
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full h-10 rounded-[10px] border border-border/20 bg-bg text-[12.5px] font-semibold text-text px-3 outline-none focus:border-brand/45 transition-all cursor-pointer appearance-none"
                   >
-                    {['CONNECTED', 'DISCONNECTED', 'SYNC_DELAY', 'BLOCKED', 'READONLY'].map((opt) => (
+                    {[...new Set([status, 'CONNECTED', 'DISCONNECTED', 'SYNC_DELAY', 'BLOCKED', 'READONLY'])].filter(Boolean).map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>

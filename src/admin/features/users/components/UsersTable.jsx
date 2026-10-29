@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Ban, CheckCircle2, Edit2, Eye, Monitor, MoreHorizontal } from 'lucide-react';
+import { Ban, Check, CheckCircle2, Copy, Edit2, Eye, EyeOff, Monitor, MoreHorizontal } from 'lucide-react';
 import { MainTable } from '@/components/common/table';
 import { StatusBadge } from '@/components/ui';
 
@@ -268,6 +268,62 @@ export function UsersListTable({
   );
 }
 
+/** Masked secret with reveal + copy, used for MT5 passwords */
+export function MaskedSecret({ label, value }) {
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  if (!value) return <span className="text-text-muted/40 text-[11px]">—</span>;
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(String(value));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 select-none">
+      {label && <span className="w-3 text-[10px] font-bold text-text-muted/60">{label}</span>}
+      <span className="font-mono text-[11.5px] text-text min-w-[92px]">
+        {revealed ? value : '••••••••'}
+      </span>
+      <button
+        type="button"
+        title={revealed ? 'Hide' : 'Show'}
+        onClick={(e) => { e.stopPropagation(); setRevealed((r) => !r); }}
+        className="flex h-5 w-5 items-center justify-center rounded-[5px] text-text-muted/50 hover:text-brand hover:bg-brand/8 transition-all cursor-pointer"
+      >
+        {revealed ? <EyeOff size={11} /> : <Eye size={11} />}
+      </button>
+      <button
+        type="button"
+        title="Copy"
+        onClick={handleCopy}
+        className="flex h-5 w-5 items-center justify-center rounded-[5px] text-text-muted/50 hover:text-brand hover:bg-brand/8 transition-all cursor-pointer"
+      >
+        {copied ? <Check size={11} /> : <Copy size={11} />}
+      </button>
+    </div>
+  );
+}
+
+/** LIVE / DEMO account type badge */
+export function AccountTypeBadge({ type }) {
+  const isDemo = String(type).toUpperCase() === 'DEMO';
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-[5px] border font-mono text-[10.5px] font-bold tracking-wider select-none ${
+        isDemo
+          ? 'border-warning/25 bg-warning/[0.08] text-warning'
+          : 'border-positive/25 bg-positive/[0.08] text-positive'
+      }`}
+    >
+      {isDemo ? 'DEMO' : 'LIVE'}
+    </span>
+  );
+}
+
 export function UsersMt5Table({ tableState, onOpenUser, onOpenMt5 }) {
   const columns = [
     {
@@ -290,16 +346,35 @@ export function UsersMt5Table({ tableState, onOpenUser, onOpenMt5 }) {
       render: (_, row) => (
         <div>
           <div className="text-[13.5px] font-semibold text-text leading-tight">{row.user}</div>
-          <button
-            type="button"
-            className="text-[10.5px] font-bold text-brand uppercase tracking-wider hover:text-brand-hover transition-colors cursor-pointer mt-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenUser(row.userId, 'mt5-accounts');
-            }}
-          >
-            View Profile →
-          </button>
+          {row.userId ? (
+            <button
+              type="button"
+              className="text-[10.5px] font-bold text-brand uppercase tracking-wider hover:text-brand-hover transition-colors cursor-pointer mt-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenUser(row.userId, 'mt5-accounts');
+              }}
+            >
+              View Profile →
+            </button>
+          ) : (
+            <div className="text-[11px] text-text-muted mt-1">{row.email || 'No CRM user'}</div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      render: (_, row) => <AccountTypeBadge type={row.type} />
+    },
+    {
+      key: 'passwords',
+      label: 'Passwords',
+      render: (_, row) => (
+        <div className="flex flex-col gap-1">
+          <MaskedSecret label="M" value={row.mPassword} />
+          <MaskedSecret label="I" value={row.iPassword} />
         </div>
       )
     },
@@ -316,13 +391,16 @@ export function UsersMt5Table({ tableState, onOpenUser, onOpenMt5 }) {
       key: 'status',
       label: 'Status',
       render: (_, row) => {
-        const isFailed = row.status === 'DISCONNECTED';
-        const isWarning = row.status === 'SYNC_DELAY';
+        const isDemo = row.type === 'DEMO';
+        const isFailed = ['DISCONNECTED', 'FAILED'].includes(row.status);
+        const isWarning = row.status === 'SYNC_DELAY' || row.status === 'PENDING' || isDemo;
         const pulseColor = isFailed ? 'bg-negative shadow-[0_0_8px_var(--negative)]' : isWarning ? 'bg-warning shadow-[0_0_8px_var(--warning)]' : 'bg-positive shadow-[0_0_8px_var(--positive)]';
+        // A provisioned demo account reads as DEMO rather than LIVE
+        const displayStatus = isDemo && row.status === 'LIVE' ? 'DEMO' : row.status;
         return (
           <div className="flex items-center gap-2 select-none">
             <span className={`h-1.5 w-1.5 rounded-full ${pulseColor} animate-pulse shrink-0`} />
-            <StatusBadge status={row.status} />
+            <StatusBadge status={displayStatus} />
           </div>
         );
       }
@@ -378,8 +456,8 @@ export function UsersMt5Table({ tableState, onOpenUser, onOpenMt5 }) {
       emptyTitle="No MT5 accounts matched the current search."
       pagination={tableState}
       rowClassName={(row) => {
-        const isFailed = row.status === 'DISCONNECTED';
-        const isWarning = row.status === 'SYNC_DELAY';
+        const isFailed = ['DISCONNECTED', 'FAILED'].includes(row.status);
+        const isWarning = row.status === 'SYNC_DELAY' || row.type === 'DEMO';
 
         if (isFailed) return 'hover:bg-negative/[0.02] hover:border-l-negative hover:border-l-3 transition-all duration-150';
         if (isWarning) return 'hover:bg-warning/[0.02] hover:border-l-warning hover:border-l-3 transition-all duration-150';

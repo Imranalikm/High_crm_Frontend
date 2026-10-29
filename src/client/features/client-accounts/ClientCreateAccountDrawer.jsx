@@ -26,8 +26,8 @@ export function ClientCreateAccountDrawer({ open, onClose, onSave }) {
     try {
       const response = await apiClient.get('/crm-groups');
       const groups = response?.data || response || [];
-      // Filter or format as needed. Ensure array.
-      const arr = Array.isArray(groups) ? groups : [];
+      // Demo groups are only for the public demo flow, never live accounts
+      const arr = (Array.isArray(groups) ? groups : []).filter((g) => g?.groupType !== 'Demo');
       setCrmGroups(arr);
       
       if (arr.length > 0) {

@@ -114,6 +114,22 @@ export async function resetPassword(email, otp, newPassword) {
 }
 
 /**
+ * Instantly create an MT5 demo account (public, no CRM user).
+ *
+ * @param {{ name: string, email: string, phone: string, country: string }} payload
+ * @returns {{ login: string, server: string, groupName: string, leverage: string, balance: number, mPassword: string, iPassword: string }}
+ */
+export async function createDemoAccount(payload) {
+  const data = await apiFetch('/mt5-accounts/demo', {
+    name: payload.name,
+    email: payload.email,
+    phone: payload.phone,
+    country: payload.country,
+  });
+  return data?.data ?? data;
+}
+
+/**
  * Rotate tokens using a refresh token.
  *
  * @param {string} refreshToken

@@ -22,9 +22,12 @@ import {
   KeyRound,
   RefreshCw,
   Loader2,
+  Copy,
+  Check,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
-import { useRegisterUser, useSendOtp, useVerifyOtp, useLoginUser, useForgotPassword, useResetPassword } from '../useAuthHooks';
+import { useRegisterUser, useSendOtp, useVerifyOtp, useLoginUser, useForgotPassword, useResetPassword, useCreateDemoAccount } from '../useAuthHooks';
 import { COUNTRIES } from '@/config/constants/COUNTRIES';
 
 /* --------------------------------------------------------------------------
@@ -54,6 +57,16 @@ const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional(),
+});
+
+const demoSchema = z.object({
+  name: z.string().min(1, 'Full name is required'),
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+  countryCode: z.string().min(1, 'Country code is required'),
+  phone: z.string()
+    .min(1, 'Phone number is required')
+    .regex(/^\d{7,15}$/, 'Phone number must be 7-15 digits'),
+  country: z.string().min(1, 'Country is required'),
 });
 
 const signupSchema = z
@@ -725,7 +738,7 @@ function PasswordInput({
 /* --------------------------------------------------------------------------
    LOGIN FORM (CRM MODERN)
 -------------------------------------------------------------------------- */
-const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPassword }, ref) => {
+const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPassword, onCreateDemo }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const {
@@ -817,6 +830,33 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPa
           )}
         </button>
       </form>
+
+      {/* Instant demo account */}
+      <div style={{ marginTop: 14 }}>
+        <div className="auth-sep">or</div>
+        <button
+          type="button"
+          onClick={onCreateDemo}
+          style={{
+            marginTop: 10,
+            width: '100%',
+            height: 40,
+            borderRadius: 11,
+            border: '1px solid rgba(251,191,36,0.3)',
+            background: 'rgba(251,191,36,0.07)',
+            color: '#fbbf24',
+            fontSize: 13,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            cursor: 'pointer',
+          }}
+        >
+          <BarChart3 size={14} /> Create Demo Account
+        </button>
+      </div>
 
       {/* SSO & Demo Access */}
       <div style={{ marginTop: 10, display: 'none' }}>
@@ -1401,6 +1441,197 @@ const ResetSuccessPanel = React.forwardRef(({ isActive, onContinue, shake }, ref
 });
 
 /* --------------------------------------------------------------------------
+   DEMO ACCOUNT FORM (INSTANT MT5 DEMO, NO LOGIN)
+-------------------------------------------------------------------------- */
+function DemoCredentialRow({ label, value, accent }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(String(value));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>{label}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 600, color: accent || '#e2e8f8', userSelect: 'all' }}>{value}</span>
+        <button type="button" onClick={handleCopy} title="Copy" style={{ background: 'none', border: 'none', color: copied ? '#34d399' : 'rgba(255,255,255,0.35)', cursor: 'pointer', display: 'flex', padding: 2 }}>
+          {copied ? <Check size={12} /> : <Copy size={12} />}
+        </button>
+      </span>
+    </div>
+  );
+}
+
+const DemoAccountForm = React.forwardRef(({ onError, shake, isActive, onBack }, ref) => {
+  const [created, setCreated] = useState(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    control,
+    setValue,
+    reset,
+  } = useForm({
+    resolver: zodResolver(demoSchema),
+    defaultValues: { name: '', email: '', phone: '', country: '', countryCode: '' },
+  });
+
+  const countryValue = watch('country');
+
+  // Auto-set dial code when country changes
+  useEffect(() => {
+    if (countryValue) {
+      const found = COUNTRIES.find(c => c.name === countryValue);
+      if (found) {
+        setValue('countryCode', found.dialCode);
+      }
+    }
+  }, [countryValue, setValue]);
+
+  const { mutate: doCreateDemo, isPending: creating } = useCreateDemoAccount({
+    onSuccess: (data) => {
+      setCreated(data);
+      onError('');
+    },
+    onError: (err) => {
+      onError(err.message || 'Could not create demo account. Please try again.');
+    },
+  });
+
+  const onSubmit = (data) => {
+    onError('');
+    doCreateDemo({
+      name: data.name.trim(),
+      email: data.email.toLowerCase().trim(),
+      country: data.country,
+      phone: data.countryCode + data.phone,
+    });
+  };
+
+  const handleBack = () => {
+    setCreated(null);
+    reset();
+    onError('');
+    onBack();
+  };
+
+  return (
+    <div ref={ref} className={`auth-panel ${isActive ? 'visible' : 'slide-out-right'}${shake ? ' auth-shake' : ''}`}>
+      {!created ? (
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ textAlign: 'center', marginBottom: 6 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Open a Demo Account</div>
+            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>
+              Get an MT5 demo account instantly. Credentials are sent to your email.
+            </div>
+          </div>
+
+          <div>
+            <label className="auth-label">Full name</label>
+            <div className="auth-input-wrap">
+              <div className="auth-input-icon"><User size={14} /></div>
+              <input {...register('name')} placeholder="Alex Morgan" className={`auth-input ${errors.name ? 'has-error' : ''}`} />
+            </div>
+            {errors.name && <div className="auth-error-msg"><AlertCircle size={11} />{errors.name.message}</div>}
+          </div>
+
+          <div>
+            <label className="auth-label">Email address</label>
+            <div className="auth-input-wrap">
+              <div className="auth-input-icon"><Mail size={14} /></div>
+              <input {...register('email')} type="email" placeholder="alex@example.com" className={`auth-input ${errors.email ? 'has-error' : ''}`} />
+            </div>
+            {errors.email && <div className="auth-error-msg"><AlertCircle size={11} />{errors.email.message}</div>}
+          </div>
+
+          <div>
+            <label className="auth-label">Country</label>
+            <div className="auth-input-wrap">
+              <div className="auth-input-icon"><Globe size={14} /></div>
+              <Controller
+                control={control}
+                name="country"
+                render={({ field }) => (
+                  <CountrySelector value={field.value} onChange={field.onChange} error={errors.country} />
+                )}
+              />
+            </div>
+            {errors.country && <div className="auth-error-msg"><AlertCircle size={11} />{errors.country.message}</div>}
+          </div>
+
+          <div>
+            <label className="auth-label">Phone Number</label>
+            <div style={{ display: 'flex' }}>
+              <Controller
+                control={control}
+                name="countryCode"
+                render={({ field }) => (
+                  <DialCodeSelector value={field.value} onChange={field.onChange} error={errors.countryCode} />
+                )}
+              />
+              <input
+                {...register('phone')}
+                placeholder="Enter phone number"
+                className={`auth-input ${errors.phone ? 'has-error' : ''}`}
+                style={{ borderRadius: '0 12px 12px 0', paddingLeft: '12px' }}
+              />
+            </div>
+            {errors.phone && <div className="auth-error-msg"><AlertCircle size={11} />{errors.phone.message}</div>}
+            {errors.countryCode && !errors.phone && <div className="auth-error-msg"><AlertCircle size={11} />{errors.countryCode.message}</div>}
+          </div>
+
+          <button type="submit" disabled={creating} className="auth-btn-primary" style={{ marginTop: 4 }}>
+            <div className="btn-shimmer" />
+            {creating ? (
+              <><Loader2 size={15} style={{ animation: 'authSpin 0.7s linear infinite' }} /> Creating demo account...</>
+            ) : (
+              <>Create Demo Account <ArrowRight size={15} /></>
+            )}
+          </button>
+          <button type="button" onClick={handleBack} style={{ background: 'none', border: 'none', fontSize: 12, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontWeight: 600, marginTop: 4 }}>
+            ← Back to Login
+          </button>
+        </form>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{
+              width: 46, height: 46, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(52,211,153,0.05))',
+              border: '1px solid rgba(52,211,153,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 10,
+            }}>
+              <CheckCircle2 size={24} color="#34d399" />
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Your Demo Account is Ready</div>
+            <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+              Save these details. They have also been sent to your email.
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '6px 14px' }}>
+            <DemoCredentialRow label="MT5 Login" value={created.login} />
+            <DemoCredentialRow label="Master Password" value={created.mPassword} accent="#fbbf24" />
+            <DemoCredentialRow label="Investor Password" value={created.iPassword} />
+            <DemoCredentialRow label="Server" value={created.server} />
+            <DemoCredentialRow label="Leverage" value={created.leverage} />
+          </div>
+
+          <button type="button" onClick={handleBack} className="auth-btn-primary">
+            <div className="btn-shimmer" />
+            Back to Sign In <ArrowRight size={15} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+});
+
+/* --------------------------------------------------------------------------
    MAIN AUTH FORM COMPONENT (EXPORTED)
 -------------------------------------------------------------------------- */
 export default function AuthForm({ mode, onModeChange }) {
@@ -1408,7 +1639,7 @@ export default function AuthForm({ mode, onModeChange }) {
   const [shake, setShake] = useState(false);
   const [sessionId] = useState(() => 'SES—' + Math.random().toString(36).slice(2, 10).toUpperCase());
 
-  const [authFlow, setAuthFlow] = useState('main'); // 'main' | 'forgot' | 'reset' | 'reset-success'
+  const [authFlow, setAuthFlow] = useState('main'); // 'main' | 'forgot' | 'reset' | 'reset-success' | 'demo'
   const [resetEmail, setResetEmail] = useState('');
 
   const loginRef = useRef(null);
@@ -1416,6 +1647,7 @@ export default function AuthForm({ mode, onModeChange }) {
   const forgotRef = useRef(null);
   const resetRef = useRef(null);
   const resetSuccessRef = useRef(null);
+  const demoRef = useRef(null);
   const [containerHeight, setContainerHeight] = useState(mode === 'login' ? 220 : 490);
   const [animateHeight, setAnimateHeight] = useState(false);
 
@@ -1426,7 +1658,7 @@ export default function AuthForm({ mode, onModeChange }) {
   }, [mode]);
 
   useEffect(() => {
-    const activeRef = authFlow === 'forgot' ? forgotRef : authFlow === 'reset' ? resetRef : authFlow === 'reset-success' ? resetSuccessRef : mode === 'login' ? loginRef : signupRef;
+    const activeRef = authFlow === 'forgot' ? forgotRef : authFlow === 'reset' ? resetRef : authFlow === 'reset-success' ? resetSuccessRef : authFlow === 'demo' ? demoRef : mode === 'login' ? loginRef : signupRef;
     if (activeRef.current) {
       const updateHeight = () => {
         const height = activeRef.current.offsetHeight;
@@ -1516,11 +1748,12 @@ export default function AuthForm({ mode, onModeChange }) {
           height: `${containerHeight}px`,
           transition: animateHeight ? 'height 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
         }}>
-          <LoginForm ref={loginRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'login' && authFlow === 'main'} onForgotPassword={() => setAuthFlow('forgot')} />
+          <LoginForm ref={loginRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'login' && authFlow === 'main'} onForgotPassword={() => setAuthFlow('forgot')} onCreateDemo={() => { setError(''); setAuthFlow('demo'); }} />
           <RegisterForm ref={signupRef} onError={handleError} shake={shake} mode={mode} isActive={mode === 'signup' && authFlow === 'main'} />
           <ForgotPasswordForm ref={forgotRef} onError={handleError} shake={shake} isActive={authFlow === 'forgot'} onSent={(email) => { setResetEmail(email); setAuthFlow('reset'); }} onBack={() => setAuthFlow('main')} />
           <ResetPasswordForm ref={resetRef} onError={handleError} shake={shake} isActive={authFlow === 'reset'} email={resetEmail} onSuccess={() => setAuthFlow('reset-success')} onBack={() => setAuthFlow('main')} />
           <ResetSuccessPanel ref={resetSuccessRef} shake={shake} isActive={authFlow === 'reset-success'} onContinue={() => setAuthFlow('main')} />
+          <DemoAccountForm ref={demoRef} onError={handleError} shake={shake} isActive={authFlow === 'demo'} onBack={() => setAuthFlow('main')} />
         </div>
 
         {/* Footer security */}

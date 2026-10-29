@@ -22,7 +22,9 @@ export const STATUS_COLORS = {
   RESOLVED:  'var(--positive)',
   PASS:      'var(--positive)',
   CLEAR:     'var(--positive)',
+  LIVE:      'var(--positive)',
   // ── Warning ────────────────────────────────────
+  DEMO:        'var(--warning)',
   PENDING:     'var(--warning)',
   REVIEW:      'var(--warning)',
   PAUSED:      'var(--warning)',

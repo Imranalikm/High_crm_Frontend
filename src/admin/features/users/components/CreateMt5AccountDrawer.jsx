@@ -115,7 +115,8 @@ export function CreateMt5AccountDrawer({ open, onClose, onSave }) {
       ]);
       setUsers(fetchedUsers || []);
       
-      const groups = Array.isArray(fetchedGroups) ? fetchedGroups : (fetchedGroups?.data || []);
+      const groups = (Array.isArray(fetchedGroups) ? fetchedGroups : (fetchedGroups?.data || []))
+        .filter((g) => g?.groupType !== 'Demo');
       setCrmGroups(groups);
       
       // Set defaults to avoid the "Please fill all fields" issue

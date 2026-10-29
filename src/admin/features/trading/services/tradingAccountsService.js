@@ -11,6 +11,16 @@ export const tradingAccountsService = {
     }
   },
 
+  async getByLogin(login) {
+    try {
+      const response = await apiClient.get(`/mt5-accounts/${encodeURIComponent(login)}`);
+      return response?.data || null;
+    } catch (error) {
+      console.warn('Failed to fetch MT5 account:', error);
+      return null;
+    }
+  },
+
   async create(payload) {
     // payload should contain: { userId, groupName, leverage }
     const response = await apiClient.post('/mt5-accounts', payload);
