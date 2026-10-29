@@ -627,6 +627,16 @@ export const adminRouteModules = [
         ],
       },
       {
+        id: 'settings-demo-accounts',
+        path: 'settings/demo-accounts',
+        pageKey: 'settings/settings-workspace',
+        navLabel: 'Demo Accounts',
+        permission: PERMISSIONS.settings.view,
+        meta: [
+          { pattern: '/admin/settings/demo-accounts', title: 'Demo Account Settings', section: 'Settings', permission: PERMISSIONS.settings.view },
+        ],
+      },
+      {
         id: 'settings-notifications',
         path: 'settings/notifications',
         pageKey: 'settings/settings-workspace',

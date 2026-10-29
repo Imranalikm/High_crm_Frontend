@@ -21,6 +21,12 @@ export const tradingAccountsService = {
     }
   },
 
+  // Add (positive) or deduct (negative) balance on a DEMO account; throws with server message
+  async adjustDemoBalance(login, amount, comment) {
+    const response = await apiClient.post(`/mt5-accounts/${encodeURIComponent(login)}/demo-balance`, { amount, comment });
+    return response?.data;
+  },
+
   async create(payload) {
     // payload should contain: { userId, groupName, leverage }
     const response = await apiClient.post('/mt5-accounts', payload);

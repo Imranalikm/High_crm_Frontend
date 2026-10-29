@@ -173,6 +173,35 @@ export function MT5AccountReviewPage() {
     }, 1000);
   };
 
+  const [demoAmount, setDemoAmount] = useState('');
+  const [demoAdjusting, setDemoAdjusting] = useState(false);
+  const [demoError, setDemoError] = useState('');
+
+  const handleDemoBalance = async (direction) => {
+    const value = Math.abs(parseFloat(demoAmount));
+    if (!value) {
+      setDemoError('Enter an amount greater than 0.');
+      return;
+    }
+    setDemoError('');
+    setDemoAdjusting(true);
+    try {
+      const amount = direction === 'add' ? value : -value;
+      const result = await tradingAccountsService.adjustDemoBalance(account.login, amount);
+      setAccount((prev) => ({ ...prev, balance: result.balance, equity: result.balance, freeMargin: result.balance }));
+      setLocalAudit((prev) => [
+        ...prev,
+        { action: direction === 'add' ? 'Demo balance added' : 'Demo balance deducted', by: 'admin', ts: new Date().toISOString().replace('T', ' ').slice(0, 16), note: `Amount: ${amount} | New balance: ${result.balance}` }
+      ]);
+      setDemoAmount('');
+      triggerToast(`Demo balance ${direction === 'add' ? 'added' : 'deducted'} on #${account.login}`);
+    } catch (err) {
+      setDemoError(err.message || 'Failed to adjust demo balance.');
+    } finally {
+      setDemoAdjusting(false);
+    }
+  };
+
   const handleResetPassword = () => {
     setLocalAudit(prev => [
       ...prev,
@@ -367,6 +396,48 @@ export function MT5AccountReviewPage() {
 
           {/* Sidebar controls */}
           <div className="space-y-5">
+            {/* Demo balance top-up (demo accounts only) */}
+            {account.type === 'DEMO' && (
+              <DetailPanel>
+                <PanelHead title="Demo Balance" subtitle="Add or deduct virtual funds via MT5." />
+                <div className="p-5 space-y-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 select-none font-heading">Amount (USD)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={demoAmount}
+                      onChange={(e) => { setDemoAmount(e.target.value); setDemoError(''); }}
+                      placeholder="10000"
+                      className="w-full h-10 rounded-[10px] border border-border/20 bg-bg text-[13px] font-mono text-text px-3 outline-none focus:border-brand/45 transition-all"
+                    />
+                  </div>
+                  {demoError && <p className="text-[11.5px] text-negative font-heading">{demoError}</p>}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDemoBalance('add')}
+                      disabled={demoAdjusting}
+                      className="h-9 flex items-center justify-center rounded-[6px] border border-positive/25 bg-positive/10 text-positive hover:bg-positive/15 text-[11px] font-bold uppercase tracking-wider font-heading active:scale-[0.97] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {demoAdjusting ? 'Working…' : 'Add Balance'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDemoBalance('deduct')}
+                      disabled={demoAdjusting}
+                      className="h-9 flex items-center justify-center rounded-[6px] border border-negative/20 bg-negative/5 text-negative hover:bg-negative/10 text-[11px] font-bold uppercase tracking-wider font-heading active:scale-[0.97] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Deduct
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-text-muted/60 font-heading leading-snug">
+                    Not recorded in Finance → Deposits.
+                  </p>
+                </div>
+              </DetailPanel>
+            )}
+
             {/* Dealing Desk Controls */}
             <DetailPanel>
               <PanelHead title="Settings" subtitle="Manage status and leverage." />

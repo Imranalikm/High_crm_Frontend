@@ -25,6 +25,7 @@ const pathToSection = {
   '/settings/payment-gateway': 'gateways',
   '/settings/kyc': 'kyc',
   '/settings/trading': 'trading',
+  '/settings/demo-accounts': 'demo',
   '/settings/notifications': 'notifications',
   '/settings/system': 'system',
 };
@@ -35,6 +36,7 @@ const sectionToPath = {
   'gateways': '/settings/payment-gateway',
   'kyc': '/settings/kyc',
   'trading': '/settings/trading',
+  'demo': '/settings/demo-accounts',
   'notifications': '/settings/notifications',
   'system': '/settings/system',
 };

@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/auth/AuthContext';
 import { useRegisterUser, useSendOtp, useVerifyOtp, useLoginUser, useForgotPassword, useResetPassword, useCreateDemoAccount } from '../useAuthHooks';
 import { COUNTRIES } from '@/config/constants/COUNTRIES';
+import { fetchDemoStatus } from '../authApiService';
 
 /* --------------------------------------------------------------------------
    PASSWORD STRENGTH UTILITY
@@ -740,6 +741,15 @@ function PasswordInput({
 -------------------------------------------------------------------------- */
 const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPassword, onCreateDemo }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDemoStatus().then((enabled) => {
+      if (!cancelled) setDemoEnabled(enabled);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const navigate = useNavigate();
   const {
     register,
@@ -831,8 +841,8 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPa
         </button>
       </form>
 
-      {/* Instant demo account */}
-      <div style={{ marginTop: 14 }}>
+      {/* Instant demo account (hidden when disabled in admin Demo Account settings) */}
+      {demoEnabled && <div style={{ marginTop: 14 }}>
         <div className="auth-sep">or</div>
         <button
           type="button"
@@ -856,7 +866,7 @@ const LoginForm = React.forwardRef(({ onError, shake, mode, isActive, onForgotPa
         >
           <BarChart3 size={14} /> Create Demo Account
         </button>
-      </div>
+      </div>}
 
       {/* SSO & Demo Access */}
       <div style={{ marginTop: 10, display: 'none' }}>

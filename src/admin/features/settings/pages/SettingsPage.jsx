@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Activity, Key, CreditCard, ShieldCheck, BarChart2, Bell } from 'lucide-react';
+import { Settings, Activity, Key, CreditCard, ShieldCheck, BarChart2, Bell, FlaskConical } from 'lucide-react';
 
 import { usePlatformSettingsWorkspace } from '../hooks/usePlatformSettingsWorkspace';
 import { PageShell } from '@/components/layout/PageShell';
@@ -12,6 +12,7 @@ import { KycSettingsPage } from './KycSettingsPage';
 import { TradingSettingsPage } from './TradingSettingsPage';
 import { NotificationSettingsPage } from './NotificationSettingsPage';
 import { SystemSettingsPage } from './SystemSettingsPage';
+import { DemoAccountSettingsPage } from './DemoAccountSettingsPage';
 
 // Standardized list of main settings category tabs
 const MAIN_SECTIONS = [
@@ -20,6 +21,7 @@ const MAIN_SECTIONS = [
   { id: 'gateways', label: 'Payment Gateways', Icon: CreditCard },
   { id: 'kyc', label: 'KYC Settings', Icon: ShieldCheck },
   { id: 'trading', label: 'Trading Settings', Icon: BarChart2 },
+  { id: 'demo', label: 'Demo Accounts', Icon: FlaskConical },
   { id: 'notifications', label: 'Notifications', Icon: Bell },
   { id: 'system', label: 'System', Icon: Settings },
 ];
@@ -30,6 +32,7 @@ const SECTION_TITLES = {
   gateways: 'Payment Gateways',
   kyc: 'KYC Settings',
   trading: 'Trading Settings',
+  demo: 'Demo Account Settings',
   notifications: 'Notification Settings',
   system: 'System Settings',
 };
@@ -88,6 +91,8 @@ export function SettingsPage() {
             resetCurrentSection={ws.resetCurrentSection}
           />
         );
+      case 'demo':
+        return <DemoAccountSettingsPage />;
       case 'notifications':
         return (
           <NotificationSettingsPage

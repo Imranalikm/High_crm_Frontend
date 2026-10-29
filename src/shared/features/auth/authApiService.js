@@ -130,6 +130,24 @@ export async function createDemoAccount(payload) {
 }
 
 /**
+ * Whether public demo account registration is enabled by admin.
+ * Defaults to enabled if the status can't be fetched (the create endpoint still enforces it).
+ *
+ * @returns {Promise<boolean>}
+ */
+export async function fetchDemoStatus() {
+  try {
+    const response = await fetch(`${BASE_URL}/mt5-accounts/demo/status`, {
+      headers: { Accept: 'application/json' },
+    });
+    const data = await response.json();
+    return data?.data?.enabled !== false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Rotate tokens using a refresh token.
  *
  * @param {string} refreshToken
