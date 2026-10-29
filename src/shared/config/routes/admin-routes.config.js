@@ -1,6 +1,7 @@
 import {
   Copy,
   FileText,
+  FlaskConical,
   LayoutDashboard,
   LifeBuoy,
   LineChart,
@@ -468,6 +469,25 @@ export const adminRouteModules = [
     ],
   },
   {
+    id: 'demo-accounts',
+    label: 'Demo Account Settings',
+    icon: FlaskConical,
+    navSection: 'management',
+    permission: PERMISSIONS.settings.view,
+    defaultPath: '/admin/settings/demo-accounts',
+    routes: [
+      {
+        id: 'settings-demo-accounts',
+        path: 'settings/demo-accounts',
+        pageKey: 'settings/settings-workspace',
+        permission: PERMISSIONS.settings.view,
+        meta: [
+          { pattern: '/admin/settings/demo-accounts', title: 'Demo Account Settings', section: 'Demo Accounts', permission: PERMISSIONS.settings.view },
+        ],
+      },
+    ],
+  },
+  {
     id: 'reports',
     label: 'Reports',
     icon: FileText,
@@ -624,16 +644,6 @@ export const adminRouteModules = [
         permission: PERMISSIONS.settings.view,
         meta: [
           { pattern: '/admin/settings/trading', title: 'Trading Settings', section: 'Settings', permission: PERMISSIONS.settings.view },
-        ],
-      },
-      {
-        id: 'settings-demo-accounts',
-        path: 'settings/demo-accounts',
-        pageKey: 'settings/settings-workspace',
-        navLabel: 'Demo Accounts',
-        permission: PERMISSIONS.settings.view,
-        meta: [
-          { pattern: '/admin/settings/demo-accounts', title: 'Demo Account Settings', section: 'Settings', permission: PERMISSIONS.settings.view },
         ],
       },
       {
