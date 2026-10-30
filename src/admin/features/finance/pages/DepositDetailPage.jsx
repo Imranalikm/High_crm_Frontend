@@ -25,6 +25,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { STATUS_CLR, RISK_CLR, depositsData } from '@/config/constants/finance/mockData';
 import { MethodBadge } from '../components/FinanceComponents';
 import { adminFinanceApi } from '../services/finance.api';
+import { getUploadUrl } from '@/utils/uploadUrl';
 
 /* ─────────────────────────────────────────────────────────
    AUDIT TRAIL
@@ -273,6 +274,7 @@ export function DepositDetailPage() {
           risk: 'LOW',
           reviewedBy: d.status !== 'pending' ? 'sys_admin_01' : 'Pending',
           note: d.note,
+          proofUrl: getUploadUrl(d.depositProof),
           user: {
             name: d.recipient?.name || 'Unknown',
             uid: `U-${d.createdFor}`,
@@ -576,6 +578,37 @@ export function DepositDetailPage() {
                 />
                 <Field label="Reviewer" value={record.reviewedBy || 'Pending'} />
               </div>
+            </div>
+
+            {/* Payment Proof */}
+            <div className="rounded-[13px] border border-border/18 bg-surface-elevated shadow-card-subtle p-5">
+              <SectionHead
+                icon={FileText}
+                title="Payment Proof"
+                right={record.proofUrl && (
+                  <a
+                    href={record.proofUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 h-7 px-3 rounded-[7px] border border-border/20 text-[11px] font-semibold text-text-muted hover:text-text transition-all"
+                  >
+                    <Download size={11} /> Open
+                  </a>
+                )}
+              />
+              {!record.proofUrl ? (
+                <p className="text-[12px] text-text-muted/70">No payment proof was uploaded for this deposit.</p>
+              ) : /\.pdf($|\?)/i.test(record.proofUrl) ? (
+                <iframe src={record.proofUrl} title="Payment proof" className="w-full h-[480px] rounded-[9px] border border-border/12 bg-bg/50" />
+              ) : (
+                <a href={record.proofUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={record.proofUrl}
+                    alt="Payment proof"
+                    className="max-h-[480px] w-auto mx-auto rounded-[9px] border border-border/12 bg-bg/50 object-contain"
+                  />
+                </a>
+              )}
             </div>
 
             {/* Client Intelligence */}

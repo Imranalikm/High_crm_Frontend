@@ -25,6 +25,7 @@ import { StatusBadge, SecureImage } from '@/components/ui';
 import { DrawerField, DrawerFormGrid, DrawerSection, SelectField } from '@/components/common/drawer';
 import { usersService } from '../services/userService';
 import { kycService } from '../services/kycService';
+import { getUploadUrl } from '@/utils/uploadUrl';
 import { PaymentMethodsTab } from './PaymentMethodsTab';
 
 /* ─────────────────────────────────────────────────────────────
@@ -181,20 +182,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
     }
   }, [activeTab, kycId, user.id]);
 
-  const getImageUrl = (path) => {
-    if (!path) return null;
-    let stringPath = typeof path === 'object' ? (path.url || path.path || path.location || path.filePath || '') : path;
-    if (!stringPath) return null;
-    if (stringPath.startsWith('http://') || stringPath.startsWith('https://') || stringPath.startsWith('blob:') || stringPath.startsWith('/mock_')) {
-      return stringPath;
-    }
-    let baseUrl = import.meta.env.VITE_API_URL || 'https://account.smatams.com/api';
-    if (baseUrl.endsWith('/')) {
-      baseUrl = baseUrl.slice(0, -1);
-    }
-    baseUrl = baseUrl.replace(/\/api$/, '');
-    return `${baseUrl}${stringPath.startsWith('/') ? '' : '/'}${stringPath}`;
-  };
+  const getImageUrl = getUploadUrl;
 
   const raw = kycRecord?.raw || {};
   const idDocType = raw.idDocType || raw.identityDocument?.type || 'passport';

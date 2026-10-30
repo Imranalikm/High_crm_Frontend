@@ -36,6 +36,7 @@ import { tradingAccountsService } from '@/features/trading/services/tradingAccou
 import { userDetailTabs } from '@/config/constants/USER_TABS';
 import { AddUserDrawer } from '../components/AddUserDrawer';
 import { buildUserDraft } from '@/utils/userDraftUtils';
+import { getUploadUrl } from '@/utils/uploadUrl';
 import { useDrawerState } from '@/hooks/useDrawerState';
 import { Mt5AccountDrawer } from '../components/UserDrawers';
 
@@ -64,20 +65,7 @@ function getAvatarStyle(name = '?') {
   };
 }
 
-const getImageUrl = (path) => {
-  if (!path) return null;
-  let stringPath = typeof path === 'object' ? (path.url || path.path || path.location || path.filePath || '') : path;
-  if (!stringPath) return null;
-  if (stringPath.startsWith('http://') || stringPath.startsWith('https://') || stringPath.startsWith('blob:') || stringPath.startsWith('/mock_')) {
-    return stringPath;
-  }
-  let baseUrl = import.meta.env.VITE_API_URL || 'https://account.smatams.com/api';
-  if (baseUrl.endsWith('/')) {
-    baseUrl = baseUrl.slice(0, -1);
-  }
-  baseUrl = baseUrl.replace(/\/api$/, '');
-  return `${baseUrl}${stringPath.startsWith('/') ? '' : '/'}${stringPath}`;
-};
+const getImageUrl = getUploadUrl;
 
 /* ── Inline contact row ── */
 // eslint-disable-next-line no-unused-vars

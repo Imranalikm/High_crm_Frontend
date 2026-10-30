@@ -7,39 +7,10 @@ import {
 import { MainDrawer } from '@/components/common/drawer';
 import { DrawerSection, DrawerField, DrawerFormGrid, DrawerFooter } from '@/components/common/drawer';
 import { SecureImage } from '@/components/ui';
+import { getUploadUrl } from '@/utils/uploadUrl';
 
 /* ── Helper to resolve image URLs securely ── */
-const getImageUrl = (path) => {
-  if (!path) return null;
-  
-  let stringPath = '';
-  if (typeof path === 'string') {
-    stringPath = path;
-  } else if (typeof path === 'object') {
-    if (path instanceof File) {
-      try {
-        return URL.createObjectURL(path);
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
-    }
-    stringPath = path.url || path.path || path.location || path.filePath || '';
-  }
-  
-  if (!stringPath) return null;
-  
-  if (stringPath.startsWith('http://') || stringPath.startsWith('https://') || stringPath.startsWith('blob:')) {
-    return stringPath;
-  }
-  
-  let baseUrl = import.meta.env.VITE_API_URL || 'https://account.smatams.com/api';
-  if (baseUrl.endsWith('/')) {
-    baseUrl = baseUrl.slice(0, -1);
-  }
-  baseUrl = baseUrl.replace(/\/api$/, '');
-  return `${baseUrl}${stringPath.startsWith('/') ? '' : '/'}${stringPath}`;
-};
+const getImageUrl = getUploadUrl;
 
 /* ── Standardize backend flat structure and frontend nested draft structure ── */
 const parseSubmittedKyc = (rawKyc) => {

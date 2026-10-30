@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Ban, Check, CheckCircle2, Copy, Edit2, Eye, EyeOff, Monitor, MoreHorizontal } from 'lucide-react';
 import { MainTable } from '@/components/common/table';
 import { StatusBadge } from '@/components/ui';
+import { getUploadUrl } from '@/utils/uploadUrl';
 
 function getAvatarStyle(name = '?') {
   const seed = name.charCodeAt(0) * 37;
@@ -13,20 +14,7 @@ function getAvatarStyle(name = '?') {
   };
 }
 
-const getImageUrl = (path) => {
-  if (!path) return null;
-  let stringPath = typeof path === 'object' ? (path.url || path.path || path.location || path.filePath || '') : path;
-  if (!stringPath) return null;
-  if (stringPath.startsWith('http://') || stringPath.startsWith('https://') || stringPath.startsWith('blob:') || stringPath.startsWith('/mock_')) {
-    return stringPath;
-  }
-  let baseUrl = import.meta.env.VITE_API_URL || 'https://account.smatams.com/api';
-  if (baseUrl.endsWith('/')) {
-    baseUrl = baseUrl.slice(0, -1);
-  }
-  baseUrl = baseUrl.replace(/\/api$/, '');
-  return `${baseUrl}${stringPath.startsWith('/') ? '' : '/'}${stringPath}`;
-};
+const getImageUrl = getUploadUrl;
 
 function UserAvatar({ name, avatar }) {
   if (avatar) {

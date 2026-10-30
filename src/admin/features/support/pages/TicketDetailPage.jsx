@@ -30,12 +30,8 @@ import {
   CatTag,
   SupportToast,
 } from '@/features/support/components/SupportComponents';
+import { getUploadUrl } from '@/utils/uploadUrl';
 
-/* ── Helper: base URL for uploads ─────────────────────────────── */
-const getUploadBase = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || '/api';
-  return apiUrl.replace('/api', '');
-};
 
 /* ── Panel primitives ─────────────────────────────────────────── */
 function Panel({ children, className = '' }) {
@@ -79,8 +75,7 @@ function MetaRow({ label, value }) {
 
 /* ── Attachment display in messages ───────────────────────────── */
 function AttachmentPreview({ attachment }) {
-  const base = getUploadBase();
-  const url = `${base}${attachment.url}`;
+  const url = getUploadUrl(attachment.url);
   const isImage = attachment.mimetype?.startsWith('image/');
   const sizeStr = attachment.size
     ? attachment.size > 1024 * 1024

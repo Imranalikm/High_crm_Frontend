@@ -1,5 +1,6 @@
 import React from 'react';
 import { Paperclip } from 'lucide-react';
+import { getUploadUrl } from '@/utils/uploadUrl';
 
 function Avatar({ initials, isAgent }) {
   return (
@@ -51,8 +52,7 @@ export function TicketTimeline({ messages = [] }) {
               {msg.attachments?.length > 0 && (
                 <div className="mt-2 space-y-1.5 w-full">
                   {msg.attachments.map((att, idx) => {
-                    const base = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5000';
-                    const url = `${base}${att.url}`;
+                    const url = getUploadUrl(att.url);
                     const isImage = att.mimetype?.startsWith('image/');
                     const sizeStr = att.size
                       ? att.size > 1024 * 1024
