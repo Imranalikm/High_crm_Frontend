@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Copy, CheckCircle2, Upload, X, AlertCircle, Building2 } from 'lucide-react';
 import { financeApi } from '../services/finance.api';
 import upiQr from '@/assets/payments/upi-qr.jpg';
-import usdtTrc20Qr from '@/assets/payments/usdt-trc20-qr.png';
+import usdtQr from '@/assets/payments/usdt-erc20-qr.jpg';
 
 /* Loads the company bank/UPI details (bank account picked server-side from the client's country) */
 function usePaymentDetails() {
@@ -222,7 +222,7 @@ function ProofUpload({ id, onProofUpload, proofFile }) {
 }
 
 /* ── Crypto instructions (USDT) ── */
-const USDT_NETWORK = 'TRC20';
+const USDT_NETWORK = 'ERC20';
 
 function CryptoInstructions({ onProofUpload, proofFile }) {
   return (
@@ -244,7 +244,7 @@ function CryptoInstructions({ onProofUpload, proofFile }) {
       </div>
 
       <div className="p-3 rounded-[12px] bg-white">
-        <img src={usdtTrc20Qr} alt={`USDT ${USDT_NETWORK} deposit QR code`} className="w-48 h-48 object-contain" />
+        <img src={usdtQr} alt={`USDT ${USDT_NETWORK} deposit QR code`} className="w-48 h-48 object-contain" />
       </div>
       <p className="text-[12px]" style={{ color: 'rgba(194,198,214,0.6)' }}>
         Scan this QR code with your wallet app to send USDT.
