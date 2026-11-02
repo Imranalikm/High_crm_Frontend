@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Lock, Check } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { DepositMethodSelector, DEPOSIT_METHODS } from '../components/DepositMethodSelector';
 import { DepositAmountForm } from '../components/DepositAmountForm';
@@ -24,11 +24,32 @@ const STEPS = [
 ];
 
 const METHOD_NAMES = {
-  online: 'USD Payment',
-  bank: 'Bank Wire',
-  crypto: 'Crypto',
+  bank: 'Bank Transfer',
+  crypto: 'USDT',
   upi: 'UPI',
 };
+
+// Methods where the client must upload a payment screenshot / receipt
+const PROOF_REQUIRED = ['bank', 'upi', 'crypto'];
+
+const TXN_LABELS = {
+  bank: 'Bank Transaction / Reference ID (Optional)',
+  upi: 'UPI Transaction ID (UTR) (Optional)',
+  crypto: 'USDT Transaction Hash (TxID) (Optional)',
+};
+
+function BackButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full h-11 rounded-[10px] font-bold text-[12.5px] transition-all duration-150 cursor-pointer border border-border/40 bg-transparent text-text-muted hover:text-text hover:bg-muted-surface/50 flex items-center justify-center gap-2"
+    >
+      <ArrowLeft size={14} strokeWidth={2.5} />
+      Back
+    </button>
+  );
+}
 
 function parseFeePercent(feeString) {
   if (!feeString) return 0;
@@ -105,7 +126,8 @@ function SummarySidebar({ method, amount, step }) {
   const { gateways } = clientSettings;
 
   const getGatewayConfig = (methodId) => {
-    const gatewayMap = { online: 'stripe', bank: 'swift', crypto: 'fireblocks', upi: 'upi' };
+    // USDT (crypto) deposits carry no processing fee
+    const gatewayMap = { bank: 'swift', upi: 'upi' };
     const gatewayId = gatewayMap[methodId];
     return gateways.find(g => g.id === gatewayId) || { fee: '0%' };
   };
@@ -157,7 +179,7 @@ function SummarySidebar({ method, amount, step }) {
 export function DepositPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [method, setMethod] = useState('online');
+  const [method, setMethod] = useState('bank');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
   const [mt5Accounts, setMt5Accounts] = useState([]);
@@ -175,6 +197,7 @@ export function DepositPage() {
   }, []);
 
   const handleStep1Next = () => setStep(2);
+  const handleBack = () => setStep((s) => Math.max(1, s - 1));
   const handleStep2Next = () => {
     if (!accountId) {
       alert("Please select an MT5 account first.");
@@ -260,6 +283,7 @@ export function DepositPage() {
                   mt5Accounts={mt5Accounts}
                   onContinue={handleStep2Next}
                 />
+                <BackButton onClick={handleBack} />
               </div>
             )}
 
@@ -270,41 +294,39 @@ export function DepositPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/40 mb-3">
                     Instructions
                   </p>
-                  <DepositInstructions method={method} amount={amount} onProofUpload={setDepositProof} proofFile={depositProof} />
+                  <DepositInstructions method={method} amount={amount} accountId={accountId} onProofUpload={setDepositProof} proofFile={depositProof} />
                 </div>
 
-                {(method === 'bank' || method === 'crypto' || method === 'upi' || method === 'online') && (
+                {TXN_LABELS[method] && (
                   <div className="flex flex-col gap-4 mt-2">
-                    {(method === 'bank' || method === 'upi' || method === 'online') && (
-                      <div>
-                        <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
-                          {method === 'upi' ? 'Stripe Reference / UPI Transaction ID (UTR) (Optional)' 
-                            : method === 'online' ? 'Stripe Reference / Transaction ID (Optional)'
-                            : 'Bank Wire Transaction ID (Optional)'}
-                        </label>
-                        <input
-                          type="text"
-                          value={transactionId}
-                          onChange={(e) => setTransactionId(e.target.value)}
-                          placeholder={method === 'online' ? "e.g. pi_3M1..." : "e.g. TRN-9381..."}
-                          className="w-full h-10 rounded-[8px] border border-border/20 bg-bg text-[13px] px-3 outline-none focus:border-brand/40 transition-colors"
-                        />
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-text-muted/70 mb-1.5">
+                        {TXN_LABELS[method]}
+                      </label>
+                      <input
+                        type="text"
+                        value={transactionId}
+                        onChange={(e) => setTransactionId(e.target.value)}
+                        placeholder={method === 'crypto' ? 'e.g. 3f9a1c...' : 'e.g. TRN-9381...'}
+                        className="w-full h-10 rounded-[8px] border border-border/20 bg-bg text-[13px] px-3 outline-none focus:border-brand/40 transition-colors"
+                      />
+                    </div>
                   </div>
                 )}
 
-                {(method === 'bank' || method === 'crypto' || method === 'upi' || method === 'online') && (
+                {METHOD_NAMES[method] && (
                   <button
                     id="deposit-confirm-sent-btn"
                     onClick={handleConfirm}
-                    disabled={isSubmitting || ((method === 'bank' || method === 'upi' || method === 'online') && !depositProof)}
+                    disabled={isSubmitting || (PROOF_REQUIRED.includes(method) && !depositProof)}
                     className="w-full h-12 rounded-[10px] font-bold text-[13px] transition-all duration-150 cursor-pointer border border-border bg-surface-elevated text-text hover:bg-muted-surface active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                   >
                     <Check size={14} strokeWidth={2.5} />
                     {isSubmitting ? 'Processing...' : "I've Sent the Payment — Submit for Review"}
                   </button>
                 )}
+
+                <BackButton onClick={handleBack} />
               </div>
             )}
           </Card>

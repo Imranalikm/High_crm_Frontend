@@ -23,7 +23,8 @@ export function DepositAmountForm({ method, amount, onChange, accountId, onAccou
   const { gateways } = clientSettings;
 
   const getGatewayConfig = (methodId) => {
-    const gatewayMap = { card: 'stripe', online: 'stripe', bank: 'swift', crypto: 'fireblocks', upi: 'upi', skrill: 'skrill' };
+    // USDT (crypto) deposits carry no processing fee, so it has no gateway entry here
+    const gatewayMap = { card: 'stripe', online: 'stripe', bank: 'swift', upi: 'upi', skrill: 'skrill' };
     const gatewayId = gatewayMap[methodId];
     return gateways.find(g => g.id === gatewayId) || { fee: '0%' };
   };
@@ -44,7 +45,7 @@ export function DepositAmountForm({ method, amount, onChange, accountId, onAccou
   const netCredit = num - fee;
   const isValid   = num >= minAmount && !!accountId;
 
-  const methodLabels = { card: 'Checkout', online: 'Checkout', bank: 'Bank Details', crypto: 'Generate Address', upi: 'Checkout', skrill: 'Skrill Login' };
+  const methodLabels = { card: 'Checkout', online: 'Checkout', bank: 'Bank Details', crypto: 'Show QR Code', upi: 'Checkout', skrill: 'Skrill Login' };
 
   return (
     <div className="flex flex-col gap-5">

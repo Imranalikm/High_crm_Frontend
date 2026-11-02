@@ -1,12 +1,12 @@
 import React from 'react';
-import { CreditCard, Building2, Zap, Clock } from 'lucide-react';
+import { Coins, Building2, Zap, Clock } from 'lucide-react';
 import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
 
 const DEFAULT_METHODS = {
   bank: {
     id: 'bank',
     label: 'Bank Transfer',
-    sub: 'SWIFT, SEPA, Wire',
+    sub: 'Bank wire / local bank transfer',
     icon: Building2,
     color: 'cyan',
     processingLabel: '1–3 Business Days',
@@ -27,17 +27,17 @@ const DEFAULT_METHODS = {
     fee: '0%',
     minDeposit: '₹100',
   },
-  online: {
-    id: 'online',
-    label: 'USD Payment',
-    sub: 'Visa, Mastercard, Stripe Checkout',
-    icon: CreditCard,
-    color: 'brand',
-    processingLabel: 'Instant',
-    processingIcon: Zap,
-    processingColor: 'var(--positive)',
-    fee: '2.9% + $0.30',
-    minDeposit: '$10',
+  crypto: {
+    id: 'crypto',
+    label: 'USDT',
+    sub: 'Tether (TRC20) — scan QR to pay',
+    icon: Coins,
+    color: 'warning',
+    processingLabel: 'After network confirmation',
+    processingIcon: Clock,
+    processingColor: 'var(--warning)',
+    fee: '0%',
+    minDeposit: '$20',
   }
 };
 
@@ -46,7 +46,8 @@ export function DepositMethodSelector({ value, onChange }) {
   const { gateways } = clientSettings;
 
   // Gateway ID → DEFAULT_METHODS key mapping
-  const gatewayToMethod = { swift: 'bank', upi: 'upi', stripe: 'online' };
+  // USDT (crypto) has no processing fee, so the Fireblocks gateway fee is not applied to it
+  const gatewayToMethod = { swift: 'bank', upi: 'upi' };
 
   // Build a fee lookup from enabled gateways
   const feeOverrides = {};
@@ -73,7 +74,7 @@ export function DepositMethodSelector({ value, onChange }) {
         const csBorder      = `color-mix(in srgb, var(--${m.color}) 25%, transparent)`;
         const cssMuted      = `color-mix(in srgb, var(--${m.color}) 12%, transparent)`;
 
-        const isDisabled    = m.id === 'bank';
+        const isDisabled    = false;
 
         return (
           <button

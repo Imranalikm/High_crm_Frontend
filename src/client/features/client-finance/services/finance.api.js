@@ -11,6 +11,12 @@ export const financeApi = {
     return data;
   },
 
+  // Company bank / UPI details to pay into (bank account chosen server-side by the client's country)
+  async getPaymentDetails() {
+    const data = await apiClient.get('/deposits/payment-details');
+    return data.data || null;
+  },
+
   async getWallet() {
     const data = await apiClient.get('/panel/wallet');
     return data.data || {};
