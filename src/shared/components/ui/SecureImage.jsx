@@ -94,15 +94,21 @@ export function SecureImage({ src, alt, className, referrerPolicy, style, ...pro
 
   if (isPdf) {
     return (
-      <div className="w-full h-full flex flex-col gap-1.5">
+      <div className="w-full h-full flex flex-col gap-2">
+        <a
+          href={blobUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="relative z-10 self-start shrink-0 inline-flex items-center h-7 px-3 rounded-[5px] bg-brand text-text-on-accent text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
+        >
+          Open PDF in new tab ↗
+        </a>
         <iframe
           src={blobUrl}
           title={alt || 'Document'}
           className="w-full flex-1 min-h-0 rounded-[6px] border-0 bg-white"
         />
-        <a href={blobUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-brand hover:underline self-end">
-          Open PDF in new tab
-        </a>
       </div>
     );
   }
