@@ -30,7 +30,7 @@ const DEFAULT_METHODS = {
   crypto: {
     id: 'crypto',
     label: 'USDT',
-    sub: 'Tether (ERC20) — scan QR to pay',
+    sub: 'Tether (TRC20) — scan QR to pay',
     icon: Coins,
     color: 'warning',
     processingLabel: 'After network confirmation',

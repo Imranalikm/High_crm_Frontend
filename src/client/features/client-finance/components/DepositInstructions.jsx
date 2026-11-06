@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Copy, CheckCircle2, Upload, X, AlertCircle, Building2 } from 'lucide-react';
 import { financeApi } from '../services/finance.api';
 import upiQr from '@/assets/payments/upi-qr.jpg';
-import usdtQr from '@/assets/payments/usdt-erc20-qr.jpg';
+import usdtQr from '@/assets/payments/usdt-trc20-qr.jpg';
 
 /* Loads the company bank/UPI details (bank account picked server-side from the client's country) */
 function usePaymentDetails() {
@@ -222,9 +222,18 @@ function ProofUpload({ id, onProofUpload, proofFile }) {
 }
 
 /* ── Crypto instructions (USDT) ── */
-const USDT_NETWORK = 'ERC20';
+const USDT_NETWORK = 'Tron (TRC20)';
+const USDT_ADDRESS = 'TP8eMW4tQriV3wS9ZRWQuasgLk3V64t89G';
 
 function CryptoInstructions({ onProofUpload, proofFile }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(USDT_ADDRESS).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="flex flex-col gap-4 items-center text-center">
       <div className="flex flex-col gap-1.5">
@@ -247,8 +256,33 @@ function CryptoInstructions({ onProofUpload, proofFile }) {
         <img src={usdtQr} alt={`USDT ${USDT_NETWORK} deposit QR code`} className="w-48 h-48 object-contain" />
       </div>
       <p className="text-[12px]" style={{ color: 'rgba(194,198,214,0.6)' }}>
-        Scan this QR code with your wallet app to send USDT.
+        Scan this QR code with your wallet app, or copy the address below.
       </p>
+
+      <div
+        className="flex items-center justify-between gap-3 w-full px-4 py-3.5 rounded-[13px] text-left"
+        style={{ background: 'var(--muted-surface)', border: '1px solid var(--border)' }}
+      >
+        <div className="min-w-0">
+          <p className="text-[9.5px] font-black uppercase tracking-[0.14em] mb-0.5" style={{ color: 'rgba(194,198,214,0.35)' }}>
+            USDT Address ({USDT_NETWORK})
+          </p>
+          <p className="font-mono text-[12.5px] font-bold break-all" style={{ color: 'var(--text)' }}>
+            {USDT_ADDRESS}
+          </p>
+        </div>
+        <button
+          onClick={handleCopy}
+          className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-[7px] transition-all duration-150 cursor-pointer"
+          style={{
+            color: copied ? 'var(--positive)' : 'rgba(194,198,214,0.45)',
+            background: copied ? 'color-mix(in srgb, var(--positive) 8%, transparent)' : 'transparent',
+          }}
+        >
+          {copied ? <CheckCircle2 size={12} /> : <Copy size={12} />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
 
       <div
         className="flex items-start gap-2 p-3 rounded-[9px] text-[11.5px] text-left w-full"
