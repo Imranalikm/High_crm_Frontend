@@ -147,7 +147,7 @@ export function DemoAccountSettingsPage() {
                   <TInput
                     value={config.mt5GroupName}
                     onChange={(v) => updateField('mt5GroupName', v)}
-                    placeholder="STL\3492\demo.grp1"
+                    placeholder={'STL\\3492\\demo.grp1'}
                     mono
                   />
                 )}

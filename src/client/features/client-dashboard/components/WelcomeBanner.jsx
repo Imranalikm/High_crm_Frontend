@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine, ArrowUpFromLine, MonitorCheck,
-  Server, Cpu, ShieldCheck, Eye, EyeOff, Wallet, TrendingUp, Landmark, Layers
+  Server, Cpu, ShieldCheck, ShieldAlert, Eye, EyeOff, Wallet, TrendingUp, Landmark, Layers
 } from 'lucide-react';
+import { kycApi } from '@/client/features/client-kyc/services/kyc.api';
 import { useAuth } from '@/auth/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { apiClient } from '@/shared/api/client/apiClient';
@@ -13,6 +14,7 @@ export function WelcomeBanner() {
   const navigate = useNavigate();
   const [hideBalance, setHideBalance] = useState(false);
   const [mt5Account, setMt5Account] = useState(null);
+  const [kycStatus, setKycStatus] = useState(null);
   
   useEffect(() => {
     const fetchAccount = async () => {
@@ -30,6 +32,16 @@ export function WelcomeBanner() {
     };
     fetchAccount();
   }, []);
+
+  // Real KYC status from the backend (null while loading, so no badge flashes)
+  useEffect(() => {
+    let active = true;
+    kycApi.getOverview().then((overview) => {
+      if (active) setKycStatus(overview?.status || 'not-started');
+    });
+    return () => { active = false; };
+  }, []);
+  const kycVerified = kycStatus === 'verified';
   
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -103,10 +115,29 @@ export function WelcomeBanner() {
                   <span className="w-1.5 h-1.5 rounded-full bg-positive animate-pulse" />
                   {type}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9.5px] font-bold tracking-wider bg-positive/8 border border-positive/20 text-positive">
-                  <ShieldCheck size={11} />
-                  KYC Verified
-                </span>
+                {kycStatus && (
+                  kycVerified ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9.5px] font-bold tracking-wider bg-positive/8 border border-positive/20 text-positive">
+                      <ShieldCheck size={11} />
+                      KYC Verified
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/client/kyc')}
+                      title="Complete your KYC verification"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[9.5px] font-bold tracking-wider cursor-pointer"
+                      style={{
+                        color: 'var(--negative)',
+                        background: 'color-mix(in srgb, var(--negative) 8%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--negative) 20%, transparent)',
+                      }}
+                    >
+                      <ShieldAlert size={11} />
+                      KYC Not Verified
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
