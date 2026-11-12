@@ -7,6 +7,7 @@ import { KpiCard, StatusBadge, RiskBadge, MethodBadge, AmountCell, Toast } from 
 import { UserCell, QuickActions } from '../components/FinanceDrawer';
 import { NewDepositDrawer } from '../components/NewDepositDrawer';
 import { MainTable, TableToolbar } from '@/components/common/table';
+import { ConfirmDialog } from '@/components/overlays/ConfirmDialog';
 
 const PAGE = {
   accent: 'var(--cyan)',
@@ -33,6 +34,30 @@ function DepositsPage() {
   React.useEffect(() => {
     fetchDeposits();
   }, []);
+
+  const [confirm, setConfirm] = useState(null); // { type: 'approve' | 'reject', row }
+  const [busy, setBusy] = useState(false);
+
+  const handleConfirm = async () => {
+    if (!confirm) return;
+    const { type, row } = confirm;
+    setBusy(true);
+    try {
+      if (type === 'approve') {
+        await adminFinanceApi.approveDeposit(row.id);
+        act('Approved', row.id);
+      } else {
+        await adminFinanceApi.rejectDeposit(row.id, 'Manually rejected by Admin');
+        act('Rejected', row.id);
+      }
+      fetchDeposits();
+    } catch (e) {
+      act(type === 'approve' ? 'Failed to approve' : 'Failed to reject', e.message);
+    } finally {
+      setBusy(false);
+      setConfirm(null);
+    }
+  };
 
   const fetchDeposits = async () => {
     setLoading(true);
@@ -91,24 +116,8 @@ function DepositsPage() {
         <div onClick={(e) => e.stopPropagation()}>
           <QuickActions
             row={row}
-            onApprove={async () => {
-              try {
-                await adminFinanceApi.approveDeposit(row.id);
-                act('Approved', row.id);
-                fetchDeposits();
-              } catch (e) {
-                act('Failed to approve', e.message);
-              }
-            }}
-            onReject={async () => {
-              try {
-                await adminFinanceApi.rejectDeposit(row.id, 'Manually rejected by Admin');
-                act('Rejected', row.id);
-                fetchDeposits();
-              } catch (e) {
-                act('Failed to reject', e.message);
-              }
-            }}
+            onApprove={() => setConfirm({ type: 'approve', row })}
+            onReject={() => setConfirm({ type: 'reject', row })}
             onFlag={async () => {
               try {
                 await adminFinanceApi.flagDeposit(row.id, 'Flagged for AML/Review by Admin');
@@ -255,6 +264,24 @@ function DepositsPage() {
           />
         </section>
       </div>
+
+      <ConfirmDialog
+        open={!!confirm}
+        actionLabel="Deposit Review"
+        title={confirm?.type === 'approve' ? 'Approve this deposit?' : 'Reject this deposit?'}
+        description={
+          confirm
+            ? confirm.type === 'approve'
+              ? `$${(parseFloat(confirm.row.amount) || 0).toFixed(2)} will be credited to ${confirm.row.recipient?.name || 'the user'}'s MT5 account (deposit #${confirm.row.id}). This cannot be undone.`
+              : `Deposit #${confirm.row.id} of $${(parseFloat(confirm.row.amount) || 0).toFixed(2)} from ${confirm.row.recipient?.name || 'the user'} will be rejected. This cannot be undone.`
+            : ''
+        }
+        confirmLabel={busy ? 'Processing…' : confirm?.type === 'approve' ? 'Approve' : 'Reject'}
+        confirmVariant={confirm?.type === 'approve' ? 'primary' : 'danger'}
+        busy={busy}
+        onClose={() => !busy && setConfirm(null)}
+        onConfirm={handleConfirm}
+      />
 
       {/* Manual Deposit Drawer */}
       <NewDepositDrawer 

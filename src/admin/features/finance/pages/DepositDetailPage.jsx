@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { ConfirmDialog } from '@/components/overlays/ConfirmDialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -258,6 +260,9 @@ export function DepositDetailPage() {
   const [localNote, setLocalNote] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [localAudit, setLocalAudit] = useState([]);
+  const [toastError, setToastError] = useState(false);
+  const [confirm, setConfirm] = useState(null); // { status, auditMsg }
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const fetchDeposit = async () => {
@@ -287,6 +292,7 @@ export function DepositDetailPage() {
           { action: 'Created', by: 'System', ts: mapped.created, note: `Source: ${mapped.method}` },
         ]);
       } catch (err) {
+        setToastError(true);
         setToastMsg('Failed to load deposit');
       } finally {
         setLoading(false);
@@ -295,9 +301,18 @@ export function DepositDetailPage() {
     fetchDeposit();
   }, [id]);
 
-  const toast = (msg) => {
+  const toast = (msg, isError = false) => {
+    setToastError(isError);
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
+    setTimeout(() => setToastMsg(''), isError ? 5000 : 3000);
+  };
+
+  const handleConfirm = async () => {
+    if (!confirm) return;
+    setBusy(true);
+    await handleAction(confirm.status, confirm.auditMsg);
+    setBusy(false);
+    setConfirm(null);
   };
 
   const handleAction = async (newStatus, auditMsg) => {
@@ -317,7 +332,7 @@ export function DepositDetailPage() {
       ]);
       toast(`Deposit #${record.id} updated to ${newStatus}`);
     } catch (err) {
-      toast(`Failed: ${err.message}`);
+      toast(`Failed: ${err.message}`, true);
     }
   };
 
@@ -352,15 +367,33 @@ export function DepositDetailPage() {
       {!loading && record && (
         <>
           {/* ── Toast ── */}
-      {toastMsg && (
-        <div className="fixed top-6 right-6 z-[300] flex items-center gap-2.5 bg-surface-elevated border border-brand/22 text-text text-[11px] font-bold px-4 py-3 rounded-[9px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in">
+      {/* Portaled to <body> so it escapes <main>'s stacking context and sits above the navbar */}
+      {toastMsg && createPortal(
+        <div className={`fixed top-6 right-6 z-[9999] flex items-center gap-2.5 bg-surface-elevated border ${toastError ? 'border-negative/40' : 'border-brand/22'} text-text text-[11px] font-bold px-4 py-3 rounded-[9px] shadow-[0_8px_32px_rgba(0,0,0,0.5)] animate-fade-in`}>
           <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-positive opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-positive" />
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${toastError ? 'bg-negative' : 'bg-positive'}`} />
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${toastError ? 'bg-negative' : 'bg-positive'}`} />
           </span>
           {toastMsg}
-        </div>
+        </div>,
+        document.body,
       )}
+
+      <ConfirmDialog
+        open={!!confirm}
+        actionLabel="Deposit Review"
+        title={confirm?.status === 'APPROVED' ? 'Approve this deposit?' : 'Reject this deposit?'}
+        description={
+          confirm?.status === 'APPROVED'
+            ? `${record.amount} will be credited to ${record.user?.name}'s MT5 account. This cannot be undone.`
+            : `The ${record.amount} deposit from ${record.user?.name} will be rejected. This cannot be undone.`
+        }
+        confirmLabel={busy ? 'Processing…' : confirm?.status === 'APPROVED' ? 'Approve' : 'Reject'}
+        confirmVariant={confirm?.status === 'APPROVED' ? 'primary' : 'danger'}
+        busy={busy}
+        onClose={() => !busy && setConfirm(null)}
+        onConfirm={handleConfirm}
+      />
 
       <div className="space-y-5 animate-fade-up">
 
@@ -474,7 +507,7 @@ export function DepositDetailPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          handleAction('APPROVED', 'Deposit manually approved by admin')
+                          setConfirm({ status: 'APPROVED', auditMsg: 'Deposit manually approved by admin' })
                         }
                         className="flex items-center gap-1.5 h-8 px-3.5 rounded-[8px] text-[11px] font-bold uppercase tracking-wider bg-positive text-bg hover:brightness-110 active:scale-[0.97] transition-all cursor-pointer shrink-0"
                       >
@@ -483,7 +516,7 @@ export function DepositDetailPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          handleAction('REJECTED', 'Manual deposit rejection registered')
+                          setConfirm({ status: 'REJECTED', auditMsg: 'Manual deposit rejection registered' })
                         }
                         className="flex items-center gap-1.5 h-8 px-3.5 rounded-[8px] text-[11px] font-bold uppercase tracking-wider bg-negative text-bg hover:brightness-110 active:scale-[0.97] transition-all cursor-pointer shrink-0"
                       >
