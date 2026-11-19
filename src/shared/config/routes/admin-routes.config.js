@@ -163,7 +163,6 @@ export const adminRouteModules = [
     navSection: 'main',
     permission: PERMISSIONS.trading.view,
     defaultPath: '/admin/trading/accounts',
-    hidden: true,
     routes: [
       {
         id: 'trading-accounts',
@@ -209,7 +208,7 @@ export const adminRouteModules = [
         id: 'trading-logs',
         path: 'trading/execution-logs',
         pageKey: 'trading/execution-logs',
-        navLabel: 'Execution Logs',
+        // No navLabel: kept out of the sidebar while this page still shows mock data
         permission: PERMISSIONS.trading.view,
         meta: [
           { pattern: '/admin/trading/execution-logs', title: 'Execution Logs', section: 'Trading', permission: PERMISSIONS.trading.view },

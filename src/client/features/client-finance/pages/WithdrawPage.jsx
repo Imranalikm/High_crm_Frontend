@@ -16,6 +16,7 @@ import { Mt5AccountSelector } from '../components/Mt5AccountSelector';
 import { usePlatformSettings } from '@/shared/features/settings/PlatformSettingsContext';
 import { financeApi } from '../services/finance.api';
 import { apiClient } from '@/shared/api/client/apiClient';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
 
 const STEPS = [
   { id: 1, label: 'Method' },
@@ -251,6 +252,7 @@ export function WithdrawPage() {
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
   const [mt5Accounts, setMt5Accounts] = useState([]);
+  const { byLogin: liveByLogin } = useLiveMt5Accounts();
   const [submitting, setSubmitting] = useState(false);
 
   // Bank accounts state
@@ -285,7 +287,9 @@ export function WithdrawPage() {
     });
   }, []);
 
-  const availableBalance = mt5Accounts.find(a => String(a.accountid) === String(accountId))?.balance || 0;
+  // Real MT5 balance from the live feed (the API value is also live at load time)
+  const selectedMt5 = mt5Accounts.find(a => String(a.accountid) === String(accountId));
+  const availableBalance = Number(withLive(selectedMt5 || {}, liveByLogin).balance) || 0;
   const selectedBankAccount = bankAccounts.find(a => a.id === selectedBankAccountId);
 
   const canProceedStep1 = accountId && selectedBankAccountId;

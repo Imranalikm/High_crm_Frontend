@@ -8,9 +8,11 @@ import { kycApi } from '@/client/features/client-kyc/services/kyc.api';
 import { useAuth } from '@/auth/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { apiClient } from '@/shared/api/client/apiClient';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
 
 export function WelcomeBanner() {
   const { user } = useAuth();
+  const { byLogin } = useLiveMt5Accounts();
   const navigate = useNavigate();
   const [hideBalance, setHideBalance] = useState(false);
   const [mt5Account, setMt5Account] = useState(null);
@@ -53,14 +55,16 @@ export function WelcomeBanner() {
   const leverage = mt5Account?.leverage || '—';
   const type = mt5Account?.status || 'N/A';
   
-  const balance = parseFloat(mt5Account?.balance || 0);
-  const equity = balance; // In a real MT5 integration this would be dynamic equity
-  const freeMargin = balance;
-  const usedMargin = 0;
-  
-  // PnL placeholders since these require live MT5 streaming API which isn't wired yet
-  const todayPnl = 0;
-  const todayPnlPct = 0;
+  // Live values from the MT5 feed (falls back to the loaded record)
+  const acc = mt5Account ? withLive(mt5Account, byLogin) : null;
+  const balance = parseFloat(acc?.balance || 0);
+  const equity = acc?.isLive ? parseFloat(acc.equity || 0) : balance;
+  const freeMargin = acc?.isLive ? parseFloat(acc.marginFree || 0) : balance;
+  const usedMargin = acc?.isLive ? parseFloat(acc.margin || 0) : 0;
+
+  // Floating P/L on open positions (live)
+  const todayPnl = acc?.isLive ? parseFloat(acc.floating || 0) : 0;
+  const todayPnlPct = balance ? Number(((todayPnl / balance) * 100).toFixed(2)) : 0;
   const openPositions = 0;
   
   const pnlPos = todayPnl >= 0;
@@ -160,14 +164,14 @@ export function WelcomeBanner() {
 
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-text-muted mb-1">
-                  Today's P&L
+                  Floating P&L
                 </div>
                 <div className="flex items-baseline gap-1.5 leading-none">
                   <span 
                     className={`font-mono font-bold text-[18px] ${pnlPos ? 'text-positive' : 'text-negative'}`}
                     style={{ textShadow: `0 0 16px color-mix(in srgb, var(--${pnlPos ? 'positive' : 'negative'}) 15%, transparent)` }}
                   >
-                    {pnlPos ? '+' : ''}${Math.abs(todayPnl).toLocaleString()}
+                    {pnlPos ? '+' : '-'}${Math.abs(todayPnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   <span className={`font-mono text-[12.5px] font-semibold ${pnlPos ? 'text-positive' : 'text-negative'}`}>
                     ({pnlPos ? '+' : ''}{todayPnlPct}%)

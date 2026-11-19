@@ -11,6 +11,12 @@ import { UsersMt5Table } from '../components/UsersTable';
 import { UsersKPIGrid } from '../components/UsersKpiGrid';
 import { tradingAccountsService } from '@/admin/features/trading/services/tradingAccountsService';
 import { CreateMt5AccountDrawer } from '../components/CreateMt5AccountDrawer';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
+
+const money = (n) => {
+  const v = Number(n) || 0;
+  return `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const PAGE = {
   accent: 'var(--brand)',
@@ -35,37 +41,44 @@ function MT5QueuePage() {
   const [serverFilter, setServerFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const [accounts, setAccounts] = useState([]);
+  const [rawAccounts, setRawAccounts] = useState([]);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+  const { byLogin } = useLiveMt5Accounts();
 
   const fetchAccounts = async () => {
     try {
-      const data = await tradingAccountsService.list();
-      const mapped = data.map(a => ({
-        login: a.accountid,
-        type: (a.accountType || 'LIVE').toUpperCase(),
-        user: a.user?.name || a.contactName || 'Unknown',
-        email: a.user?.email || a.contactEmail || '',
-        uid: a.userId,
-        userId: a.userId,
-        mPassword: a.mPassword,
-        iPassword: a.iPassword,
-        server: a.server,
-        group: a.groupName,
-        leverage: a.leverage,
-        equity: a.balance,
-        balance: a.balance,
-        margin: '$0.00',
-        freeMargin: a.balance,
-        marginLvl: '—',
-        status: a.status,
-        lastSync: a.updatedAt
-      }));
-      setAccounts(mapped);
+      setRawAccounts(await tradingAccountsService.list());
     } catch (err) {
       console.error(err);
     }
   };
+
+  // Balance / equity / margin from the live MT5 feed (falls back to the loaded values)
+  const accounts = useMemo(() => rawAccounts.map((row) => {
+    const a = withLive(row, byLogin);
+    const bal = Number(a.balance) || 0;
+    return {
+      login: a.accountid,
+      type: (a.accountType || 'LIVE').toUpperCase(),
+      user: a.user?.name || a.contactName || 'Unknown',
+      email: a.user?.email || a.contactEmail || '',
+      uid: a.userId,
+      userId: a.userId,
+      mPassword: a.mPassword,
+      iPassword: a.iPassword,
+      server: a.server,
+      group: a.groupName,
+      leverage: a.leverage,
+      balance: money(bal),
+      equity: money(a.equity ?? bal),
+      margin: money(a.margin ?? 0),
+      freeMargin: money(a.marginFree ?? bal),
+      marginLvl: a.margin ? `${Number(a.marginLevel).toFixed(0)}%` : '—',
+      isLive: a.isLive,
+      status: a.status,
+      lastSync: a.liveTime ? new Date(a.liveTime).toISOString() : a.updatedAt,
+    };
+  }), [rawAccounts, byLogin]);
 
   useEffect(() => {
     fetchAccounts();
@@ -108,7 +121,8 @@ function MT5QueuePage() {
   const kpis = useMemo(() => {
     const list = accounts;
     const totalBalance = list.reduce((acc, curr) => {
-      const val = parseFloat(String(curr.balance || '0').replace(/[$,]/g, '')) || 0;
+      const s = String(curr.balance || '0');
+      const val = (parseFloat(s.replace(/[$,-]/g, '')) || 0) * (s.startsWith('-') ? -1 : 1);
       return acc + val;
     }, 0);
     const uniqueServers = [...new Set(list.map((t) => t.server))].filter(Boolean);

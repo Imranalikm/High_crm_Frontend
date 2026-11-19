@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Monitor, Check, AlertTriangle } from 'lucide-react';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
 
-export function Mt5AccountSelector({ accounts = [], selectedId, onSelect }) {
+export function Mt5AccountSelector({ accounts: rawAccounts = [], selectedId, onSelect }) {
   const [isOpen, setIsOpen] = useState(false);
+  // Balances from the live MT5 feed (not the CRM's stored copy)
+  const { byLogin } = useLiveMt5Accounts();
+  const accounts = rawAccounts.map((a) => withLive(a, byLogin));
   const dropdownRef = useRef(null);
 
   useEffect(() => {

@@ -18,6 +18,12 @@ import { MainDrawer, DrawerHeader, DrawerBody, DrawerFooter } from '@/components
 import { DrawerField, DrawerFormGrid as DrawerFormGrid, DrawerSection, SelectField, TextField } from '@/components/common/drawer';
 import { ActionBtn } from '@/components/ui';
 import { InlineAlert } from '@/components/feedback/InlineAlert';
+import { useLiveMt5Accounts } from '@/shared/hooks/useLiveMt5Accounts';
+
+const money = (n) => {
+  const v = Number(n) || 0;
+  return `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 import { StatusBadge } from '@/components/ui';
 import { StatusChip } from '@/components/ui';
 import { userDetailTabs } from '@/config/constants/USER_TABS';
@@ -172,6 +178,7 @@ export function Mt5AccountDrawer({ open, entry, onClose, onSave, onSync, onReset
   const [showStatusSuccess, setShowStatusSuccess] = useState(false);
   const [prevEntry, setPrevEntry] = useState(null);
   const [crmGroups, setCrmGroups] = useState([]);
+  const { byLogin } = useLiveMt5Accounts();
 
   useEffect(() => {
     if (open) {
@@ -199,8 +206,23 @@ export function Mt5AccountDrawer({ open, entry, onClose, onSave, onSync, onReset
   const isExistingAccount = Boolean(entry?.login);
   const isBlocked = status === 'DISCONNECTED' || status === 'BLOCKED' || status === 'SUSPENDED';
   const statusAccent = isBlocked ? 'var(--negative)' : 'var(--positive)';
-  const balanceVal = entry?.balance ? parseFloat(String(entry.balance).replace(/[$,]/g, '')) : 0;
-  const equityVal = entry?.equity ? parseFloat(String(entry.equity).replace(/[$,]/g, '')) : balanceVal;
+
+  // Display values from the live MT5 feed when available (saving still uses `entry`)
+  const live = entry?.login ? byLogin[String(entry.login)] : null;
+  const view = live ? {
+    ...entry,
+    balance: money(live.balance),
+    equity: money(live.equity),
+    margin: money(live.margin),
+    freeMargin: money(live.marginFree),
+    marginLvl: live.margin ? `${Number(live.marginLevel).toFixed(0)}%` : '—',
+  } : entry;
+  const parseMoney = (v) => {
+    const s = String(v ?? '');
+    return (parseFloat(s.replace(/[$,-]/g, '')) || 0) * (s.startsWith('-') ? -1 : 1);
+  };
+  const balanceVal = view?.balance ? parseMoney(view.balance) : 0;
+  const equityVal = view?.equity ? parseMoney(view.equity) : balanceVal;
   const delta = equityVal - balanceVal;
 
   const handleSave = () => {
@@ -250,11 +272,11 @@ export function Mt5AccountDrawer({ open, entry, onClose, onSave, onSync, onReset
                 <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/10">
                   <div className="text-center flex flex-col items-center gap-1.5">
                     <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 leading-none">Balance</div>
-                    <div className="font-mono text-[13.5px] font-semibold text-text leading-none">{entry.balance ?? '$0.00'}</div>
+                    <div className="font-mono text-[13.5px] font-semibold text-text leading-none">{view.balance ?? '$0.00'}</div>
                   </div>
                   <div className="text-center flex flex-col items-center gap-1.5">
                     <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 leading-none">Equity</div>
-                    <div className="font-mono text-[13.5px] font-semibold text-brand leading-none">{entry.equity ?? entry.balance ?? '$0.00'}</div>
+                    <div className="font-mono text-[13.5px] font-semibold text-brand leading-none">{view.equity ?? view.balance ?? '$0.00'}</div>
                   </div>
                   <div className="text-center flex flex-col items-center gap-1.5">
                     <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 leading-none">Float</div>
@@ -294,16 +316,16 @@ export function Mt5AccountDrawer({ open, entry, onClose, onSave, onSync, onReset
               {/* Capital Metrics */}
               <DrawerSection title="Balance Info">
                 <DrawerFormGrid>
-                  <DrawerField label="Balance" value={entry.balance} mono accent="var(--cyan)" />
-                  <DrawerField label="Equity" value={entry.equity ?? entry.balance} mono accent="var(--brand)" />
-                  <DrawerField label="Used Margin" value={entry.margin || '$0'} mono accent="var(--warning)" />
-                  <DrawerField label="Free Margin" value={entry.freeMargin || entry.balance} mono accent="var(--positive)" />
+                  <DrawerField label="Balance" value={view.balance} mono accent="var(--cyan)" />
+                  <DrawerField label="Equity" value={view.equity ?? view.balance} mono accent="var(--brand)" />
+                  <DrawerField label="Used Margin" value={view.margin || '$0'} mono accent="var(--warning)" />
+                  <DrawerField label="Free Margin" value={view.freeMargin || view.balance} mono accent="var(--positive)" />
                   <DrawerField
                     label="Margin Level"
-                    value={entry.marginLvl || '—'}
+                    value={view.marginLvl || '—'}
                     mono
                     accent={
-                      entry.marginLvl && entry.marginLvl.includes('%') && parseInt(entry.marginLvl) < 150
+                      view.marginLvl && view.marginLvl.includes('%') && parseInt(view.marginLvl) < 150
                         ? 'var(--negative)'
                         : 'var(--text)'
                     }
