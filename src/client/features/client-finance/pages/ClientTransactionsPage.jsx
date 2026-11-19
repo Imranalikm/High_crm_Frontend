@@ -86,7 +86,11 @@ export function ClientTransactionsPage() {
   useEffect(() => {
     const fetchTxns = async () => {
       try {
-        const rawDeposits = await financeApi.getDeposits();
+        const [rawDeposits, rawWithdrawals, rawOps] = await Promise.all([
+          financeApi.getDeposits(),
+          financeApi.getWithdrawals().catch(() => []),
+          financeApi.getBalanceOperations(),
+        ]);
         
         // Map database records to frontend transaction schema
         const mapped = rawDeposits.map(d => {
@@ -118,7 +122,50 @@ export function ClientTransactionsPage() {
           };
         });
 
-        setTransactions(mapped);
+        const statusMapW = { pending: 'PENDING', approved: 'COMPLETED', rejected: 'REJECTED', failed: 'FAILED', flagged: 'FLAGGED' };
+        const withdrawals = rawWithdrawals.map(w => {
+          const amt = parseFloat(w.amount) || 0;
+          return {
+            id: `WDR-${w.id}`,
+            type: 'Withdrawal',
+            amount: -amt,
+            fee: 0,
+            netAmount: -amt,
+            method: METHOD_LABELS[w.type] || w.type || 'Unknown',
+            source: w.accountId ? `MT5 #${w.accountId}` : 'Trading Account',
+            destination: w.bankAccount || METHOD_LABELS[w.type] || 'Payout',
+            status: statusMapW[w.status?.toLowerCase()] || 'PENDING',
+            date: w.createdAt,
+            referenceId: w.mt5DealId || null,
+            notes: w.note || 'Withdrawal request.',
+            statusHistory: [
+              { status: 'PENDING', date: new Date(w.createdAt).toLocaleString() },
+              ...(w.status !== 'pending' ? [{ status: statusMapW[w.status?.toLowerCase()] || w.status?.toUpperCase(), date: new Date(w.updatedAt).toLocaleString() }] : [])
+            ]
+          };
+        });
+
+        // Broker balance operations: credit, bonus, commission, charges...
+        const ops = rawOps.map(o => {
+          const amt = Number(o.amount) || 0;
+          return {
+            id: `BOP-${o.id}`,
+            type: o.typeLabel || 'Adjustment',
+            amount: amt,
+            fee: 0,
+            netAmount: amt,
+            method: 'Broker',
+            source: amt >= 0 ? 'Broker' : `MT5 #${o.accountId}`,
+            destination: amt >= 0 ? `MT5 #${o.accountId}` : 'Broker',
+            status: 'COMPLETED',
+            date: o.createdAt,
+            referenceId: o.dealId || null,
+            notes: o.comment || o.typeLabel,
+            statusHistory: [{ status: 'COMPLETED', date: new Date(o.createdAt).toLocaleString() }]
+          };
+        });
+
+        setTransactions([...mapped, ...withdrawals, ...ops].sort((a, b) => new Date(b.date) - new Date(a.date)));
       } catch (err) {
         console.error("Failed to load transactions", err);
       } finally {
@@ -319,7 +366,7 @@ export function ClientTransactionsPage() {
       label: 'Amount',
       render: (val) => {
         const isCredit = val > 0;
-        const amtColor = isCredit ? 'var(--positive)' : 'var(--text)';
+        const amtColor = isCredit ? 'var(--positive)' : 'var(--negative)';
         const amtStr = isCredit ? `+${fmt(val)}` : `-${fmt(Math.abs(val))}`;
         return (
           <span className="font-mono text-[13px] font-bold" style={{ color: amtColor }}>
@@ -384,10 +431,14 @@ export function ClientTransactionsPage() {
     { value: 'All', label: 'ALL' },
     { value: 'Deposit', label: 'DEPOSIT' },
     { value: 'Withdrawal', label: 'WITHDRAWAL' },
-    { value: 'Internal Transfer', label: 'TRANSFER' },
-    { value: 'Fee', label: 'FEE' },
     { value: 'Credit', label: 'CREDIT' },
-    { value: 'Debit', label: 'DEBIT' }
+    { value: 'Bonus', label: 'BONUS' },
+    { value: 'Commission', label: 'COMMISSION' },
+    { value: 'Correction', label: 'CORRECTION' },
+    { value: 'Charge', label: 'CHARGE' },
+    { value: 'Tax', label: 'TAX' },
+    { value: 'Dividend', label: 'DIVIDEND' },
+    { value: 'Dividend Franked', label: 'DIVIDEND FRANKED' }
   ];
 
   const statusOptions = [
@@ -629,8 +680,8 @@ export function ClientTransactionsPage() {
             emptyTitle="No transactions found matching filters."
             pagination={paginationState}
             rowClassName={(row) => {
-              const isGreen = row.type === 'Deposit' || row.type === 'Credit';
-              const isRed = row.type === 'Withdrawal' || row.type === 'Fee' || row.type === 'Debit';
+              const isGreen = row.amount > 0;
+              const isRed = row.amount < 0;
               if (isGreen) return 'hover:bg-positive/[0.04] hover:border-l-positive';
               if (isRed) return 'hover:bg-negative/[0.04] hover:border-l-negative';
               return 'hover:bg-brand/[0.04] hover:border-l-brand';

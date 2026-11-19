@@ -27,6 +27,9 @@ import { usersService } from '../services/userService';
 import { kycService } from '../services/kycService';
 import { getUploadUrl } from '@/utils/uploadUrl';
 import { PaymentMethodsTab } from './PaymentMethodsTab';
+import { UserWalletTab } from './UserWalletTab';
+import { UserTradesTab } from './UserTradesTab';
+import { UserBalanceOperationsTab } from '@/admin/features/finance/components/UserBalanceOperationsTab';
 
 /* ─────────────────────────────────────────────────────────────
    INTERNAL DESIGN PRIMITIVES
@@ -217,52 +220,6 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
     }
   }, [docTabs, selectedDoc, activeTab]);
 
-  const [pendingAdjustments, setPendingAdjustments] = useState([]);
-  const [makerAmount, setMakerAmount] = useState('');
-  const [makerAsset, setMakerAsset] = useState('USD');
-  const [makerType, setMakerType] = useState('CREDIT');
-  const [makerReason, setMakerReason] = useState('');
-  const [adjustmentSuccessMsg, setAdjustmentSuccessMsg] = useState('');
-
-  const handleCreateAdjustment = (e) => {
-    e.preventDefault();
-    if (!makerAmount || parseFloat(makerAmount) <= 0) return;
-    const newAdjustment = {
-      id: `ADJ-${Date.now()}`,
-      amount: makerAmount,
-      asset: makerAsset,
-      type: makerType,
-      reason: makerReason || 'Manual balance correction',
-      maker: 'Financial Admin',
-      time: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    };
-    setPendingAdjustments(prev => [...prev, newAdjustment]);
-    setMakerAmount('');
-    setMakerReason('');
-    setAdjustmentSuccessMsg('Maker adjustment queued. Awaiting Checker review.');
-    setTimeout(() => setAdjustmentSuccessMsg(''), 4000);
-  };
-
-  const handleApproveAdjustment = (adjId) => {
-    const adj = pendingAdjustments.find(a => a.id === adjId);
-    if (!adj) return;
-    const amountNum = parseFloat(adj.amount) || 0;
-    const updatedUser = usersService.adjustUserBalance(user.id, adj.asset, amountNum, adj.type);
-    if (updatedUser) {
-      usersService.logAdminAction('Financial Auditor', user.name, `Approved manual wire: ${adj.type} $${amountNum} (${adj.asset}) - Reason: ${adj.reason}`);
-      onUpdateUser?.({ walletBalance: updatedUser.walletBalance, equity: updatedUser.equity, walletHistory: updatedUser.walletHistory });
-      setPendingAdjustments(prev => prev.filter(p => p.id !== adjId));
-      setAdjustmentSuccessMsg('Adjustment successfully checker-approved.');
-      setTimeout(() => setAdjustmentSuccessMsg(''), 4000);
-    }
-  };
-
-  const handleDeclineAdjustment = (adjId) => {
-    const adj = pendingAdjustments.find(a => a.id === adjId);
-    if (adj) usersService.logAdminAction('Financial Auditor', user.name, `Declined manual wire: ${adj.type} $${adj.amount} (${adj.asset}) - Reason: ${adj.reason}`);
-    setPendingAdjustments(prev => prev.filter(p => p.id !== adjId));
-  };
-
   const handleToggleLock = (lockKey) => {
     const currentLocks = {
       withdrawalsBlocked: user.withdrawalsBlocked ?? false,
@@ -276,22 +233,6 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
       const lockLabel = lockKey === 'withdrawalsBlocked' ? 'Payout Lock' : lockKey === 'readOnlyTerminals' ? 'Read-Only Terminals' : 'API Connection Block';
       usersService.logAdminAction('Compliance Officer', user.name, `${actionVerb} Restriction: ${lockLabel}`);
       onUpdateUser?.({ withdrawalsBlocked: updated.withdrawalsBlocked, readOnlyTerminals: updated.readOnlyTerminals, apiBlocked: updated.apiBlocked });
-    }
-  };
-
-  const handleForceClose = (ticketId, symbol) => {
-    const result = usersService.forceCloseUserPosition(user.id, ticketId);
-    if (result) {
-      usersService.logAdminAction('Risk Desk', user.name, `Force Closed Position ${symbol} #${ticketId}`);
-      onUpdateUser?.({ livePositions: result.user.livePositions, tradingHistory: result.user.tradingHistory, walletBalance: result.user.walletBalance, equity: result.user.equity });
-    }
-  };
-
-  const handleForceHedge = (ticketId, symbol) => {
-    const result = usersService.forceHedgeUserPosition(user.id, ticketId);
-    if (result) {
-      usersService.logAdminAction('Risk Desk', user.name, `Hedged Position ${symbol} #${ticketId} with counter-trade #${result.hedgePosition.ticket}`);
-      onUpdateUser?.({ livePositions: result.user.livePositions });
     }
   };
 
@@ -799,188 +740,12 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
     return <PaymentMethodsTab user={user} />;
   }
 
+  if (activeTab === 'balance-operations') {
+    return <UserBalanceOperationsTab user={user} />;
+  }
+
   if (activeTab === 'wallet') {
-    return (
-      <div className="space-y-5 animate-fade-up">
-
-        {/* Success toast */}
-        {adjustmentSuccessMsg && (
-          <div className="flex items-center gap-2.5 rounded-[6px] border-l-2 border-l-brand border border-brand/15 bg-brand/[0.04] px-4 py-2.5 text-[11px] font-bold text-brand">
-            <CheckCircle size={12} className="shrink-0" />
-            {adjustmentSuccessMsg}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-
-          {/* LEFT: Assets + History */}
-          <div className="lg:col-span-7 space-y-5">
-
-            {/* Wallet assets */}
-            <div>
-              <SectionHeader title="Balances" />
-              <div className="space-y-2.5">
-                {(user.wallet ?? []).length > 0 ? (
-                  user.wallet.map((w, idx) => (
-                    <Panel key={idx}>
-                      <div className="flex items-center gap-4 p-4">
-                        {/* Asset badge */}
-                        <div className="h-9 w-9 rounded-[7px] border border-brand/20 bg-brand/[0.06] text-brand flex items-center justify-center font-semibold text-[12px] font-mono shrink-0">
-                          {w.asset}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-[13px] font-semibold text-text">{w.asset}</h4>
-                          <p className="text-[12px] text-text-muted/80 mt-1">Main wallet currency.</p>
-                        </div>
-                        {/* Metrics */}
-                        <div className="flex items-center divide-x divide-border/15 shrink-0">
-                          {[
-                            { label: 'Balance', val: user.walletBalance, cls: 'text-text' },
-                            { label: 'Available', val: user.walletBalance, cls: 'text-positive' },
-                            { label: 'Hold', val: '$0.00', cls: 'text-text-muted/50' },
-                          ].map(({ label, val, cls }) => (
-                            <div key={label} className="px-4 text-right">
-                              <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70">{label}</p>
-                              <p className={`font-mono text-[12.5px] font-semibold mt-0.5 ${cls}`}>{val}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </Panel>
-                  ))
-                ) : (
-                  <div className="rounded-[8px] border border-dashed border-border/20 p-6 text-center text-[11.5px] text-text-muted/40 italic">
-                    No collateral balances registered.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Transaction history */}
-            <div>
-              <SectionHeader title="Transactions" />
-              <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
-                {(user.walletHistory ?? []).length > 0 ? (
-                  user.walletHistory.map((tx) => {
-                    const isDebit = tx.type === 'WITHDRAWAL';
-                    return (
-                      <div key={tx.id}
-                        className={`flex items-center justify-between gap-4 px-4 py-2.5 rounded-[7px] border-l-2 border border-border/10 bg-bg/20 hover:bg-bg/35 transition-all
-                          ${isDebit ? 'border-l-negative' : 'border-l-positive'}`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`p-1.5 rounded-[5px] shrink-0 ${isDebit ? 'bg-negative/8 text-negative' : 'bg-positive/8 text-positive'}`}>
-                            {isDebit ? <ArrowDownRight size={11} /> : <ArrowUpRight size={11} />}
-                          </div>
-                          <div>
-                            <h4 className="text-[11.5px] font-bold text-text leading-tight">{tx.method}</h4>
-                            <p className="text-[9.5px] text-text-muted/45 mt-0.5 font-mono uppercase">
-                              {tx.type} · <span className="text-positive font-bold">{tx.status}</span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className={`font-mono text-[12px] font-black block ${isDebit ? 'text-negative' : 'text-positive'}`}>{tx.amount}</span>
-                          <span className="font-mono text-[9px] text-text-muted/35 block mt-0.5">{tx.time}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-[8px] border border-dashed border-border/20 p-6 text-center text-[11.5px] text-text-muted/40 italic">
-                    No transactions recorded.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: Maker-Checker */}
-          <div className="lg:col-span-5 space-y-4">
-
-            {/* Maker form */}
-            <Panel>
-              <PanelHead
-                title="Adjust Balance"
-                subtitle="Request a balance change. Another admin must approve this."
-              />
-              <div className="p-4">
-                <form onSubmit={handleCreateAdjustment} className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: 'Action', val: makerType, set: setMakerType, opts: [['CREDIT', 'CREDIT (Add)'], ['DEBIT', 'DEBIT (Remove)']] },
-                      { label: 'Currency', val: makerAsset, set: setMakerAsset, opts: [['USD', 'USD'], ['BTC', 'BTC'], ['EUR', 'EUR']] },
-                    ].map(({ label, val, set, opts }) => (
-                      <div key={label}>
-                        <label className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 block mb-1">{label}</label>
-                        <select value={val} onChange={e => set(e.target.value)}
-                          className="w-full h-8 text-[12px] px-2.5 rounded-[6px] border border-border/18 bg-bg text-text outline-none focus:border-brand/40 transition-all font-semibold">
-                          {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 block mb-1">Amount (USD)</label>
-                    <input type="number" value={makerAmount} onChange={e => setMakerAmount(e.target.value)}
-                      placeholder="e.g. 5000.00" required step="0.01" min="0.01"
-                      className="w-full h-8 text-[12px] px-2.5 rounded-[6px] border border-border/18 bg-bg text-text outline-none focus:border-brand/40 font-mono transition-all font-semibold" />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 block mb-1">Reason</label>
-                    <textarea value={makerReason} onChange={e => setMakerReason(e.target.value)}
-                      placeholder="Write the reason for this adjustment..." required
-                      className="w-full text-[12px] p-2.5 rounded-[6px] border border-border/18 bg-bg text-text outline-none focus:border-brand/40 resize-none transition-all"
-                      rows={2} />
-                  </div>
-                  <button type="submit"
-                    className="w-full h-8 rounded-[6px] bg-brand text-text-on-accent border border-brand/20 hover:bg-brand-hover text-[11px] font-bold uppercase tracking-wider transition-all active:scale-[0.98] cursor-pointer">
-                    Submit Request
-                  </button>
-                </form>
-              </div>
-            </Panel>
-
-            {/* Checker queue */}
-            <Panel>
-              <PanelHead
-                title="Pending Adjustments"
-                subtitle="Approve or reject balance change requests."
-              />
-              <div className="p-4 space-y-2.5 max-h-[300px] overflow-y-auto no-scrollbar">
-                {pendingAdjustments.length > 0 ? (
-                  pendingAdjustments.map((adj) => (
-                    <div key={adj.id} className="rounded-[8px] border border-border/15 bg-bg/20 overflow-hidden">
-                      <div className="flex items-center justify-between px-3 py-2 border-b border-border/10">
-                        <Chip label={adj.type} variant={adj.type === 'CREDIT' ? 'positive' : 'negative'} />
-                        <span className="font-mono text-text font-semibold text-[12.5px]">${parseFloat(adj.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="px-3 py-2.5">
-                        <p className="text-[12px] text-text-muted/80 leading-relaxed">Reason: "{adj.reason}"</p>
-                        <p className="text-[11px] text-text-muted/70 font-semibold mt-1">Requested by {adj.maker} · {adj.time}</p>
-                      </div>
-                      <div className="flex border-t border-border/8">
-                        <button onClick={() => handleDeclineAdjustment(adj.id)}
-                          className="flex-1 h-7 text-negative text-[11px] font-bold uppercase tracking-wider hover:bg-negative/5 transition-all cursor-pointer border-r border-border/10">
-                          Decline
-                        </button>
-                        <button onClick={() => handleApproveAdjustment(adj.id)}
-                          className="flex-1 h-7 text-brand text-[11px] font-bold uppercase tracking-wider hover:bg-brand/5 transition-all cursor-pointer">
-                          Approve & Apply
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-[8px] border border-dashed border-border/18 p-5 text-center text-[11px] text-text-muted/35 italic">
-                    No adjustments are currently waiting for checker approval.
-                  </div>
-                )}
-              </div>
-            </Panel>
-          </div>
-        </div>
-      </div>
-    );
+    return <UserWalletTab user={user} />;
   }
 
   /* ── 4. MT5 TERMINALS ── */
@@ -1059,120 +824,7 @@ export function UserDetailContent({ user, activeTab, onUpdateUser, onCreateMt5Ac
 
   /* ── 5. TRADE LOG ── */
   if (activeTab === 'trading-history') {
-    return (
-      <div className="space-y-6 animate-fade-up">
-
-        {/* Live positions */}
-        <div>
-          <SectionHeader title="Open Positions" />
-          <div className="space-y-2.5">
-            {(user.livePositions ?? []).length > 0 ? (
-              user.livePositions.map((trade) => {
-                const isLoss = String(trade.pnl).startsWith('-');
-                const isBuy = trade.side === 'BUY';
-                return (
-                  <Panel key={trade.ticket}>
-                    <div className="flex flex-col md:flex-row md:items-center gap-4 p-4">
-                      {/* Side + Symbol */}
-                      <div className="flex items-center gap-3 min-w-[140px]">
-                        <span className={`h-8 w-12 rounded-[6px] text-[11px] font-bold uppercase tracking-wider flex items-center justify-center border shrink-0
-                          ${isBuy ? 'border-positive/20 bg-positive/8 text-positive' : 'border-negative/20 bg-negative/8 text-negative'}`}>
-                          {trade.side}
-                        </span>
-                        <div>
-                          <h4 className="text-[13px] font-semibold text-text">{trade.symbol}</h4>
-                          <p className="font-mono text-[11px] text-text-muted/70 mt-1">#{trade.ticket}</p>
-                        </div>
-                      </div>
-
-                      {/* Metrics */}
-                      <div className="flex-1 grid grid-cols-4 gap-4 border-x border-border/10 px-4">
-                        {[
-                          { label: 'Volume', val: trade.lots },
-                          { label: 'Entry', val: trade.openPrice },
-                          { label: 'Current', val: trade.livePrice },
-                          { label: 'Swap', val: trade.swaps },
-                        ].map(({ label, val }) => (
-                          <div key={label}>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70">{label}</p>
-                            <p className="font-mono text-[12px] font-semibold text-text mt-0.5">{val}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* PnL + actions */}
-                      <div className="flex items-center gap-4 shrink-0">
-                        <div className="text-right">
-                          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70">P&L</p>
-                          <p className={`font-mono font-semibold text-[14px] mt-0.5 ${isLoss ? 'text-negative' : 'text-positive'}`}>{trade.pnl}</p>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                          <PillBtn onClick={() => handleForceHedge(trade.ticket, trade.symbol)} variant="warning">
-                            Hedge
-                          </PillBtn>
-                          <PillBtn onClick={() => handleForceClose(trade.ticket, trade.symbol)} variant="danger">
-                            Close Trade
-                          </PillBtn>
-                        </div>
-                      </div>
-                    </div>
-                  </Panel>
-                );
-              })
-            ) : (
-              <div className="rounded-[8px] border border-dashed border-border/18 p-7 text-center text-[11.5px] text-text-muted/40 italic">
-                No open positions.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Closed history */}
-        <div>
-          <SectionHeader title="Closed Trades" />
-          <div className="space-y-1.5">
-            {(user.tradingHistory ?? []).length > 0 ? (
-              user.tradingHistory.map((trade) => {
-                const isLoss = String(trade.pnl).startsWith('-');
-                const isBuy = trade.side === 'BUY';
-                return (
-                  <div key={trade.ticket}
-                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-2.5 rounded-[7px] border-l-2 border border-border/10 bg-bg/18 hover:bg-bg/30 transition-all
-                      ${isBuy ? 'border-l-positive' : 'border-l-negative'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className={`h-7 w-10 rounded-[5px] text-[11px] font-bold uppercase flex items-center justify-center border shrink-0
-                        ${isBuy ? 'border-positive/18 bg-positive/6 text-positive' : 'border-negative/18 bg-negative/6 text-negative'}`}>
-                        {trade.side}
-                      </span>
-                      <div>
-                        <h4 className="text-[13px] font-semibold text-text">{trade.symbol}</h4>
-                        <p className="font-mono text-[11px] text-text-muted/70 mt-1">#{trade.ticket}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-8 shrink-0">
-                      {[
-                        { label: 'Volume', val: trade.lots, cls: '' },
-                        { label: 'Prices', val: `${trade.open} → ${trade.close}`, cls: 'font-mono text-text-muted/65' },
-                        { label: 'P&L', val: trade.pnl, cls: `font-mono font-semibold ${isLoss ? 'text-negative' : 'text-positive'}` },
-                      ].map(({ label, val, cls }) => (
-                        <div key={label} className="text-right">
-                          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70">{label}</p>
-                          <p className={`text-[12px] font-semibold mt-0.5 ${cls}`}>{val}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rounded-[8px] border border-dashed border-border/18 p-6 text-center text-[11.5px] text-text-muted/40 italic">
-                No closed trades.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+    return <UserTradesTab user={user} />;
   }
 
   /* ── 6. ACTIVITY LOGS ── */

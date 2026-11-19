@@ -62,5 +62,19 @@ export const adminFinanceApi = {
   async createWithdrawal(payload) {
     const data = await apiClient.post('/withdrawals', payload);
     return data;
+  },
+
+  /* Balance operations: Credit, Charge, Correction, Bonus, Commission, Tax, Dividend... */
+  async getBalanceOperations(filters = {}) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '' && v !== 'ALL') params.append(k, v);
+    });
+    const data = await apiClient.get(`/balance-operations?${params.toString()}`);
+    return data.data || [];
+  },
+
+  async createBalanceOperation(payload) {
+    return apiClient.post('/balance-operations', payload);
   }
 };

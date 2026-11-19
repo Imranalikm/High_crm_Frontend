@@ -25,6 +25,7 @@ import UsersAuditPage from '@/admin/features/users/pages/UsersAuditPage';
 import MT5AccountReviewPage from '@/admin/features/users/pages/MT5AccountReviewPage';
 import DepositsPage from '@/admin/features/finance/pages/DepositsPage';
 import WithdrawalsPage from '@/admin/features/finance/pages/WithdrawalsPage';
+import BalanceOperationsPage from '@/admin/features/finance/pages/BalanceOperationsPage';
 import TransactionsPage from '@/admin/features/finance/pages/TransactionsPage';
 import FailedPaymentsPage from '@/admin/features/finance/pages/FailedPaymentsPage';
 import ApprovalsPage from '@/admin/features/finance/pages/ApprovalsPage';
@@ -85,6 +86,7 @@ const adminPageRegistry = {
   'finance/deposits': DepositsPage,
   'finance/deposit-detail': DepositDetailPage,
   'finance/withdrawals': WithdrawalsPage,
+  'finance/balance-operations': BalanceOperationsPage,
   'finance/withdrawal-detail': WithdrawalDetailPage,
   'finance/transactions': TransactionsPage,
   'finance/failed-payments': FailedPaymentsPage,

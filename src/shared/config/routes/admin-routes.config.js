@@ -154,6 +154,16 @@ export const adminRouteModules = [
           { pattern: '/admin/finance/withdrawals/:id', title: 'Withdrawal Details', section: 'Finance', permission: PERMISSIONS.finance.view },
         ],
       },
+      {
+        id: 'finance-balance-operations',
+        path: 'finance/balance-operations',
+        pageKey: 'finance/balance-operations',
+        navLabel: 'Balance Operations',
+        permission: PERMISSIONS.finance.view,
+        meta: [
+          { pattern: '/admin/finance/balance-operations', title: 'Balance Operations', section: 'Finance', permission: PERMISSIONS.finance.view },
+        ],
+      },
     ],
   },
   {

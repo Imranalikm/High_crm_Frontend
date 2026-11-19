@@ -296,6 +296,7 @@ export function Sidebar({ collapsed, isMobile }) {
   const getFinanceActiveId = (pathname) => {
     if (pathname.includes('/admin/finance/deposits')) return 'finance-deposits';
     if (pathname.includes('/admin/finance/withdrawals')) return 'finance-withdrawals';
+    if (pathname.includes('/admin/finance/balance-operations')) return 'finance-balance-operations';
     if (pathname.includes('/admin/finance/transactions')) return 'finance-transactions';
     if (pathname.includes('/admin/finance/failed')) return 'finance-failed';
     if (pathname.includes('/admin/finance/approvals')) return 'finance-approvals';

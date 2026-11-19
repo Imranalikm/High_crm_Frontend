@@ -27,6 +27,16 @@ export const financeApi = {
     return data.withdrawals || data.data || [];
   },
 
+  // Credit, bonus, commission, charges... posted by the broker (completed only)
+  async getBalanceOperations() {
+    try {
+      const data = await apiClient.get('/balance-operations/my');
+      return data.data || [];
+    } catch {
+      return []; // never break the wallet if this endpoint is unavailable
+    }
+  },
+
   async createWithdrawal(payload) {
     const data = await apiClient.post('/withdrawals', payload);
     return data;

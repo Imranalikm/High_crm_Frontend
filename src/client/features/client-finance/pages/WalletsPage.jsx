@@ -11,13 +11,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowDownToLine, ArrowUpFromLine, CreditCard, BarChart3,
   TrendingUp, Lock, ShieldCheck, ChevronRight,
-  ArrowDownLeft, ArrowUpRight, Clock,
+  ArrowDownLeft, ArrowUpRight, Clock, Gift,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { financeApi } from '../services/finance.api';
 import { METHOD_LABELS } from '@/shared/config/constants/finance';
 import { AddWithdrawalDrawer } from '../components/AddWithdrawalDrawer';
 import { useLiveMt5Accounts } from '@/shared/hooks/useLiveMt5Accounts';
+import { useFinanceUpdates } from '@/shared/hooks/useFinanceUpdates';
 
 /* ─────────────────────────────────────────────────────────
    Mock data — replace with API / store values
@@ -57,12 +58,13 @@ const QUICK_ACTIONS = [
 const fmt = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
 
-const FILTERS = ['All', 'Deposits', 'Withdrawals', 'Completed', 'Pending'];
+const FILTERS = ['All', 'Deposits', 'Withdrawals', 'Bonus & Credit', 'Completed', 'Pending'];
 
 const matchFilter = (tx, f) => {
   if (f === 'All') return true;
   if (f === 'Deposits') return tx.type === 'DEPOSIT';
   if (f === 'Withdrawals') return tx.type === 'WITHDRAWAL';
+  if (f === 'Bonus & Credit') return tx.kind === 'OP';
   if (f === 'Completed') return tx.status === 'COMPLETED';
   if (f === 'Pending') return tx.status === 'PENDING';
   return true;
@@ -211,10 +213,11 @@ function StatCards({ data }) {
     { label: 'Total Deposits', value: fmt(data.totalDeposits), sub: 'Lifetime funded', color: 'positive', Icon: ArrowDownToLine },
     { label: 'Total Withdrawals', value: fmt(data.totalWithdrawals), sub: 'Lifetime withdrawn', color: 'negative', Icon: ArrowUpFromLine },
     { label: 'Pending Amount', value: fmt(data.pendingAmount), sub: `${data.pendingCount} transactions processing`, color: 'warning', Icon: Clock },
+    { label: 'Bonus & Credit', value: fmt(data.totalAdjustments || 0), sub: 'Credit, bonus, commission & other', color: 'cyan', Icon: Gift },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((c) => {
         const colorVar = `var(--${c.color})`;
         const dimVar = `color-mix(in srgb, var(--${c.color}) 12%, transparent)`;
@@ -307,7 +310,7 @@ function StatusBadge({ status }) {
 
 /** Single transaction row */
 function TxRow({ tx, isLast }) {
-  const isDebit = tx.type === 'WITHDRAWAL';
+  const isDebit = tx.type === 'WITHDRAWAL' || tx.amount < 0;
   const amtColor = isDebit ? 'var(--negative)' : 'var(--positive)';
   const iconBg = isDebit ? 'color-mix(in srgb, var(--negative) 12%, transparent)' : 'color-mix(in srgb, var(--positive) 12%, transparent)';
   const iconBd = isDebit ? 'color-mix(in srgb, var(--negative) 18%, transparent)' : 'color-mix(in srgb, var(--positive) 18%, transparent)';
@@ -402,7 +405,7 @@ function ActivitySection({ txs, onViewAll }) {
       <Card padding={false} className="overflow-hidden">
         {filtered.length > 0
           ? filtered.map((tx, i) => (
-            <TxRow key={tx.ref} tx={tx} isLast={i === filtered.length - 1} />
+            <TxRow key={tx.key || tx.ref} tx={tx} isLast={i === filtered.length - 1} />
           ))
           : (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
@@ -468,13 +471,15 @@ export function WalletsPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showWithdrawDrawer, setShowWithdrawDrawer] = useState(false);
+  const financeVersion = useFinanceUpdates();
 
   const fetchWalletData = async () => {
     try {
-      const [walletRes, depositsRes, withdrawalsRes] = await Promise.all([
+      const [walletRes, depositsRes, withdrawalsRes, opsRes] = await Promise.all([
         financeApi.getWallet(),
         financeApi.getDeposits(),
-        financeApi.getWithdrawals()
+        financeApi.getWithdrawals(),
+        financeApi.getBalanceOperations(),
       ]);
 
         const balance = parseFloat(walletRes.wallet_balance || 0);
@@ -522,7 +527,25 @@ export function WalletsPage() {
           };
         });
 
-        const txs = [...depTxs, ...withTxs].sort((a, b) => b._rawDate - a._rawDate);
+        // Broker balance operations (credit, bonus, commission, charges...)
+        let totalAdjustments = 0;
+        const opTxs = opsRes.map(o => {
+          const amt = Number(o.amount) || 0;
+          totalAdjustments += amt;
+          return {
+            key: `BOP-${o.id}`,
+            kind: 'OP',
+            type: String(o.typeLabel || 'Adjustment').toUpperCase(),
+            amount: amt,
+            method: `#${o.accountId}${o.comment ? ` · ${o.comment}` : ''}`,
+            date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
+            status: 'COMPLETED',
+            ref: o.dealId || `BOP-${o.id}`,
+            _rawDate: new Date(o.createdAt).getTime()
+          };
+        });
+
+        const txs = [...depTxs, ...withTxs, ...opTxs].sort((a, b) => b._rawDate - a._rawDate);
 
         setWalletData({
           totalBalance: portfolio,
@@ -534,6 +557,7 @@ export function WalletsPage() {
           totalWithdrawals: totalWiths,
           pendingAmount: pendingAmt,
           pendingCount: pendingCount,
+          totalAdjustments,
         });
 
         setTransactions(txs);
@@ -545,9 +569,10 @@ export function WalletsPage() {
       }
   };
 
+  // Refetch when a deposit/withdrawal/balance operation changes (socket push)
   useEffect(() => {
     fetchWalletData();
-  }, []);
+  }, [financeVersion]);
 
   // Portfolio = CRM wallet + MT5 balances, with MT5 overridden live from the feed
   const liveWalletData = useMemo(() => {

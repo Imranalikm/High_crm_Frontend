@@ -3,6 +3,7 @@ export const userDetailTabs = [
   { id: 'profile', label: 'Profile' },
   { id: 'kyc', label: 'Verification' },
   { id: 'wallet', label: 'Wallet' },
+  { id: 'balance-operations', label: 'Balance Ops' },
   { id: 'payment-methods', label: 'Bank Account' },
   { id: 'mt5-accounts', label: 'MT5 Accounts' },
   { id: 'trading-history', label: 'Trades' },
