@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/api/client/apiClient';
+import { isDemoAccount } from '@/shared/utils/mt5Accounts';
 
 /**
  * Dashboard API Service
@@ -44,8 +45,10 @@ export const dashboardApi = {
       withdrawalsPending: extractArray(withdrawalsPendingRes, ['data', 'withdrawals']),
       tickets: extractTickets(ticketsRes),
       // Provisioned MT5 accounts only (live values are merged in on the page)
+      // (demo accounts excluded: they are not client money)
       mt5Accounts: extractArray(mt5Res, ['data']).filter(
-        (a) => a.accountid && !String(a.accountid).startsWith('PENDING-') && String(a.status || '').toUpperCase() === 'LIVE'
+        (a) => a.accountid && !String(a.accountid).startsWith('PENDING-') &&
+          String(a.status || '').toUpperCase() === 'LIVE' && !isDemoAccount(a)
       ),
     };
   },

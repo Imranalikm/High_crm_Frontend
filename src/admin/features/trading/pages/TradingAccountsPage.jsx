@@ -10,6 +10,7 @@ import { TradingAccountCards } from '../components/TradingAccountCards';
 import { TradingActivityLog } from '../components/TradingActivityLog';
 import { tradingAccountsService } from '../services/tradingAccountsService';
 import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
+import { isDemoAccount } from '@/shared/utils/mt5Accounts';
 import { exportRows } from '@/utils/exporters';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +29,10 @@ const FILTER_OPTIONS = [
 ];
 
 /* ─── Helpers ─────────────────────────────────────────────── */
+// Provisioned live accounts only: no pending/failed placeholders, no demo accounts
+const isRealAccount = (r) =>
+  r.accountid && !String(r.accountid).startsWith('PENDING-') && !isDemoAccount(r);
+
 function formatMoney(num) {
   const n = Number(num) || 0;
   return `${n < 0 ? '-' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -90,13 +95,13 @@ function TradingAccountsPage() {
 
   const loadAccounts = useCallback(() =>
     tradingAccountsService.list().then((list) => {
-      setRows(list.filter((r) => r.accountid && !String(r.accountid).startsWith('PENDING-')));
+      setRows(list.filter(isRealAccount));
       setLoading(false);
     }), []);
 
   useEffect(() => {
     tradingAccountsService.list().then((list) => {
-      setRows(list.filter((r) => r.accountid && !String(r.accountid).startsWith('PENDING-')));
+      setRows(list.filter(isRealAccount));
       setLoading(false);
     });
   }, []);
