@@ -147,16 +147,17 @@ export function ClientTransactionsPage() {
 
         // Broker balance operations: credit, bonus, commission, charges...
         const ops = rawOps.map(o => {
-          const amt = Number(o.amount) || 0;
+          const amt = Math.abs(Number(o.amount) || 0); // no add/deduct sign
           return {
             id: `BOP-${o.id}`,
+            isOp: true,
             type: o.typeLabel || 'Adjustment',
             amount: amt,
             fee: 0,
             netAmount: amt,
             method: 'Broker',
-            source: amt >= 0 ? 'Broker' : `MT5 #${o.accountId}`,
-            destination: amt >= 0 ? `MT5 #${o.accountId}` : 'Broker',
+            source: 'Broker',
+            destination: `MT5 #${o.accountId}`,
             status: 'COMPLETED',
             date: o.createdAt,
             referenceId: o.dealId || null,
@@ -364,7 +365,10 @@ export function ClientTransactionsPage() {
     {
       key: 'amount',
       label: 'Amount',
-      render: (val) => {
+      render: (val, row) => {
+        if (row?.isOp) {
+          return <span className="font-mono text-[13px] font-bold text-text">{fmt(Math.abs(val))}</span>;
+        }
         const isCredit = val > 0;
         const amtColor = isCredit ? 'var(--positive)' : 'var(--negative)';
         const amtStr = isCredit ? `+${fmt(val)}` : `-${fmt(Math.abs(val))}`;
@@ -680,8 +684,8 @@ export function ClientTransactionsPage() {
             emptyTitle="No transactions found matching filters."
             pagination={paginationState}
             rowClassName={(row) => {
-              const isGreen = row.amount > 0;
-              const isRed = row.amount < 0;
+              const isGreen = !row.isOp && row.amount > 0;
+              const isRed = !row.isOp && row.amount < 0;
               if (isGreen) return 'hover:bg-positive/[0.04] hover:border-l-positive';
               if (isRed) return 'hover:bg-negative/[0.04] hover:border-l-negative';
               return 'hover:bg-brand/[0.04] hover:border-l-brand';

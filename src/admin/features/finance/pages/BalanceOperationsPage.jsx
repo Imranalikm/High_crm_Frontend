@@ -91,14 +91,14 @@ function BalanceOperationsPage() {
 
   const kpis = useMemo(() => {
     const done = rows.filter((r) => r.status === 'completed');
-    const net = (...types) => done.filter((r) => types.includes(r.type)).reduce((s, r) => s + r.amount, 0);
+    const total = (...types) => done.filter((r) => types.includes(r.type)).reduce((s, r) => s + Math.abs(r.amount), 0);
     const failed = rows.filter((r) => r.status === 'failed').length;
     return [
       { label: 'Operations', value: done.length, Icon: Layers, accent: 'var(--cyan)', sub: 'completed' },
-      { label: 'Net Credit', value: fmtMoney(net(2)), Icon: CreditCard, accent: 'var(--cyan)', sub: 'credit in − out' },
-      { label: 'Net Bonus', value: fmtMoney(net(5)), Icon: Gift, accent: 'var(--positive)', sub: 'bonus given − removed' },
-      { label: 'Commission', value: fmtMoney(net(6)), Icon: Percent, accent: 'var(--brand)', sub: 'net commission' },
-      { label: 'Charges & Tax', value: fmtMoney(net(3, 7)), Icon: Receipt, accent: 'var(--negative)', sub: 'charges + tax' },
+      { label: 'Credit', value: fmtMoney(total(2)), Icon: CreditCard, accent: 'var(--cyan)', sub: 'total credit' },
+      { label: 'Bonus', value: fmtMoney(total(5)), Icon: Gift, accent: 'var(--positive)', sub: 'total bonus' },
+      { label: 'Commission', value: fmtMoney(total(6)), Icon: Percent, accent: 'var(--brand)', sub: 'total commission' },
+      { label: 'Charges & Tax', value: fmtMoney(total(3, 7)), Icon: Receipt, accent: 'var(--negative)', sub: 'charges + tax' },
       { label: 'Failed', value: failed, Icon: AlertTriangle, accent: 'var(--negative)', sub: 'rejected by MT5', trend: failed ? 'check' : 'none', trendUp: !failed },
     ];
   }, [rows]);
@@ -111,9 +111,7 @@ function BalanceOperationsPage() {
     {
       key: 'amount', label: 'Amount', align: 'right',
       render: (v) => (
-        <span className="font-mono font-bold text-[13px]" style={{ color: v >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
-          {v > 0 ? '+' : ''}{fmtMoney(v)}
-        </span>
+        <span className="font-mono font-bold text-[13px] text-text">{fmtMoney(Math.abs(v))}</span>
       ),
     },
     { key: 'comment', label: 'Comment', render: (v, r) => <span className="text-[12px] text-text-muted/85 max-w-[180px] block truncate" title={r.note ? `${v}\nNote: ${r.note}` : v}>{v || '—'}</span> },
@@ -132,7 +130,7 @@ function BalanceOperationsPage() {
     email: r.client?.email || '',
     account: r.accountId,
     type: r.typeLabel,
-    amount: r.amount,
+    amount: Math.abs(r.amount),
     comment: r.comment || '',
     note: r.note || '',
     dealId: r.dealId || '',

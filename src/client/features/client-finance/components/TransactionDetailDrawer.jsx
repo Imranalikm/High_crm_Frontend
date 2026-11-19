@@ -65,7 +65,7 @@ function DHeader({ eyebrow, title, subtitle, onClose, accentColor = 'var(--brand
 }
 
 /* ── StatusHeroBanner: Renders top status panel ── */
-function StatusHeroBanner({ status, amount, id, created, method }) {
+function StatusHeroBanner({ status, amount, id, created, method, isOp }) {
   const statusColor = STATUS_CLR[status] || 'var(--text-muted)';
 
   let StatusIcon = Clock;
@@ -118,7 +118,7 @@ function StatusHeroBanner({ status, amount, id, created, method }) {
               </span>
             </div>
             <div className="text-[20px] font-bold tracking-tight text-text font-mono leading-none mt-1">
-              {amount > 0 ? '+' : ''}
+              {amount > 0 && !isOp ? '+' : ''}
               {fmt(amount)}
             </div>
             <div className="text-[10.5px] font-mono text-text-muted/70 mt-1">
@@ -239,6 +239,7 @@ export function TransactionDetailDrawer({ transaction, open, onClose, triggerToa
         <StatusHeroBanner
           status={transaction.status}
           amount={transaction.amount}
+          isOp={!!transaction.isOp}
           id={transaction.id}
           created={rowTs}
           method={transaction.method}
@@ -251,9 +252,9 @@ export function TransactionDetailDrawer({ transaction, open, onClose, triggerToa
             <DrawerField label="Status" value={transaction.status} accent={statusColor} />
             <DrawerField
               label="Amount"
-              value={(transaction.amount > 0 ? '+' : '') + fmt(transaction.amount)}
+              value={(transaction.amount > 0 && !transaction.isOp ? '+' : '') + fmt(transaction.amount)}
               mono
-              accent={transaction.amount > 0 ? 'var(--positive)' : 'var(--text)'}
+              accent={transaction.amount > 0 && !transaction.isOp ? 'var(--positive)' : 'var(--text)'}
             />
             <DrawerField label="Method" value={transaction.method} />
             <DrawerField label="Gross Amount" value={fmt(Math.abs(transaction.amount))} mono />

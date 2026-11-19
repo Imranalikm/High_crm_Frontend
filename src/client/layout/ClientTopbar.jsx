@@ -12,9 +12,11 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useClickOutside } from '@/shared/hooks/useClickOutside';
 import { useAuth } from '@/shared/features/auth/AuthContext';
+import { useMyNotifications } from '@/shared/hooks/useMyNotifications';
 
 export function ClientTopbar({ collapsed, setCollapsed, theme, toggleTheme }) {
   const navigate = useNavigate();
+  const { unreadCount } = useMyNotifications();
   const location = useLocation();
   const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -115,10 +117,17 @@ export function ClientTopbar({ collapsed, setCollapsed, theme, toggleTheme }) {
 
         {/* Notifications bell */}
         <button
-          aria-label="Notifications"
+          aria-label={unreadCount ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+          title="Notifications"
+          onClick={() => navigate('/client')}
           className="group relative flex items-center justify-center w-8 h-8 rounded-[7px] text-text-muted/75 hover:text-text hover:bg-text/[0.04] border border-transparent hover:border-border/[0.12] transition-all duration-200 cursor-pointer"
         >
           <Bell size={17} strokeWidth={2} className="transition-transform duration-300 group-hover:[transform:rotate(10deg)]" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-[3px] rounded-full bg-negative text-text-on-accent text-[8.5px] font-black flex items-center justify-center leading-none">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </button>
 
         <div className="w-px h-4 shrink-0 bg-border/40" />

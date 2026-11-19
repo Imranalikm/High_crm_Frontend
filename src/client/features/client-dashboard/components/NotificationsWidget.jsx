@@ -1,33 +1,51 @@
 import React, { useState } from 'react';
-import { Bell, TrendingUp, ArrowDownLeft, Copy, Shield, CheckCheck } from 'lucide-react';
+import { Bell, ArrowDownLeft, ArrowUpRight, Gift, Shield, Monitor, CheckCheck } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { useMyNotifications, markNotificationRead, markAllNotificationsRead } from '@/shared/hooks/useMyNotifications';
 
-const NOTIFICATIONS = [
-  { id:1, type:'POSITION', icon:TrendingUp, color:'var(--positive)', title:'Position closed at profit',  body:'USDJPY BUY closed. Profit: +$702.40',   ts:'2 min ago',  unread:true  },
-  { id:2, type:'DEPOSIT',  icon:ArrowDownLeft,color:'var(--cyan)',title:'Deposit confirmed',           body:'$5,000 bank wire credited to your account.', ts:'14 min ago', unread:true  },
-  { id:3, type:'COPY',     icon:Copy,       color:'var(--purple)', title:'Copy trade executed',         body:'Apex Scalper Pro — EURUSD BUY 1.0 lot', ts:'1h ago',     unread:false },
-  { id:4, type:'SYSTEM',   icon:Bell,       color:'var(--warning)', title:'Market update',               body:'Gold up 0.36% — near key resistance at $2,328', ts:'2h ago', unread:false },
-  { id:5, type:'KYC',      icon:Shield,     color:'var(--positive)', title:'KYC verified successfully',   body:'Your account has been fully verified.',  ts:'1d ago',     unread:false },
-];
+/* Notification type -> icon, colour and filter group */
+const TYPE_META = {
+  deposit:    { icon: ArrowDownLeft, color: 'var(--positive)', group: 'Finance' },
+  withdrawal: { icon: ArrowUpRight,  color: 'var(--negative)', group: 'Finance' },
+  balance:    { icon: Gift,          color: 'var(--cyan)',     group: 'Finance' },
+  kyc:        { icon: Shield,        color: 'var(--positive)', group: 'Account' },
+  account:    { icon: Monitor,       color: 'var(--brand)',    group: 'Account' },
+};
+const DEFAULT_META = { icon: Bell, color: 'var(--warning)', group: 'Platform' };
 
-const FILTER_LABELS = ['All', 'Trades', 'Finance', 'Platform'];
+const FILTER_LABELS = ['All', 'Finance', 'Account', 'Platform'];
+
+function timeAgo(date) {
+  const s = Math.max(0, Math.round((Date.now() - new Date(date).getTime()) / 1000));
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  if (s < 7 * 86400) return `${Math.floor(s / 86400)}d ago`;
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export function NotificationsWidget() {
   const [filter, setFilter] = useState('All');
-  const [items, setItems] = useState(NOTIFICATIONS);
+  const { items: raw, unreadCount: unread, loaded, error } = useMyNotifications();
 
-  const unread = items.filter(n => n.unread).length;
-
-  const filtered = items.filter((n) => {
-    if (filter === 'All') return true;
-    if (filter === 'Trades') return n.type === 'POSITION' || n.type === 'COPY';
-    if (filter === 'Finance') return n.type === 'DEPOSIT';
-    if (filter === 'Platform') return n.type === 'SYSTEM' || n.type === 'KYC';
-    return true;
+  const items = raw.map((n) => {
+    const meta = TYPE_META[String(n.type || '').toLowerCase()] || DEFAULT_META;
+    return {
+      id: n.id,
+      icon: meta.icon,
+      color: meta.color,
+      group: meta.group,
+      title: n.title,
+      body: n.message,
+      ts: timeAgo(n.createdAt),
+      unread: !n.isRead,
+    };
   });
 
-  const markRead = (id) => setItems(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
-  const markAllRead = () => setItems(prev => prev.map(n => ({ ...n, unread: false })));
+  const filtered = items.filter((n) => filter === 'All' || n.group === filter);
+
+  const markRead = (id) => markNotificationRead(id);
+  const markAllRead = () => markAllNotificationsRead();
 
   return (
     <Card className="h-full p-0 flex flex-col overflow-hidden" padding={false} contentClassName="h-full flex flex-col min-h-0">
@@ -45,7 +63,7 @@ export function NotificationsWidget() {
               <span
                 className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-[8.5px] font-black flex items-center justify-center bg-negative text-text-on-accent"
               >
-                {unread}
+                {unread > 9 ? '9+' : unread}
               </span>
             )}
           </span>
@@ -89,7 +107,9 @@ export function NotificationsWidget() {
       <div className="flex-1 overflow-y-auto custom-scrollbar bg-surface/5">
         {filtered.length === 0 && (
           <div className="flex items-center justify-center h-32">
-            <p className="text-[12px] text-text-muted">No notifications here</p>
+            <p className="text-[12px] text-text-muted">
+              {!loaded ? 'Loading…' : error ? 'Could not load notifications' : 'No notifications here'}
+            </p>
           </div>
         )}
         {filtered.map((n) => {
@@ -130,7 +150,7 @@ export function NotificationsWidget() {
                     <span className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 bg-brand animate-pulse" />
                   )}
                 </div>
-                <p className="text-[11px] text-text-muted mt-0.5 leading-normal truncate">{n.body}</p>
+                <p className="text-[11px] text-text-muted mt-0.5 leading-normal line-clamp-2" title={n.body}>{n.body}</p>
                 <p className="text-[9.5px] mt-1 font-mono text-text-muted">{n.ts}</p>
               </div>
             </div>

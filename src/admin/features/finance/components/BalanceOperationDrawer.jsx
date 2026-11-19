@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Send, AlertTriangle, Plus, Minus, ShieldCheck } from 'lucide-react';
+import { X, Send, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { MainDrawer } from '@/components/common/drawer';
 import { apiClient } from '@/shared/api/client/apiClient';
 import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
@@ -14,7 +14,7 @@ export function BalanceOperationDrawer({ open, onClose, onSuccess, initialUserId
   const [accounts, setAccounts] = useState([]);
   const [clientQuery, setClientQuery] = useState('');
   const [form, setForm] = useState({
-    userId: initialUserId ? String(initialUserId) : '', accountId: '', type: 5, direction: 1, amount: '', comment: '', note: '',
+    userId: initialUserId ? String(initialUserId) : '', accountId: '', type: 5, amount: '', comment: '', note: '',
   });
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -57,11 +57,11 @@ export function BalanceOperationDrawer({ open, onClose, onSuccess, initialUserId
   const selectedAccount = accounts.find((a) => String(a.accountid) === String(form.accountId));
   const live = selectedAccount ? withLive(selectedAccount, byLogin) : null;
   const typeMeta = BALANCE_OP_TYPES.find((t) => t.id === Number(form.type));
-  const signedAmount = (Number(form.amount) || 0) * form.direction;
+  const amount = Math.abs(Number(form.amount) || 0);
 
   const set = (patch) => { setConfirming(false); setError(''); setForm((f) => ({ ...f, ...patch })); };
 
-  const pickType = (t) => set({ type: t.id, direction: t.defaultDirection });
+  const pickType = (t) => set({ type: t.id });
 
   const validate = () => {
     if (!form.userId) return 'Select a client.';
@@ -82,11 +82,11 @@ export function BalanceOperationDrawer({ open, onClose, onSuccess, initialUserId
       await adminFinanceApi.createBalanceOperation({
         accountId: form.accountId,
         type: Number(form.type),
-        amount: signedAmount,
+        amount,
         comment: form.comment,
         note: form.note,
       });
-      onSuccess?.(`${typeMeta.label} ${signedAmount > 0 ? '+' : ''}${fmtMoney(signedAmount)} applied to #${form.accountId}`);
+      onSuccess?.(`${typeMeta.label} ${fmtMoney(amount)} applied to #${form.accountId}`);
       onClose();
     } catch (err) {
       setConfirming(false);
@@ -195,32 +195,15 @@ export function BalanceOperationDrawer({ open, onClose, onSuccess, initialUserId
             {typeMeta && <p className="text-[11px] text-text-muted/70 mt-1.5">{typeMeta.hint}</p>}
           </div>
 
-          {/* Direction + amount */}
+          {/* Amount: the operation type decides how MT5 applies it */}
           <div>
             <label className={labelCls}>Amount (USD)</label>
-            <div className="flex gap-2">
-              <div className="flex rounded-[8px] border border-border/20 overflow-hidden flex-shrink-0">
-                {[[1, 'Add', Plus, 'var(--positive)'], [-1, 'Deduct', Minus, 'var(--negative)']].map(([d, label, Icon, color]) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => set({ direction: d })}
-                    className="h-10 px-3 flex items-center gap-1 text-[12px] font-bold transition-all cursor-pointer"
-                    style={form.direction === d
-                      ? { background: `color-mix(in srgb, ${color} 16%, transparent)`, color }
-                      : { color: 'var(--text-muted)' }}
-                  >
-                    {React.createElement(Icon, { size: 12 })} {label}
-                  </button>
-                ))}
-              </div>
-              <input
-                type="number" min="0.01" step="0.01" value={form.amount}
-                onChange={(e) => set({ amount: e.target.value })}
-                placeholder="0.00"
-                className={`${inputCls} font-mono`}
-              />
-            </div>
+            <input
+              type="number" min="0.01" step="0.01" value={form.amount}
+              onChange={(e) => set({ amount: e.target.value })}
+              placeholder="0.00"
+              className={`${inputCls} font-mono`}
+            />
           </div>
 
           <div>
@@ -248,9 +231,7 @@ export function BalanceOperationDrawer({ open, onClose, onSuccess, initialUserId
               <p className="flex items-center gap-1.5 font-bold text-warning mb-1"><ShieldCheck size={14} /> Confirm operation</p>
               <p>
                 <b>{typeMeta?.label}</b>{' '}
-                <span className="font-mono font-bold" style={{ color: signedAmount > 0 ? 'var(--positive)' : 'var(--negative)' }}>
-                  {signedAmount > 0 ? '+' : '-'}{fmtMoney(Math.abs(signedAmount))}
-                </span>{' '}
+                <span className="font-mono font-bold">{fmtMoney(amount)}</span>{' '}
                 on account <b>#{form.accountId}</b>{selectedAccount?.user?.name ? ` (${selectedAccount.user.name})` : ''}.
                 This is posted to MT5 and cannot be undone from here.
               </p>

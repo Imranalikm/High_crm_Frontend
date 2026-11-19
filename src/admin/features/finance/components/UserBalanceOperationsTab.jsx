@@ -40,11 +40,11 @@ export function UserBalanceOperationsTab({ user }) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  // Net per type over completed operations (only types that were used)
+  // Total per type over completed operations (only types that were used)
   const totals = useMemo(() => {
     const map = new Map();
     rows.filter((r) => r.status === 'completed').forEach((r) => {
-      map.set(r.type, (map.get(r.type) || 0) + r.amount);
+      map.set(r.type, (map.get(r.type) || 0) + Math.abs(r.amount));
     });
     return BALANCE_OP_TYPES.filter((t) => map.has(t.id)).map((t) => ({ ...t, net: map.get(t.id) }));
   }, [rows]);
@@ -89,9 +89,7 @@ export function UserBalanceOperationsTab({ user }) {
           {totals.map((t) => (
             <div key={t.id} className="rounded-[9px] border border-border/15 bg-surface-elevated px-3.5 py-3" style={{ borderTop: `2px solid ${t.color}` }}>
               <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-text-muted/75">{t.label}</p>
-              <p className="font-mono text-[15px] font-bold mt-1" style={{ color: t.net >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
-                {t.net > 0 ? '+' : ''}{fmtMoney(t.net)}
-              </p>
+              <p className="font-mono text-[15px] font-bold mt-1 text-text">{fmtMoney(t.net)}</p>
             </div>
           ))}
         </div>
@@ -132,8 +130,8 @@ export function UserBalanceOperationsTab({ user }) {
                         {r.typeLabel}
                       </span>
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-mono font-bold whitespace-nowrap" style={{ color: r.amount >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
-                      {r.amount > 0 ? '+' : ''}{fmtMoney(r.amount)}
+                    <td className="px-3.5 py-2.5 text-right font-mono font-bold whitespace-nowrap text-text">
+                      {fmtMoney(Math.abs(r.amount))}
                     </td>
                     <td className="px-3.5 py-2.5 text-text-muted/85 max-w-[200px]">
                       <span className="block truncate" title={r.note ? `${r.comment || ''}\nNote: ${r.note}` : r.comment}>{r.comment || '—'}</span>

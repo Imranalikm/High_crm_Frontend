@@ -213,7 +213,7 @@ function StatCards({ data }) {
     { label: 'Total Deposits', value: fmt(data.totalDeposits), sub: 'Lifetime funded', color: 'positive', Icon: ArrowDownToLine },
     { label: 'Total Withdrawals', value: fmt(data.totalWithdrawals), sub: 'Lifetime withdrawn', color: 'negative', Icon: ArrowUpFromLine },
     { label: 'Pending Amount', value: fmt(data.pendingAmount), sub: `${data.pendingCount} transactions processing`, color: 'warning', Icon: Clock },
-    { label: 'Bonus & Credit', value: fmt(data.totalAdjustments || 0), sub: 'Credit, bonus, commission & other', color: 'cyan', Icon: Gift },
+    { label: 'Balance Operations', value: String(data.opsCount || 0), sub: 'Credit, bonus, commission & other', color: 'cyan', Icon: Gift },
   ];
 
   return (
@@ -310,12 +310,14 @@ function StatusBadge({ status }) {
 
 /** Single transaction row */
 function TxRow({ tx, isLast }) {
-  const isDebit = tx.type === 'WITHDRAWAL' || tx.amount < 0;
-  const amtColor = isDebit ? 'var(--negative)' : 'var(--positive)';
-  const iconBg = isDebit ? 'color-mix(in srgb, var(--negative) 12%, transparent)' : 'color-mix(in srgb, var(--positive) 12%, transparent)';
-  const iconBd = isDebit ? 'color-mix(in srgb, var(--negative) 18%, transparent)' : 'color-mix(in srgb, var(--positive) 18%, transparent)';
-  const TxIcon = isDebit ? ArrowUpRight : ArrowDownLeft;
-  const amtStr = isDebit ? `-${fmt(Math.abs(tx.amount))}` : `+${fmt(tx.amount)}`;
+  const isOp = tx.kind === 'OP'; // balance operations: no add/deduct sign
+  const isDebit = !isOp && tx.type === 'WITHDRAWAL';
+  const tone = isOp ? 'var(--cyan)' : isDebit ? 'var(--negative)' : 'var(--positive)';
+  const amtColor = isOp ? 'var(--text)' : tone;
+  const iconBg = `color-mix(in srgb, ${tone} 12%, transparent)`;
+  const iconBd = `color-mix(in srgb, ${tone} 18%, transparent)`;
+  const TxIcon = isOp ? Gift : isDebit ? ArrowUpRight : ArrowDownLeft;
+  const amtStr = isOp ? fmt(Math.abs(tx.amount)) : isDebit ? `-${fmt(Math.abs(tx.amount))}` : `+${fmt(tx.amount)}`;
 
   return (
     <div style={{
@@ -528,10 +530,8 @@ export function WalletsPage() {
         });
 
         // Broker balance operations (credit, bonus, commission, charges...)
-        let totalAdjustments = 0;
         const opTxs = opsRes.map(o => {
-          const amt = Number(o.amount) || 0;
-          totalAdjustments += amt;
+          const amt = Math.abs(Number(o.amount) || 0); // no add/deduct sign
           return {
             key: `BOP-${o.id}`,
             kind: 'OP',
@@ -557,7 +557,7 @@ export function WalletsPage() {
           totalWithdrawals: totalWiths,
           pendingAmount: pendingAmt,
           pendingCount: pendingCount,
-          totalAdjustments,
+          opsCount: opTxs.length,
         });
 
         setTransactions(txs);

@@ -94,9 +94,8 @@ export function UserWalletTab({ user }) {
       approvedWd,
       pendingCount: pending.length,
       pendingAmount: sum(pending, (r) => num(r.amount)),
-      opsNet: sum(ops.filter((o) => o.status === 'completed'), (o) => num(o.amount)),
     };
-  }, [realAccounts, deposits, withdrawals, ops]);
+  }, [realAccounts, deposits, withdrawals]);
 
   const txs = useMemo(() => {
     const list = [
@@ -113,7 +112,7 @@ export function UserWalletTab({ user }) {
       ...ops.map((o) => ({
         key: `BOP-${o.id}`, kind: 'OP', label: o.typeLabel, color: BALANCE_OP_TYPE_BY_ID[o.type]?.color,
         detail: `#${o.accountId}${o.comment ? ` · ${o.comment}` : ''}`,
-        amount: num(o.amount), status: o.status, ref: o.dealId || `BOP-${o.id}`, date: o.createdAt,
+        amount: Math.abs(num(o.amount)), status: o.status, ref: o.dealId || `BOP-${o.id}`, date: o.createdAt,
       })),
     ];
     return list
@@ -226,7 +225,8 @@ export function UserWalletTab({ user }) {
               No transactions recorded.
             </div>
           ) : txs.map((tx) => {
-            const isDebit = tx.amount < 0;
+            const isOp = tx.kind === 'OP'; // balance operations carry no add/deduct sign
+            const isDebit = !isOp && tx.amount < 0;
             const accent = tx.kind === 'OP' ? (tx.color || 'var(--brand)') : isDebit ? 'var(--negative)' : 'var(--positive)';
             const statusColor = STATUS_COLOR[tx.status] || 'var(--text-muted)';
             const Icon = tx.kind === 'OP' ? Gift : isDebit ? ArrowDownRight : ArrowUpRight;
@@ -246,8 +246,8 @@ export function UserWalletTab({ user }) {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-mono text-[12.5px] font-black block" style={{ color: isDebit ? 'var(--negative)' : 'var(--positive)' }}>
-                    {isDebit ? '' : '+'}{fmtMoney(tx.amount)}
+                  <span className="font-mono text-[12.5px] font-black block" style={{ color: isOp ? 'var(--text)' : isDebit ? 'var(--negative)' : 'var(--positive)' }}>
+                    {isOp || isDebit ? '' : '+'}{fmtMoney(tx.amount)}
                   </span>
                   <span className="font-mono text-[10px] text-text-muted/55 block mt-0.5">
                     {new Date(tx.date).toLocaleString()} · {tx.ref}
@@ -257,11 +257,6 @@ export function UserWalletTab({ user }) {
             );
           })}
         </div>
-        {totals.opsNet !== 0 && (
-          <p className="text-[11px] text-text-muted/65 mt-2">
-            Net balance operations: <span className="font-mono font-bold" style={{ color: totals.opsNet > 0 ? 'var(--positive)' : 'var(--negative)' }}>{totals.opsNet > 0 ? '+' : ''}{fmtMoney(totals.opsNet)}</span>
-          </p>
-        )}
       </div>
     </div>
   );
