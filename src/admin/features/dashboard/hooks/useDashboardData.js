@@ -1,13 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { dashboardApi } from '../services/dashboardApi';
+import { socketClient } from '@/shared/api/client/socketClient';
+import { METHOD_LABELS } from '@/shared/config/constants/finance';
 
-const REFRESH_INTERVAL = 60_000; // 60 seconds
+const REFRESH_INTERVAL = 60_000; // 60 seconds (safety net)
+const EVENT_DEBOUNCE = 1_500;    // coalesce bursts of socket events into one refetch
+
+// Socket events (sent to admins) that mean dashboard numbers changed
+const REFRESH_EVENTS = ['finance:updated', 'new_ticket', 'ticket_updated', 'new_notification'];
 
 /**
  * useDashboardData
  *
  * Fetches and computes all dashboard metrics from real backend data.
- * Auto-refreshes every 60 seconds.
+ * Refetches immediately when the backend reports a deposit/withdrawal,
+ * ticket or registration change, and every 60 seconds as a fallback.
  */
 export function useDashboardData() {
   const [data, setData] = useState(null);
@@ -35,6 +42,23 @@ export function useDashboardData() {
     fetchData(false);
     intervalRef.current = setInterval(() => fetchData(true), REFRESH_INTERVAL);
     return () => clearInterval(intervalRef.current);
+  }, [fetchData]);
+
+  // Realtime: refetch shortly after relevant backend events
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return undefined;
+    const socket = socketClient.connect(token);
+    let timer = null;
+    const onEvent = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fetchData(true), EVENT_DEBOUNCE);
+    };
+    REFRESH_EVENTS.forEach((e) => socket.on(e, onEvent));
+    return () => {
+      clearTimeout(timer);
+      REFRESH_EVENTS.forEach((e) => socket.off(e, onEvent));
+    };
   }, [fetchData]);
 
   return { data, loading, error, refresh: () => fetchData(false) };
@@ -100,7 +124,7 @@ function computeDashboardMetrics(raw) {
   // ── Tickets ──
   const totalTickets = raw.tickets.length;
   const openTickets = raw.tickets.filter(
-    (t) => (t.status || '').toLowerCase() === 'open' || (t.status || '').toLowerCase() === 'pending'
+    (t) => ['open', 'pending', 'escalated'].includes((t.status || '').toLowerCase())
   ).length;
   const recentTickets = raw.tickets
     .filter((t) => t.createdAt)
@@ -140,7 +164,8 @@ function computeDashboardMetrics(raw) {
       rejected: rejectedWithdrawals.length,
       rejectedAmount: rejectedWithdrawalsAmount,
     },
-    netFlow: totalDepositsAmount - totalWithdrawalsAmount,
+    // Only money that actually moved: approved deposits minus approved withdrawals
+    netFlow: approvedDepositsAmount - approvedWithdrawalsAmount,
   };
 
   // ── KYC Summary ──
@@ -207,6 +232,7 @@ function computeDashboardMetrics(raw) {
     kycSummary,
     actionItems,
     recentActivity,
+    mt5Accounts: raw.mt5Accounts || [],
   };
 }
 
@@ -233,7 +259,7 @@ function buildRecentActivity(users, deposits, withdrawals, tickets) {
       id: `dep-${d.id}`,
       type: 'deposit',
       detail: `Deposit ${formatCurrency(amt)}`,
-      info: d.method || d.paymentMethod || 'Transfer',
+      info: describeTx(d),
       status: d.status,
       time: d.createdAt,
       path: `/admin/finance/deposits/${d.id}`,
@@ -246,7 +272,7 @@ function buildRecentActivity(users, deposits, withdrawals, tickets) {
       id: `wd-${w.id}`,
       type: 'withdrawal',
       detail: `Withdrawal ${formatCurrency(amt)}`,
-      info: w.method || w.paymentMethod || 'Transfer',
+      info: describeTx(w),
       status: w.status,
       time: w.createdAt,
       path: `/admin/finance/withdrawals/${w.id}`,
@@ -273,6 +299,15 @@ function buildRecentActivity(users, deposits, withdrawals, tickets) {
 
 // ── Utilities ──
 
+/** "Bank Wire · Jane Doe · #901000018290" from a deposit/withdrawal row. */
+function describeTx(t) {
+  const parts = [METHOD_LABELS[t.type] || t.type || 'Transfer'];
+  const who = t.recipient?.name || t.creator?.name;
+  if (who) parts.push(who);
+  if (t.accountId) parts.push(`#${t.accountId}`);
+  return parts.join(' · ');
+}
+
 function parseAmount(val) {
   if (typeof val === 'number') return val;
   if (typeof val === 'string') return parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
@@ -284,9 +319,12 @@ function sumAmount(items) {
 }
 
 export function formatCurrency(num) {
-  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `$${(num / 1_000).toFixed(1)}k`;
-  return `$${num.toFixed(2)}`;
+  const n = Number(num) || 0;
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}k`;
+  return `${sign}$${abs.toFixed(2)}`;
 }
 
 export function formatNumber(num) {

@@ -7,6 +7,7 @@ import { MainTable, TableToolbar } from '@/components/common/table';
 import { ClientCreateAccountDrawer } from './ClientCreateAccountDrawer';
 import { UpdateMt5PasswordModal } from './UpdateMt5PasswordModal';
 import { apiClient } from '@/shared/api/client/apiClient';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
@@ -20,6 +21,8 @@ export function ClientAccountsPage() {
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [toast, setToast] = useState('');
   const navigate = useNavigate();
+  const { byLogin } = useLiveMt5Accounts();
+  const liveAccounts = useMemo(() => accounts.map((a) => withLive(a, byLogin)), [accounts, byLogin]);
 
   useEffect(() => {
     fetchAccounts();
@@ -45,7 +48,7 @@ export function ClientAccountsPage() {
 
   // Calculate summary statistics
   const stats = useMemo(() => {
-    const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance || 0), 0);
+    const totalBalance = liveAccounts.reduce((sum, acc) => sum + parseFloat(acc.isLive ? acc.equity : acc.balance || 0), 0);
     const activeCount = accounts.filter(acc => 
       ['LIVE', 'ACTIVE'].includes((acc.status || 'LIVE').toUpperCase())
     ).length;
@@ -69,7 +72,7 @@ export function ClientAccountsPage() {
       activeCount,
       maxLeverage
     };
-  }, [accounts]);
+  }, [accounts, liveAccounts]);
 
   const columns = useMemo(() => [
     {
@@ -131,9 +134,43 @@ export function ClientAccountsPage() {
     {
       key: 'balance',
       label: 'Balance',
-      render: (val) => (
-        <span className="font-mono text-[13px] font-bold text-positive">
+      render: (val, row) => (
+        <span className="inline-flex items-center gap-1.5 font-mono text-[13px] font-bold text-positive">
+          {row.isLive && (
+            <span className="w-1.5 h-1.5 rounded-full bg-positive animate-pulse" title="Live from MT5" />
+          )}
           {fmt(parseFloat(val || 0))}
+        </span>
+      )
+    },
+    {
+      key: 'equity',
+      label: 'Equity',
+      render: (val, row) => (
+        <span className="font-mono text-[13px] font-bold text-text">
+          {row.isLive ? fmt(parseFloat(val || 0)) : '—'}
+        </span>
+      )
+    },
+    {
+      key: 'floating',
+      label: 'Floating P/L',
+      render: (val, row) => {
+        if (!row.isLive) return <span className="font-mono text-[12.5px] text-text-muted/50">—</span>;
+        const n = parseFloat(val || 0);
+        return (
+          <span className={`font-mono text-[13px] font-bold ${n > 0 ? 'text-positive' : n < 0 ? 'text-negative' : 'text-text-muted'}`}>
+            {n > 0 ? '+' : ''}{fmt(n)}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'marginFree',
+      label: 'Free Margin',
+      render: (val, row) => (
+        <span className="font-mono text-[12.5px] text-text-muted/80">
+          {row.isLive ? fmt(parseFloat(val || 0)) : '—'}
         </span>
       )
     },
@@ -198,7 +235,7 @@ export function ClientAccountsPage() {
         {accounts.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { label: 'Total Trading Equity', value: fmt(stats.totalBalance), desc: 'Aggregated account balances', color: 'brand', Icon: Wallet },
+              { label: 'Total Trading Equity', value: fmt(stats.totalBalance), desc: 'Live equity across all accounts', color: 'brand', Icon: Wallet },
               { label: 'Active MT5 Accounts', value: stats.activeCount, desc: 'Live MetaTrader 5 accounts', color: 'positive', Icon: Monitor },
               { label: 'Max Account Leverage', value: stats.maxLeverage, desc: 'Maximum leverage ratio', color: 'cyan', Icon: Activity }
             ].map((c) => {
@@ -261,7 +298,7 @@ export function ClientAccountsPage() {
             />
             <MainTable
               columns={columns}
-              data={accounts}
+              data={liveAccounts}
             />
           </section>
         )}

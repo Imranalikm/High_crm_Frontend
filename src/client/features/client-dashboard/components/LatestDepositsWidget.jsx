@@ -4,6 +4,7 @@ import { ArrowDownToLine, Loader2 } from 'lucide-react';
 import { Card, StatusBadge } from '@/components/ui';
 import { financeApi } from '@/features/client-finance/services/finance.api';
 import { METHOD_LABELS } from '@/shared/config/constants/finance';
+import { useFinanceUpdates } from '@/shared/hooks/useFinanceUpdates';
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
@@ -12,6 +13,7 @@ export function LatestDepositsWidget() {
   const navigate = useNavigate();
   const [deposits, setDeposits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const updates = useFinanceUpdates('deposit'); // refetch when a deposit is created/approved/rejected
 
   useEffect(() => {
     let active = true;
@@ -35,7 +37,7 @@ export function LatestDepositsWidget() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [updates]);
 
   return (
     <Card className="h-full p-0 flex flex-col overflow-hidden" padding={false} contentClassName="h-full flex flex-col min-h-0">
@@ -97,9 +99,11 @@ export function LatestDepositsWidget() {
                 className="px-5 py-3 flex items-center justify-between hover:bg-surface-elevated/30 transition-all duration-150 cursor-default"
               >
                 {/* Deposit ID & Date */}
-                <div className="w-[120px] shrink-0">
+                <div className="min-w-0 flex-1 pr-2">
                   <span className="font-mono text-[12.5px] font-bold text-brand block truncate">DEP-{d.id}</span>
-                  <span className="text-[10px] text-text-muted block mt-0.5">{dateStr}</span>
+                  <span className="text-[10px] text-text-muted block mt-0.5 truncate">
+                    {methodLabel}{d.accountId ? ` · #${d.accountId}` : ''} · {dateStr}
+                  </span>
                 </div>
 
                 {/* Status Badge */}
@@ -108,7 +112,7 @@ export function LatestDepositsWidget() {
                 </div>
 
                 {/* Amount */}
-                <div className="text-right flex-1 shrink-0">
+                <div className="text-right shrink-0">
                   <span 
                     className="font-mono text-[13.5px] font-bold text-positive"
                     style={{ textShadow: `0 0 12px color-mix(in srgb, var(--positive) 15%, transparent)` }}

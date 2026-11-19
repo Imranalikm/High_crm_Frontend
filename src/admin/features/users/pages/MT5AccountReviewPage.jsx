@@ -14,6 +14,7 @@ import { StatusChip } from '@/components/ui';
 import { usersService } from '../services/userService';
 import { tradingAccountsService } from '@/admin/features/trading/services/tradingAccountsService';
 import { MaskedSecret, AccountTypeBadge } from '../components/UsersTable';
+import { useLiveMt5Accounts } from '@/shared/hooks/useLiveMt5Accounts';
 
 /* ─── Premium Glassy Panel Primitive ─────────────────────────── */
 function DetailPanel({ children, className = '' }) {
@@ -91,6 +92,7 @@ export function MT5AccountReviewPage() {
   const [status, setStatus] = useState(originalAccount.status || 'CONNECTED');
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const { byLogin } = useLiveMt5Accounts();
   const [localAudit, setLocalAudit] = useState([
     { action: 'Trading account registered', by: 'SystemEngine', ts: originalAccount.lastSync || '2026-05-26 12:00' },
     { action: 'Connection check completed', by: 'BridgeManager', ts: originalAccount.lastSync || '2026-05-26 12:00', note: 'Stable connection' }
@@ -210,8 +212,20 @@ export function MT5AccountReviewPage() {
     triggerToast(`Password reset queued for #${account.login}`);
   };
 
-  const balanceVal = account.balance ? parseFloat(String(account.balance).replace(/[$,]/g, '')) : 0;
-  const equityVal = account.equity ? parseFloat(String(account.equity).replace(/[$,]/g, '')) : balanceVal;
+  // Live MT5 values (balance/equity/margin) override the loaded record when streaming
+  const live = byLogin[String(account.login)];
+  const money = (n) => `${Number(n) < 0 ? '-' : ''}$${Math.abs(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const shown = live ? {
+    ...account,
+    balance: money(live.balance),
+    equity: money(live.equity),
+    margin: money(live.margin),
+    freeMargin: money(live.marginFree),
+    marginLvl: live.margin ? `${Number(live.marginLevel).toFixed(0)}%` : '—',
+  } : account;
+
+  const balanceVal = shown.balance ? parseFloat(String(shown.balance).replace(/[$,-]/g, '')) * (String(shown.balance).startsWith('-') ? -1 : 1) : 0;
+  const equityVal = shown.equity ? parseFloat(String(shown.equity).replace(/[$,-]/g, '')) * (String(shown.equity).startsWith('-') ? -1 : 1) : balanceVal;
   const delta = equityVal - balanceVal;
 
   const isBlocked = status === 'DISCONNECTED' || status === 'BLOCKED' || status === 'SUSPENDED';
@@ -287,11 +301,11 @@ export function MT5AccountReviewPage() {
             <div className="grid grid-cols-3 gap-6 bg-bg/25 border border-border/12 px-4 py-3 rounded-[10px] min-w-[280px]">
               <div className="text-center">
                 <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 leading-none">Balance</p>
-                <p className="font-mono text-[14px] font-semibold text-text mt-1.5">{account.balance}</p>
+                <p className="font-mono text-[14px] font-semibold text-text mt-1.5">{shown.balance}</p>
               </div>
               <div className="text-center border-l border-border/12 px-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 leading-none">Equity</p>
-                <p className="font-mono text-[14px] font-semibold text-brand mt-1.5">{account.equity || account.balance}</p>
+                <p className="font-mono text-[14px] font-semibold text-brand mt-1.5">{shown.equity || shown.balance}</p>
               </div>
               <div className="text-center border-l border-border/12 pl-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-text-muted/70 leading-none">Floating</p>
@@ -354,16 +368,16 @@ export function MT5AccountReviewPage() {
             <DetailPanel>
               <PanelHead title="Balance Info" subtitle="Active balance and margin details." />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
-                <InfoRow label="Balance" value={account.balance} mono accent="var(--cyan)" />
-                <InfoRow label="Equity" value={account.equity || account.balance} mono accent="var(--brand)" />
-                <InfoRow label="Used Margin" value={account.margin || '$0.00'} mono accent="var(--warning)" />
-                <InfoRow label="Free Margin" value={account.freeMargin || account.balance} mono accent="var(--positive)" />
+                <InfoRow label="Balance" value={shown.balance} mono accent="var(--cyan)" />
+                <InfoRow label="Equity" value={shown.equity || shown.balance} mono accent="var(--brand)" />
+                <InfoRow label="Used Margin" value={shown.margin || '$0.00'} mono accent="var(--warning)" />
+                <InfoRow label="Free Margin" value={shown.freeMargin || shown.balance} mono accent="var(--positive)" />
                 <InfoRow
                   label="Margin Level"
-                  value={account.marginLvl || '—'}
+                  value={shown.marginLvl || '—'}
                   mono
                   accent={
-                    account.marginLvl && account.marginLvl.includes('%') && parseInt(account.marginLvl) < 150
+                    shown.marginLvl && shown.marginLvl.includes('%') && parseInt(shown.marginLvl) < 150
                       ? 'var(--negative)'
                       : 'var(--text)'
                   }

@@ -36,7 +36,7 @@ export function DashboardChart({ financeSummary, loading }) {
               Liquidity &amp; Capital Flow
             </div>
             <div className="text-[12.5px] text-text-muted mt-1">
-              Overview of system deposits, withdrawals, and net treasury movement.
+              Approved deposits and withdrawals; net = money that actually moved.
             </div>
           </div>
           <div
@@ -64,17 +64,17 @@ export function DashboardChart({ financeSummary, loading }) {
           <div className="relative rounded-[12px] border border-border/15 bg-bg/30 p-4 transition-all duration-300 hover:border-border/30 hover:scale-[1.01] hover:shadow-card-subtle group">
             <div className="absolute top-0 left-0 h-[3px] w-[40px] rounded-tr-[3px] rounded-bl-[3px] bg-positive" />
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-text-muted">Total Deposits</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-text-muted">Approved Deposits</span>
               <div className="h-7 w-7 rounded-lg bg-positive/10 flex items-center justify-center text-positive group-hover:scale-110 transition-transform">
                 <ArrowDownRight size={14} strokeWidth={2.5} />
               </div>
             </div>
             <div className="mt-2 text-[24px] font-bold text-positive tracking-tight">
-              {formatCurrency(deposits.totalAmount)}
+              {formatCurrency(deposits.approvedAmount)}
             </div>
             <div className="mt-1 text-[12px] text-text-muted flex items-center justify-between border-t border-border/10 pt-2">
-              <span>Transactions: <b className="text-text">{formatNumber(deposits.total)}</b></span>
-              <span>Approved: <b className="text-text">{formatCurrency(deposits.approvedAmount)}</b></span>
+              <span>Requests: <b className="text-text">{formatNumber(deposits.total)}</b></span>
+              <span>Pending: <b className="text-text">{formatCurrency(deposits.pendingAmount)}</b></span>
             </div>
           </div>
 
@@ -82,17 +82,17 @@ export function DashboardChart({ financeSummary, loading }) {
           <div className="relative rounded-[12px] border border-border/15 bg-bg/30 p-4 transition-all duration-300 hover:border-border/30 hover:scale-[1.01] hover:shadow-card-subtle group">
             <div className="absolute top-0 left-0 h-[3px] w-[40px] rounded-tr-[3px] rounded-bl-[3px] bg-negative" />
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-text-muted">Total Withdrawals</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-text-muted">Approved Withdrawals</span>
               <div className="h-7 w-7 rounded-lg bg-negative/10 flex items-center justify-center text-negative group-hover:scale-110 transition-transform">
                 <ArrowUpRight size={14} strokeWidth={2.5} />
               </div>
             </div>
             <div className="mt-2 text-[24px] font-bold text-negative tracking-tight">
-              {formatCurrency(withdrawals.totalAmount)}
+              {formatCurrency(withdrawals.approvedAmount)}
             </div>
             <div className="mt-1 text-[12px] text-text-muted flex items-center justify-between border-t border-border/10 pt-2">
-              <span>Transactions: <b className="text-text">{formatNumber(withdrawals.total)}</b></span>
-              <span>Approved: <b className="text-text">{formatCurrency(withdrawals.approvedAmount)}</b></span>
+              <span>Requests: <b className="text-text">{formatNumber(withdrawals.total)}</b></span>
+              <span>Pending: <b className="text-text">{formatCurrency(withdrawals.pendingAmount)}</b></span>
             </div>
           </div>
         </div>

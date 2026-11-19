@@ -278,17 +278,22 @@ export function OrderDetailsDrawer({ row, onAction }) {
         </DrawerFormGrid>
       </DrawerSection>
 
-      {row.status === 'REJECTED' && (
-        <DrawerSection title="Reason" className="animate-in fade-in slide-in-from-right-4 duration-500">
-          <div className="rounded-[12px] border border-negative/25 bg-negative/5 px-4 py-3 text-[12px] text-negative/80 leading-relaxed font-medium">
-            Order rejected — market was closed for the requested instrument. No position opened.
-          </div>
+      {(row.positionId || row.comment) && (
+        <DrawerSection title="MT5">
+          <DrawerFormGrid>
+            {row.positionId && <DrawerField label="Position" value={row.positionId} mono />}
+            {row.direction && <DrawerField label="Direction" value={row.direction} />}
+            {row.comment && <DrawerField label="Comment" value={row.comment} wide />}
+          </DrawerFormGrid>
         </DrawerSection>
       )}
 
-      <DrawerSection title="Actions">
-        <TradingQuickActions actions={actions} />
-      </DrawerSection>
+      {/* Only shown when the caller wires real handlers (no fake "done" states on live orders) */}
+      {onAction && (
+        <DrawerSection title="Actions">
+          <TradingQuickActions actions={actions} />
+        </DrawerSection>
+      )}
     </div>
   );
 }
@@ -319,8 +324,18 @@ export function PositionDetailsDrawer({ row, onAction }) {
           <DrawerField label="Size"          value={`${row.size} lots`} mono />
           <DrawerField label="Open Price"    value={row.openPrice} mono />
           <DrawerField label="Current Price" value={row.currPrice} mono />
-          <DrawerField label="Swap"          value={row.swap}      mono />
-          <DrawerField label="Margin"        value={row.margin}    mono accent="var(--warning)" />
+          {row.stopLoss !== undefined ? (
+            <>
+              <DrawerField label="Stop Loss"   value={row.stopLoss}   mono accent="var(--negative)" />
+              <DrawerField label="Take Profit" value={row.takeProfit} mono accent="var(--positive)" />
+              <DrawerField label="Opened"      value={row.opened} />
+            </>
+          ) : (
+            <>
+              <DrawerField label="Swap"          value={row.swap}      mono />
+              <DrawerField label="Margin"        value={row.margin}    mono accent="var(--warning)" />
+            </>
+          )}
           <DrawerField label="Duration"      value={row.duration}  />
         </DrawerFormGrid>
       </DrawerSection>
@@ -353,9 +368,12 @@ export function PositionDetailsDrawer({ row, onAction }) {
         </div>
       </DrawerSection>
 
-      <DrawerSection title="Actions">
-        <TradingQuickActions actions={actions} />
-      </DrawerSection>
+      {/* Only shown when the caller wires real handlers (no fake "done" states on live positions) */}
+      {onAction && (
+        <DrawerSection title="Actions">
+          <TradingQuickActions actions={actions} />
+        </DrawerSection>
+      )}
     </div>
   );
 }

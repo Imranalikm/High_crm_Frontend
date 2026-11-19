@@ -21,6 +21,7 @@ export const dashboardApi = {
       withdrawalsRes,
       withdrawalsPendingRes,
       ticketsRes,
+      mt5Res,
     ] = await Promise.allSettled([
       apiClient.get('/user-management'),
       apiClient.get('/kyc'),
@@ -30,6 +31,7 @@ export const dashboardApi = {
       apiClient.get('/withdrawals'),
       apiClient.get('/withdrawals?status=PENDING'),
       apiClient.get('/tickets'),
+      apiClient.get('/mt5-accounts'),
     ]);
 
     return {
@@ -41,6 +43,10 @@ export const dashboardApi = {
       withdrawals: extractArray(withdrawalsRes, ['data', 'withdrawals']),
       withdrawalsPending: extractArray(withdrawalsPendingRes, ['data', 'withdrawals']),
       tickets: extractTickets(ticketsRes),
+      // Provisioned MT5 accounts only (live values are merged in on the page)
+      mt5Accounts: extractArray(mt5Res, ['data']).filter(
+        (a) => a.accountid && !String(a.accountid).startsWith('PENDING-') && String(a.status || '').toUpperCase() === 'LIVE'
+      ),
     };
   },
 };

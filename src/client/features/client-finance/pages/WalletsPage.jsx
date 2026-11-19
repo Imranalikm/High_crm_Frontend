@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/Card';
 import { financeApi } from '../services/finance.api';
 import { METHOD_LABELS } from '@/shared/config/constants/finance';
 import { AddWithdrawalDrawer } from '../components/AddWithdrawalDrawer';
+import { useLiveMt5Accounts } from '@/shared/hooks/useLiveMt5Accounts';
 
 /* ─────────────────────────────────────────────────────────
    Mock data — replace with API / store values
@@ -141,8 +142,12 @@ function HeroCard({ data }) {
             {/* Big balance */}
             <p style={{ fontFamily: "var(--font-heading)", fontSize: 36, fontWeight: 800, letterSpacing: '-.03em', color: 'var(--text)', lineHeight: 1 }}>
               <span style={{ fontSize: 20, verticalAlign: 'top', marginTop: 4, display: 'inline-block', color: 'var(--text-muted)', fontWeight: 600 }}>$</span>
-              {new Intl.NumberFormat('en-US').format(data.totalBalance)}
-              <span style={{ fontSize: 22 }}>.00</span>
+              {(() => {
+                const [whole, cents] = (Number(data.totalBalance) || 0)
+                  .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  .split('.');
+                return <>{whole}<span style={{ fontSize: 22 }}>.{cents}</span></>;
+              })()}
             </p>
             {/* Change pill */}
             <div style={{
@@ -445,6 +450,8 @@ function ActivitySection({ txs, onViewAll }) {
 ───────────────────────────────────────────────────────── */
 export function WalletsPage() {
   const navigate = useNavigate();
+  const { byLogin } = useLiveMt5Accounts();
+  const [mt5Accounts, setMt5Accounts] = useState([]);
 
   const [walletData, setWalletData] = useState({
     totalBalance: 0,
@@ -530,6 +537,7 @@ export function WalletsPage() {
         });
 
         setTransactions(txs);
+        setMt5Accounts(walletRes.accounts || []);
       } catch (err) {
         console.error('Failed to load wallet data', err);
       } finally {
@@ -540,6 +548,16 @@ export function WalletsPage() {
   useEffect(() => {
     fetchWalletData();
   }, []);
+
+  // Portfolio = CRM wallet + MT5 balances, with MT5 overridden live from the feed
+  const liveWalletData = useMemo(() => {
+    if (!mt5Accounts.length) return walletData;
+    const mt5 = mt5Accounts.reduce((sum, a) => {
+      const live = byLogin[String(a.login)];
+      return sum + (live ? Number(live.balance) || 0 : Number(a.balance) || 0);
+    }, 0);
+    return { ...walletData, totalBalance: walletData.availableBalance + mt5 };
+  }, [walletData, mt5Accounts, byLogin]);
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -580,10 +598,10 @@ export function WalletsPage() {
           <VerifiedNotice />
 
           {/* ── Hero balance card ── */}
-          <HeroCard data={walletData} />
+          <HeroCard data={liveWalletData} />
 
           {/* ── Stat cards row ── */}
-          <StatCards data={walletData} />
+          <StatCards data={liveWalletData} />
 
           <QuickActions
             actions={QUICK_ACTIONS}

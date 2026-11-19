@@ -8,7 +8,9 @@ class SocketClient {
 
   connect(token) {
     if (this.socket) {
-      if (this.socket.connected) return this.socket;
+      // Reuse a socket that is connected or still (re)connecting; several
+      // components share it, so tearing it down would drop their listeners.
+      if (this.socket.connected || this.socket.active) return this.socket;
       this.socket.disconnect();
     }
 

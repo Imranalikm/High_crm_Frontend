@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { KpiCard } from '@/components/cards';
 import {
   Wallet, TrendingUp, Shield, BarChart2,
   PieChart, Target
 } from 'lucide-react';
 import { apiClient } from '@/shared/api/client/apiClient';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
 
 export function ClientKpis() {
-  const [mt5Account, setMt5Account] = useState(null);
+  const [mt5Accounts, setMt5Accounts] = useState([]);
+  const { byLogin } = useLiveMt5Accounts();
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -15,9 +17,7 @@ export function ClientKpis() {
         const response = await apiClient.get('/mt5-accounts');
         const accounts = response?.data || response || [];
         const arr = Array.isArray(accounts) ? accounts : [];
-        if (arr.length > 0) {
-          setMt5Account(arr[0]);
-        }
+        setMt5Accounts(arr);
       } catch (err) {
         console.error('Error fetching mt5 accounts for KPIs:', err);
       }
@@ -25,13 +25,24 @@ export function ClientKpis() {
     fetchAccount();
   }, []);
 
-  const balance = parseFloat(mt5Account?.balance || 0);
-  const equity = balance; 
-  const freeMargin = balance;
-  
-  // Placeholders for real-time MT5 metrics not yet available via API
-  const todayPnl = 0;
-  const todayPnlPct = 0;
+  // Totals across all of the client's MT5 accounts, live values when available
+  const { balance, equity, freeMargin, floating } = useMemo(() => {
+    const t = { balance: 0, equity: 0, freeMargin: 0, floating: 0 };
+    mt5Accounts.forEach((acc) => {
+      const a = withLive(acc, byLogin);
+      const bal = parseFloat(a.balance || 0);
+      t.balance += bal;
+      t.equity += a.isLive ? parseFloat(a.equity || 0) : bal;
+      t.freeMargin += a.isLive ? parseFloat(a.marginFree || 0) : bal;
+      t.floating += a.isLive ? parseFloat(a.floating || 0) : 0;
+    });
+    return t;
+  }, [mt5Accounts, byLogin]);
+
+  const todayPnl = floating;
+  const todayPnlPct = balance ? ((floating / balance) * 100).toFixed(2) : 0;
+
+  // Placeholders for MT5 metrics not yet available via API
   const openPositions = 0;
   const winRate = 0;
   const totalTrades = 0;
@@ -66,8 +77,8 @@ export function ClientKpis() {
       accent:  'var(--cyan)',
     },
     {
-      label:   "Today's PnL",
-      value:   `${pnlPos ? '+' : ''}$${todayPnl.toLocaleString('en-US', {minimumFractionDigits: 2})}`,
+      label:   'Floating P/L',
+      value:   `${pnlPos ? '+' : '-'}$${Math.abs(todayPnl).toLocaleString('en-US', {minimumFractionDigits: 2})}`,
       trend:   `${pnlPos ? '+' : ''}${todayPnlPct}%`,
       trendUp: pnlPos,
       sub:     'floating live',

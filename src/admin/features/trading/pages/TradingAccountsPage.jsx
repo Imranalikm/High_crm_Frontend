@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  PlusCircle, RefreshCw, Download,
+  RefreshCw, Download,
   Wallet, Monitor, ShieldAlert, Radio, DollarSign,
 } from 'lucide-react';
 import { PageShell } from '@/components/layout/PageShell';
 import { KpiCard } from '@/components/cards';
 import { TradingAccountCards } from '../components/TradingAccountCards';
 import { TradingActivityLog } from '../components/TradingActivityLog';
+import { tradingAccountsService } from '../services/tradingAccountsService';
+import { useLiveMt5Accounts, withLive } from '@/shared/hooks/useLiveMt5Accounts';
 import { exportRows } from '@/utils/exporters';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,57 +17,8 @@ import { useNavigate } from 'react-router-dom';
 const PAGE = {
   eyebrow:     'Trading',
   title:       'Trading Accounts',
-  description: 'Manage trading accounts and balances.',
+  description: 'Manage trading accounts and balances. Balances, equity and margin update live from MT5.',
 };
-
-/* ─── Mock data ─────────────────────────────────────────────── */
-const MOCK_ACCOUNTS = [
-  {
-    login:      '88100249',
-    user:       'Arjun Sathia',
-    uid:        'U-499201',
-    server:     'MT5-PRIME-01 (EU Node)',
-    group:      'REAL_RAW_SPREAD',
-    leverage:   '1:500',
-    equity:     '$142,005.12',
-    balance:    '$141,800.00',
-    margin:     '$2,800.00',
-    freeMargin: '$139,205.12',
-    marginLvl:  '5071%',
-    status:     'LIVE',
-    lastSync:   '2 mins ago',
-  },
-  {
-    login:      '88100562',
-    user:       'Arjun Sathia',
-    uid:        'U-499201',
-    server:     'MT5-STND-04 (US Node)',
-    group:      'REAL_STANDARD',
-    leverage:   '1:100',
-    equity:     '$42,099.00',
-    balance:    '$42,099.00',
-    margin:     '$0.00',
-    freeMargin: '$42,099.00',
-    marginLvl:  '—',
-    status:     'DISCONNECTED',
-    lastSync:   '14 hours ago',
-  },
-  {
-    login:      '88100918',
-    user:       'Arjun Sathia',
-    uid:        'U-499201',
-    server:     'MT5-PRIME-01 (EU Node)',
-    group:      'REAL_RAW_SPREAD',
-    leverage:   '1:500',
-    equity:     '$100,000.33',
-    balance:    '$100,000.00',
-    margin:     '$2,000.00',
-    freeMargin: '$98,000.33',
-    marginLvl:  '5000%',
-    status:     'LIVE',
-    lastSync:   'Just now',
-  },
-];
 
 const FILTER_OPTIONS = [
   { id: 'ALL',          label: 'All Accounts' },
@@ -75,22 +28,59 @@ const FILTER_OPTIONS = [
 ];
 
 /* ─── Helpers ─────────────────────────────────────────────── */
-function parseMoney(str = '$0') {
-  return parseFloat(String(str).replace(/[$,]/g, '')) || 0;
+function formatMoney(num) {
+  const n = Number(num) || 0;
+  return `${n < 0 ? '-' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function formatMoney(num) {
-  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function timeAgo(ms, now) {
+  if (!ms) return '—';
+  const s = Math.max(0, Math.round((now - ms) / 1000));
+  if (s < 5) return 'Just now';
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)} mins ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)} hours ago`;
+  return `${Math.floor(s / 86400)} days ago`;
+}
+
+/** DB row + live MT5 values -> the shape TradingAccountCards renders. */
+function toCard(row, byLogin, now) {
+  const a = withLive(row, byLogin);
+  const balance = Number(a.balance) || 0;
+  const equity = a.isLive ? Number(a.equity) || 0 : balance;
+  const dbStatus = String(row.status || 'LIVE').toUpperCase();
+  return {
+    login:      String(row.accountid),
+    user:       row.user?.name || row.contactName || (row.accountType === 'DEMO' ? 'Demo account' : '—'),
+    uid:        row.userId ? `U-${row.userId}` : '—',
+    server:     row.server || '—',
+    group:      row.groupName,
+    leverage:   String(row.leverage || '').includes(':') ? row.leverage : `1:${row.leverage || 100}`,
+    equity:     formatMoney(equity),
+    balance:    formatMoney(balance),
+    margin:     formatMoney(a.isLive ? a.margin : 0),
+    freeMargin: formatMoney(a.isLive ? a.marginFree : balance),
+    marginLvl:  a.isLive && a.marginLevel ? `${Number(a.marginLevel).toFixed(0)}%` : '—',
+    // A LIVE account we have no feed data for is shown as disconnected
+    status:     dbStatus === 'LIVE' && !a.isLive ? 'DISCONNECTED' : dbStatus,
+    lastSync:   a.isLive ? timeAgo(a.liveTime, now) : timeAgo(row.updatedAt && Date.parse(row.updatedAt), now),
+    // raw numbers for KPIs
+    _equity: equity,
+    _balance: balance,
+    _margin: a.isLive ? Number(a.margin) || 0 : 0,
+  };
 }
 
 /* ─── Page Component ─────────────────────────────────────────── */
 function TradingAccountsPage() {
   const navigate = useNavigate();
-  const [accounts,    setAccounts]    = useState(MOCK_ACCOUNTS);
+  const [rows,         setRows]       = useState([]);
+  const [loading,      setLoading]    = useState(true);
   const [filterStatus, setFilter]     = useState('ALL');
-  const [syncing,     setSyncing]     = useState(false);
-  const [toastMsg,    setToastMsg]    = useState('');
-
+  const [syncing,      setSyncing]    = useState(false);
+  const [toastMsg,     setToastMsg]   = useState('');
+  const [now,          setNow]        = useState(() => Date.now());
+  const { byLogin, feedConnected } = useLiveMt5Accounts();
 
   /* ── Toast helper ── */
   const toast = (msg) => {
@@ -98,12 +88,34 @@ function TradingAccountsPage() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
+  const loadAccounts = useCallback(() =>
+    tradingAccountsService.list().then((list) => {
+      setRows(list.filter((r) => r.accountid && !String(r.accountid).startsWith('PENDING-')));
+      setLoading(false);
+    }), []);
+
+  useEffect(() => {
+    tradingAccountsService.list().then((list) => {
+      setRows(list.filter((r) => r.accountid && !String(r.accountid).startsWith('PENDING-')));
+      setLoading(false);
+    });
+  }, []);
+
+  // Re-render every 5s so "Last Sync" stays accurate
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  const accounts = useMemo(() => rows.map((r) => toCard(r, byLogin, now)), [rows, byLogin, now]);
+
   /* ── Aggregate KPI values ── */
   const kpis = useMemo(() => {
-    const liveCount = accounts.filter((a) => a.status === 'LIVE' || a.status === 'ACTIVE').length;
-    const totalEquity   = accounts.reduce((s, a) => s + parseMoney(a.equity),   0);
-    const totalBalance  = accounts.reduce((s, a) => s + parseMoney(a.balance),  0);
-    const totalMargin   = accounts.reduce((s, a) => s + parseMoney(a.margin),   0);
+    const liveCount    = accounts.filter((a) => a.status === 'LIVE' || a.status === 'ACTIVE').length;
+    const totalEquity  = accounts.reduce((s, a) => s + a._equity,  0);
+    const totalBalance = accounts.reduce((s, a) => s + a._balance, 0);
+    const totalMargin  = accounts.reduce((s, a) => s + a._margin,  0);
+    const floating     = totalEquity - totalBalance;
 
     return [
       {
@@ -112,15 +124,15 @@ function TradingAccountsPage() {
         accent:  'var(--brand)',
         Icon:    Wallet,
         sub:     'all accounts',
-        trend:   '+4.2%',
-        trendUp: true,
+        trend:   `${floating >= 0 ? '+' : ''}${formatMoney(floating)}`,
+        trendUp: floating >= 0,
       },
       {
         label:   'Live Accounts',
         value:   `${liveCount} of ${accounts.length}`,
         accent:  'var(--positive)',
         Icon:    Monitor,
-        sub:     'active accounts',
+        sub:     'streaming from MT5',
         trend:   liveCount > 0 ? 'online' : 'offline',
         trendUp: liveCount > 0,
       },
@@ -139,52 +151,35 @@ function TradingAccountsPage() {
         sub:     'margin in use',
       },
       {
-        label:   'Server Status',
-        value:   'Healthy',
-        accent:  'var(--positive)',
+        label:   'Live Feed',
+        value:   feedConnected === null ? 'Connecting…' : feedConnected ? 'Connected' : 'Offline',
+        accent:  feedConnected === false ? 'var(--negative)' : 'var(--positive)',
         Icon:    Radio,
-        sub:     'NY4 · 14ms',
-        trend:   'stable',
+        sub:     'MT5 account stream',
+        trend:   feedConnected ? 'live' : 'down',
+        trendUp: !!feedConnected,
       },
     ];
-  }, [accounts]);
+  }, [accounts, feedConnected]);
 
   /* ── Actions ── */
-  const handleAddNewAccount = () => {
-    const login = String(Math.floor(10_000_000 + Math.random() * 90_000_000));
-    setAccounts((prev) => [{
-      login,
-      user:       'New Account',
-      uid:        'U-000000',
-      server:     'MT5-PRIME-01 (EU Node)',
-      group:      'REAL_STANDARD',
-      leverage:   '1:100',
-      equity:     '$10,000.00',
-      balance:    '$10,000.00',
-      margin:     '$0.00',
-      freeMargin: '$10,000.00',
-      marginLvl:  '—',
-      status:     'LIVE',
-      lastSync:   'Just now',
-    }, ...prev]);
-    toast(`New account #${login} created`);
-  };
-
-  const handleGlobalSync = () => {
+  const handleGlobalSync = async () => {
     setSyncing(true);
-    setTimeout(() => setSyncing(false), 1800);
-    setAccounts((prev) => prev.map((a) => ({ ...a, lastSync: 'Just now', status: a.status === 'DISCONNECTED' ? 'DISCONNECTED' : 'LIVE' })));
-    toast('All accounts synced with MT5 cluster');
+    await loadAccounts();
+    setSyncing(false);
+    toast('Account list refreshed');
   };
 
-  const handleSyncOne = (account) => {
-    setAccounts((prev) =>
-      prev.map((a) => a.login === account.login ? { ...a, lastSync: 'Just now', status: 'LIVE' } : a)
-    );
-    toast(`Account #${account.login} synced`);
+  const handleSyncOne = async (account) => {
+    await loadAccounts();
+    toast(`Account #${account.login} refreshed`);
   };
 
-
+  const exportable = accounts.map((a) => {
+    const row = { ...a };
+    delete row._equity; delete row._balance; delete row._margin;
+    return row;
+  });
 
   return (
     <PageShell className="relative">
@@ -217,17 +212,10 @@ function TradingAccountsPage() {
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               type="button"
-              onClick={() => exportRows(accounts, 'trading-accounts.csv')}
+              onClick={() => exportRows(exportable, 'trading-accounts.csv')}
               className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-border/20 bg-surface-elevated text-text-muted/85 hover:text-text hover:border-border/40 text-[12px] font-semibold transition-all cursor-pointer"
             >
               <Download size={12} /> Export
-            </button>
-            <button
-              type="button"
-              onClick={handleAddNewAccount}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-border/20 bg-surface-elevated text-text-muted/85 hover:text-text hover:border-border/40 text-[12px] font-semibold transition-all cursor-pointer"
-            >
-              <PlusCircle size={12} /> New Account
             </button>
             <button
               type="button"
@@ -249,7 +237,7 @@ function TradingAccountsPage() {
 
         {/* ── Filter Bar ── */}
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {FILTER_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
@@ -275,12 +263,21 @@ function TradingAccountsPage() {
         </div>
 
         {/* ── Account Cards Grid ── */}
-        <TradingAccountCards
-          accounts={accounts}
-          filterStatus={filterStatus}
-          onViewDetails={(account) => navigate(`/admin/users/mt5/${account.login}`, { state: { fromTrading: true } })}
-          onSync={handleSyncOne}
-        />
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <span className="relative flex h-6 w-6">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-60" />
+              <span className="relative inline-flex rounded-full h-6 w-6 bg-brand/80" />
+            </span>
+          </div>
+        ) : (
+          <TradingAccountCards
+            accounts={accounts}
+            filterStatus={filterStatus}
+            onViewDetails={(account) => navigate(`/admin/users/mt5/${account.login}`, { state: { fromTrading: true } })}
+            onSync={handleSyncOne}
+          />
+        )}
 
         {/* ── Activity Log (collapsible) ── */}
         <TradingActivityLog />

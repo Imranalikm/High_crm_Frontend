@@ -5,6 +5,7 @@ import { DashboardChart } from '../components/DashboardChart';
 import { DashboardAlerts } from '../components/DashboardAlerts';
 import { DashboardQuickActions } from '../components/DashboardQuickActions';
 import DashboardStream from '../components/DashboardStream';
+import { DashboardMt5Live } from '../components/DashboardMt5Live';
 import { useDashboardData } from '../hooks/useDashboardData';
 
 export function DashboardPage() {
@@ -28,6 +29,9 @@ export function DashboardPage() {
 
         {/* ── ROW 1: Platform-wide KPI Telemetry ── */}
         <DashboardKpis kpis={data?.kpis} loading={loading} />
+
+        {/* ── ROW 1b: Live MT5 totals (balance / equity / floating / margin) ── */}
+        <DashboardMt5Live accounts={data?.mt5Accounts} loading={loading} />
 
         {/* ── ROW 2: Liquidity Flow + Alerts Command Center ── */}
         <section className="grid grid-cols-12 gap-5">
