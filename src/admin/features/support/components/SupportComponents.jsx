@@ -11,6 +11,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, CheckCircle2, X, MessageCircle, Clock, Timer, AlertOctagon, UserPlus, Eye, ArrowUp } from 'lucide-react';
 import { PRIORITY_COLORS, CATEGORY_COLORS, STATUS_COLORS } from '@/config/constants/status.constants';
+import { getInitials } from '@/shared/utils/initials';
 
 /* ── Color maps (re-exported for backward compat) ────────────── */
 
@@ -114,7 +115,7 @@ export function SlaBar({ pct, slaMins }) {
 
 /* ── Support-specific: UserAvatar ────────────────────────────── */
 export function UserAvatar({ name, size = 'sm' }) {
-  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = getInitials(name).slice(0, 2).toUpperCase();
   const dim =
     size === 'lg' ? 'w-10 h-10 text-[12px] rounded-[10px]' :
     size === 'md' ? 'w-8 h-8 text-[10px] rounded-[8px]' :

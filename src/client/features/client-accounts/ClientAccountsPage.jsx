@@ -55,7 +55,7 @@ export function ClientAccountsPage() {
     
     const parseLeverage = (levStr) => {
       if (!levStr) return 100;
-      const parts = levStr.split(':');
+      const parts = String(levStr).split(':');
       if (parts.length > 1) return parseInt(parts[1], 10) || 100;
       return parseInt(levStr, 10) || 100;
     };

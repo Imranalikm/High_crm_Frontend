@@ -358,7 +358,7 @@ function FinanceRecordDrawer({ row, open, onClose, type, onAction }) {
   const [localNote, setLocalNote] = useState('');
   if (!row) return null;
 
-  const u = row.user;
+  const u = row.user || {};
   const isTxn = type === 'Transaction';
   const rowTs = row.created || row.ts;
 
@@ -463,7 +463,7 @@ function FinanceRecordDrawer({ row, open, onClose, type, onAction }) {
                 borderColor: 'color-mix(in srgb, var(--brand) 20%, transparent)',
               }}
             >
-              {u.name.split(' ').map(n => n[0]).join('')}
+              {initialsOf(u?.name)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[13.5px] font-bold font-heading text-text tracking-tight truncate">{u.name}</div>
@@ -615,15 +615,20 @@ function FilterRow({ filters }) {
   );
 }
 
+/* ── Initials from a name; safe when the name is missing ─────── */
+function initialsOf(name) {
+  return String(name || '?').trim().split(/s+/).filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase() || '?';
+}
+
 /* ── User cell ───────────────────────────────────────────────── */
-function UserCell({ u }) {
+function UserCell({ u = {} }) {
   return (
     <div className="flex items-center gap-2">
       <div className="w-6 h-6 rounded-[6px] bg-primary/[0.1] border border-primary/[0.16] flex items-center justify-center text-[9px] font-bold text-primary font-heading flex-shrink-0">
-        {u.name.split(' ').map(n => n[0]).join('')}
+        {initialsOf(u?.name)}
       </div>
       <div>
-        <div className="text-[13px] font-semibold font-heading tracking-[-0.01em] text-text/85">{u.name}</div>
+        <div className="text-[13px] font-semibold font-heading tracking-[-0.01em] text-text/85">{u.name || 'Unknown'}</div>
         <div className="text-[10px] font-mono font-semibold text-text-muted/45 mt-0.5">{u.uid}</div>
       </div>
     </div>

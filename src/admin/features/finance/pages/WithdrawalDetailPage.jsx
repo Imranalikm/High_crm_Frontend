@@ -29,6 +29,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { STATUS_CLR, RISK_CLR } from '@/config/constants/finance/mockData';
 import { MethodBadge } from '../components/FinanceComponents';
 import { adminFinanceApi } from '../services/finance.api';
+import { getInitials } from '@/shared/utils/initials';
 
 /* ─────────────────────────────────────────────────────────
    AUDIT TRAIL
@@ -347,9 +348,9 @@ export function WithdrawalDetailPage() {
   if (!record) return <PageShell><div className="p-6 text-negative">Withdrawal not found</div></PageShell>;
 
   const statusColor = STATUS_CLR[record.status] || 'var(--text-muted)';
-  const avatarHue = ((parseInt(record.id.replace(/\D/g, ''), 10) || 55) * 37) % 360;
+  const avatarHue = ((parseInt(String(record.id ?? '').replace(/\D/g, ''), 10) || 55) * 37) % 360;
   const userInitials = record.user?.name
-    ? record.user.name.split(' ').map((n) => n[0]).join('')
+    ? getInitials(record.user.name)
     : 'U';
 
   return (

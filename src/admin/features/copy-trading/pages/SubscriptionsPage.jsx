@@ -7,6 +7,7 @@ import { Badge, IBtn, ToastBar } from '../components/CopyTradingActions';
 import { KpiCard } from '../components/CopyTradingStatsCards';
 import { StatPills } from '../components/CopyTradingFilters';
 import { SUBSCRIPTION_ROWS } from '@/config/constants/copy-trading/workspaces';
+import { getInitials } from '@/shared/utils/initials';
 
 const subsData = SUBSCRIPTION_ROWS.map(s => ({
   ...s,
@@ -68,10 +69,7 @@ export function SubscriptionsPage() {
       render: (v, r) => (
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-[8px] bg-primary/[0.1] border border-primary/[0.16] flex items-center justify-center text-[10px] font-bold text-primary font-heading flex-shrink-0">
-            {v
-              .split(' ')
-              .map(n => n[0])
-              .join('')
+            {getInitials(v)
               .slice(0, 2)}
           </div>
           <div>

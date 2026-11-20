@@ -28,6 +28,7 @@ import { STATUS_CLR, RISK_CLR, depositsData } from '@/config/constants/finance/m
 import { MethodBadge } from '../components/FinanceComponents';
 import { adminFinanceApi } from '../services/finance.api';
 import { getUploadUrl } from '@/utils/uploadUrl';
+import { getInitials } from '@/shared/utils/initials';
 
 /* ─────────────────────────────────────────────────────────
    AUDIT TRAIL
@@ -353,7 +354,7 @@ export function DepositDetailPage() {
   const statusColor = STATUS_CLR[record?.status] || 'var(--text-muted)';
   const avatarHue = ((parseInt(String(record?.id || '').replace(/\D/g, ''), 10) || 44) * 37) % 360;
   const userInitials = record?.user?.name
-    ? record.user.name.split(' ').map((n) => n[0]).join('')
+    ? getInitials(record.user.name)
     : 'U';
 
   return (

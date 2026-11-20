@@ -80,7 +80,7 @@ export function PerformancePage() {
         <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
           <KpiCard label="Copied PnL" value={totalCopiedPnl} color="var(--positive)" Icon={TrendingUp} sub="Total follower profit/loss" />
           <KpiCard label="Monthly Growth" value={monthlyGrowth} color="var(--positive)" Icon={TrendingUp} sub="Platform average" />
-          <KpiCard label="Top Provider" value={bestProvider.provider.split(' ')[0]} color="var(--brand)" Icon={Trophy} sub={`${bestProvider.roi}% profit`} />
+          <KpiCard label="Top Provider" value={String(bestProvider?.provider ?? '—').split(' ')[0]} color="var(--brand)" Icon={Trophy} sub={`${bestProvider?.roi ?? 0}% profit`} />
           <KpiCard label="Avg Drawdown" value={`-${avgDD}%`} color="var(--negative)" Icon={TrendingDown} sub="Average loss" />
           <KpiCard label="Success Rate" value={`${successRate}%`} color="var(--cyan)" Icon={Target} sub="Strategies >10% profit" />
         </section>

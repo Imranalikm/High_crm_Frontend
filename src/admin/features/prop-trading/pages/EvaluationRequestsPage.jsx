@@ -7,6 +7,7 @@ import { EvaluationDrawer } from '../components/PropDrawer';
 import { MetricGrid } from '@/components/cards/MetricGrid';
 import { usePropWorkspace } from '../hooks/usePropWorkspace';
 import { exportRows } from '@/utils/exporters';
+import { getInitials } from '@/shared/utils/initials';
 
 // Summary metrics derived from source data
 const metrics = [
@@ -31,7 +32,7 @@ function EvaluationRequestsPage() {
       key: 'trader',   label: 'Trader',    render: (v, r) => (
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-[8px] bg-primary/[0.1] border border-primary/[0.15] flex items-center justify-center text-[9px] font-bold text-primary font-heading flex-shrink-0">
-            {v.split(' ').map((n) => n[0]).join('')}
+            {getInitials(v)}
           </div>
           <div>
             <div className="text-[12px] font-semibold font-heading text-text">{v}</div>

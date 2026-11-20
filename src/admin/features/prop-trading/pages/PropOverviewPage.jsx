@@ -5,6 +5,7 @@ import { overviewKpis, payoutTrend, completionTrend, funnelData, recentApprovals
 import { Card, SectionHead, IconBtn, RiskBadge, CustomTooltip } from '../components/PropComponents';
 import { PropStatsCards } from '../components/PropStatsCards';
 import { PropQuickActions } from '../components/PropQuickActions';
+import { getInitials } from '@/shared/utils/initials';
 
 export function PropOverviewPage() {
   return (
@@ -91,7 +92,7 @@ export function PropOverviewPage() {
             {recentApprovals.map(a => (
               <div key={a.id} className="flex items-center gap-3 rounded-[9px] border border-white/[0.04] bg-white/[0.015] px-3 py-2.5 hover:border-white/[0.08] transition-all group cursor-pointer">
                 <div className="w-7 h-7 rounded-[7px] bg-primary/[0.1] border border-primary/[0.18] flex items-center justify-center text-[9px] font-bold text-primary font-heading flex-shrink-0">
-                  {a.trader.split(' ').map(n => n[0]).join('')}
+                  {getInitials(a.trader)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11.5px] font-semibold text-text/80 font-heading truncate">{a.trader}</div>

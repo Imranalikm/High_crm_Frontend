@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, GitBranch, Network, Users, X, CircleDollarSign, Edit2, Lock } from 'lucide-react';
 import { IBCard, IBTierBadge, IBBadge, SectionHead, IBIconBtn } from './IBComponents';
 import { TIER_CLR, STATUS_CLR } from '@/config/constants/ib-system/workspaces/shared.workspace';
+import { getInitials } from '@/shared/utils/initials';
 
 export function TreeNode({ node, depth = 0, selectedId, onSelect }) {
   const [expanded, setExpanded] = useState(depth === 0);
@@ -37,7 +38,7 @@ export function TreeNode({ node, depth = 0, selectedId, onSelect }) {
         </div>
         <div className="w-8 h-8 rounded-[8px] flex items-center justify-center text-[10px] font-bold font-heading flex-shrink-0 mr-3 border"
           style={{ background: `color-mix(in srgb, ${tierColor} 12%, transparent)`, borderColor: `color-mix(in srgb, ${tierColor} 22%, transparent)`, color: tierColor }}>
-          {node.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+          {getInitials(node.name).slice(0, 2)}
         </div>
         <div className="flex-1 min-w-0 flex items-center gap-4">
           <div className="min-w-[160px]">
@@ -86,7 +87,7 @@ export function TreeDetailPanel({ node, onClose }) {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[10px] flex items-center justify-center text-[12px] font-bold font-heading border"
               style={{ background: `color-mix(in srgb, ${tierColor} 15%, transparent)`, borderColor: `color-mix(in srgb, ${tierColor} 25%, transparent)`, color: tierColor }}>
-              {node.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              {getInitials(node.name).slice(0, 2)}
             </div>
             <div>
               <div className="text-[14px] font-bold tracking-[-0.02em] text-text font-heading">{node.name}</div>
@@ -140,7 +141,7 @@ export function TreeDetailPanel({ node, onClose }) {
                 <div key={sub.id} className="flex items-center gap-3 rounded-[8px] border border-border/20 bg-bg/40 px-3 py-2">
                   <div className="w-6 h-6 rounded-[5px] flex items-center justify-center text-[9px] font-bold font-heading flex-shrink-0"
                     style={{ background: `color-mix(in srgb, ${TIER_CLR[sub.tier] || '#fff'} 12%, transparent)`, color: TIER_CLR[sub.tier] || '#fff', border: `1px solid color-mix(in srgb, ${TIER_CLR[sub.tier] || '#fff'} 22%, transparent)` }}>
-                    {sub.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    {getInitials(sub.name).slice(0, 2)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[11.5px] font-semibold text-text/75 font-heading truncate">{sub.name}</div>

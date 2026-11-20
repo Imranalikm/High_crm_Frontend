@@ -104,7 +104,7 @@ function DepositsPage() {
 
   const columns = [
     { key: 'id',         label: 'ID',   render: (val) => <span className="font-mono text-[12px] font-bold text-brand">{val}</span> },
-    { key: 'user',       label: 'User',         render: (_, row) => <UserCell u={{ name: row.recipient?.name, email: row.recipient?.email, uid: `U-${row.createdFor}` }} /> },
+    { key: 'user',       label: 'User',         render: (_, row) => <UserCell u={{ name: row.recipient?.name || row.creator?.name || 'Unknown', email: row.recipient?.email, uid: `U-${row.createdFor}` }} /> },
     { key: 'amount',     label: 'Amount',       render: (val) => <AmountCell value={val ? `$${parseFloat(val).toFixed(2)}` : '$0.00'} type="DEPOSIT" /> },
     { key: 'type',       label: 'Method',       render: (val) => <MethodBadge value={val || 'Unknown'} /> },
     { key: 'status',     label: 'Status',       render: (val) => <StatusBadge value={val} /> },

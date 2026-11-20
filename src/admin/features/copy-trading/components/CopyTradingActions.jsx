@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { TrendingUp, TrendingDown, ArrowLeft } from 'lucide-react';
 import { StatusChip, RiskChip, Button as BaseButton, Card as BaseCard, Toast as CanonicalToast } from '@/components/ui';
 import { SEV_CLR } from '@/config/constants/status.constants';
+import { getInitials } from '@/shared/utils/initials';
 
 const Minus = () => <span style={{ fontSize: 9, lineHeight: 1 }}>—</span>;
 
@@ -85,10 +86,7 @@ export function ToastBar({ msg, onDone }) {
 }
 
 export function UserAvatar({ name, size = 'sm' }) {
-  const initials = name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
+  const initials = getInitials(name)
     .slice(0, 2)
     .toUpperCase();
   const dim =

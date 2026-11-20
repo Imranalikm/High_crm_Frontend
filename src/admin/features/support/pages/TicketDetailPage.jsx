@@ -31,6 +31,7 @@ import {
   SupportToast,
 } from '@/features/support/components/SupportComponents';
 import { getUploadUrl } from '@/utils/uploadUrl';
+import { getInitials } from '@/shared/utils/initials';
 
 
 /* ── Panel primitives ─────────────────────────────────────────── */
@@ -396,7 +397,7 @@ function AssignDropdown({ owner, onAssign, open, setOpen, agents = [] }) {
                   color: 'var(--brand)',
                 }}
               >
-                {a.name.split(' ').map((w) => w[0]).join('')}
+                {getInitials(a.name)}
               </div>
               {a.name}
               {owner?.name === a.name && <Check size={10} className="ml-auto" style={{ color: 'var(--brand)' }} />}

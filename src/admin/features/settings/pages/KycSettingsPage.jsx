@@ -150,10 +150,10 @@ export function KycSettingsPage({
                   <div className="flex-1 space-y-3">
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[4px]" style={{ color: c, background: `color-mix(in srgb, ${c} 10%, transparent)` }}>
-                        {tier.level.split(':')[0]}
+                        {String(tier.level ?? '').split(':')[0]}
                       </span>
                       <h4 className="text-[13.5px] font-bold font-heading text-text/90 mt-2">
-                        {tier.level.split(':')[1]?.trim() || tier.level}
+                        {String(tier.level ?? '').split(':')[1]?.trim() || tier.level}
                       </h4>
                       <p className="text-[11.5px] text-text-muted/50 font-heading mt-1">
                         {tier.desc}

@@ -5,6 +5,7 @@ import * as LucideIcons from 'lucide-react';
 import { rolesData } from '@/config/constants/roles-permissions/workspaces/admin-mgmt.workspace';
 import { SEV_CLR } from '@/config/constants/status.constants';
 import { useRolesPermissions } from '../context/RolesPermissionsContext';
+import { getInitials } from '@/shared/utils/initials';
 export { SEV_CLR };
 
 export const STATUS_CLR = {
@@ -112,7 +113,7 @@ export function IconBtn({ Icon: Ic, label, variant = 'default', onClick, small }
 }
 
 export function AdminAvatar({ name, size = 'sm', role }) {
-  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = getInitials(name).slice(0, 2).toUpperCase();
   let dynamicRoles = [];
   try {
     const ctx = useRolesPermissions();
