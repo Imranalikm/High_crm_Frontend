@@ -38,4 +38,27 @@ export const mt5ServersService = {
   async remove(id) {
     await apiClient.delete(`/mt5-servers/${id}`);
   },
+
+  // → { components: { api, manager }, server, checkedAt, alerts: { emailEnabled, emails, recipients, usingSuperAdmins } }
+  async health() {
+    const response = await apiClient.get('/mt5-servers/health');
+    return response?.data || null;
+  },
+
+  // Runs a check right away; same shape as health()
+  async checkHealth() {
+    const response = await apiClient.post('/mt5-servers/health/check');
+    return response?.data || null;
+  },
+
+  // { emailEnabled?, emails? } → alerts view
+  async updateAlerts(payload) {
+    const response = await apiClient.put('/mt5-servers/alerts', payload);
+    return response?.data || null;
+  },
+
+  // → { message, data: { recipients } }
+  async testAlert() {
+    return apiClient.post('/mt5-servers/alerts/test');
+  },
 };

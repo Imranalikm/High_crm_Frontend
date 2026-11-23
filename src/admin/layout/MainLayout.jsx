@@ -3,6 +3,7 @@ import { Outlet, ScrollRestoration } from 'react-router-dom';
 import { useAdminUi } from '@/app/providers/AdminUiProvider';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { Mt5AlertBanner } from './Mt5AlertBanner';
 import { CommandPalette } from '@/components/overlays/CommandPalette';
 import { UniversalDrawerContainer } from '@/shared/components/overlays';
 
@@ -47,6 +48,7 @@ export function MainLayout() {
           setCollapsed={setCollapsed}
           onOpenCommand={() => setCmdOpen(true)}
         />
+        <Mt5AlertBanner />
 
         <main className="flex-1 p-4 md:p-8 max-w-[1720px] w-full mx-auto animate-fade-in relative z-10">
           <Outlet />

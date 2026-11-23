@@ -57,8 +57,8 @@ export function Topbar({ collapsed, setCollapsed, theme, toggleTheme, onOpenComm
       setNotifications(prev => [notif, ...prev].slice(0, 10)); // Keep only 10
       setUnreadCount(prev => prev + 1);
       
-      // Play sound
-      if (audioRef.current) {
+      // Play sound (MT5 failures have their own alarm in Mt5AlertBanner)
+      if (audioRef.current && !(notif?.type === 'mt5_alert' && notif?.severity === 'critical')) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(e => console.log('Audio play blocked:', e));
       }

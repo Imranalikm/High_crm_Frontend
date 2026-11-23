@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, PlugZap, ArrowRightLeft, CheckCircle2, Server } from 'lucide-react';
 import { WarnBanner } from '../components/SettingsForm';
 import { Mt5ServerDrawer } from '../components/Mt5ServerDrawer';
 import { ConnectionPath } from '../components/ConnectionPath';
+import { Mt5AlertsPanel } from '../components/Mt5AlertsPanel';
 import { hostOf } from '../configs/mt5Servers.config';
 import { mt5ServersService } from '../services/mt5ServersService';
 import { ConfirmDialog } from '@/components/overlays/ConfirmDialog';
@@ -20,12 +21,23 @@ const ACTION_VERBS = {
   deactivated: 'switched away from',
   tested: 'tested',
   deleted: 'deleted',
+  connection_lost: 'lost the connection to',
+  connection_restored: 'reconnected to',
+  alerts_updated: 'changed the failure alerts',
 };
 const ACTION_COLORS = {
   activated: 'var(--positive)',
   deactivated: 'var(--warning)',
   deleted: 'var(--negative)',
   tested: 'var(--cyan)',
+  connection_lost: 'var(--negative)',
+  connection_restored: 'var(--positive)',
+};
+const COMPONENT_NAMES = { api: 'Gateway API login', manager: 'MT5 manager login' };
+const minutes = (ms) => {
+  const m = Math.round(ms / 60000);
+  if (m < 1) return 'under a minute';
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 };
 
 const FIELD_NAMES = {
@@ -47,6 +59,9 @@ function logDetail(log) {
   }
   if (log.action === 'deactivated' && d.replacedBy) return `Replaced by ${d.replacedBy}.`;
   if (log.action === 'created' && d.source) return `Imported from ${d.source}.`;
+  if (log.action === 'connection_lost') return `${COMPONENT_NAMES[d.component] || 'Login'} failed: ${d.error || 'unknown error'}`;
+  if (log.action === 'connection_restored') return `${COMPONENT_NAMES[d.component] || 'Login'} working again after ${minutes(d.downForMs || 0)}.`;
+  if (log.action === 'alerts_updated') return `Emails ${d.emailEnabled ? 'on' : 'off'}, ${d.emails ? `${d.emails} address${d.emails === 1 ? '' : 'es'}` : 'sent to every Super Admin'}.`;
   return '';
 }
 
@@ -227,8 +242,8 @@ function HistoryTimeline({ logs }) {
                   />
                   <p className="text-[12.5px] text-text/90 font-heading">
                     <span className="font-semibold text-text">{log.userName || 'System'}</span>
-                    {' '}{ACTION_VERBS[log.action] || log.action}{' '}
-                    <span className="font-semibold text-text">{log.serverLabel || 'a server'}</span>
+                    {' '}{ACTION_VERBS[log.action] || log.action}
+                    {log.action !== 'alerts_updated' && <>{' '}<span className="font-semibold text-text">{log.serverLabel || 'a server'}</span></>}
                     <span className="ml-2 text-[11.5px] text-text-muted/50">{fmtTime(log.createdAt)}</span>
                   </p>
                   {detail && <p className="mt-0.5 text-[12px] text-text-muted/60 font-heading">{detail}</p>}
@@ -291,8 +306,8 @@ export function Mt5ServersPage() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const flash = (text) => { setError(''); setToast({ id: Date.now(), text }); };
-  const fail = (err, fallback) => setError(err.message || fallback);
+  const flash = useCallback((text) => { setError(''); setToast({ id: Date.now(), text }); }, []);
+  const fail = useCallback((err, fallback) => setError(err.message || fallback), []);
 
   const active = servers.find((s) => s.isActive);
   const others = servers.filter((s) => !s.isActive);
@@ -440,6 +455,8 @@ export function Mt5ServersPage() {
               <p className="text-[13px] text-text-muted font-heading">No server is active. Add one and switch to it to manage MT5 from here.</p>
             </section>
           )}
+
+          <Mt5AlertsPanel canEdit={canEdit} onToast={flash} onError={fail} />
 
           <section aria-label="Other servers" className="rounded-[14px] border bg-surface-elevated/40" style={panelBorder}>
             <div className="px-5 pt-4 pb-3">
