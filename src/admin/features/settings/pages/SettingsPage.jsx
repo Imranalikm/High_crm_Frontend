@@ -13,6 +13,8 @@ import { TradingSettingsPage } from './TradingSettingsPage';
 import { NotificationSettingsPage } from './NotificationSettingsPage';
 import { SystemSettingsPage } from './SystemSettingsPage';
 import { DemoAccountSettingsPage } from './DemoAccountSettingsPage';
+import { PaymentMethodsPage } from './PaymentMethodsPage';
+import { Mt5ServersPage } from './Mt5ServersPage';
 
 // Standardized list of main settings category tabs
 const MAIN_SECTIONS = [
@@ -93,6 +95,10 @@ export function SettingsPage() {
         );
       case 'demo':
         return <DemoAccountSettingsPage />;
+      case 'payment-methods':
+        return <PaymentMethodsPage />;
+      case 'mt5-servers':
+        return <Mt5ServersPage />;
       case 'notifications':
         return (
           <NotificationSettingsPage

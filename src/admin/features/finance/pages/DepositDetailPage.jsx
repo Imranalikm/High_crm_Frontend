@@ -22,6 +22,7 @@ import {
   Hash,
   User,
   FileText,
+  Landmark,
 } from 'lucide-react';
 import { PageShell } from '@/components/layout/PageShell';
 import { STATUS_CLR, RISK_CLR, depositsData } from '@/config/constants/finance/mockData';
@@ -230,6 +231,74 @@ function Field({ label, value, mono = false, accent, copyable = false }) {
 }
 
 /* ─────────────────────────────────────────────────────────
+   PAID INTO (company account the client chose on the deposit page)
+───────────────────────────────────────────────────────── */
+const PAYMENT_TYPE_NAMES = { bank: 'Bank Transfer', upi: 'UPI', usdt: 'USDT' };
+const REGION_NAMES = { IN: 'India', INTL: 'International' };
+
+// Label/value rows from the snapshot stored on the deposit
+function paymentAccountFields(snap) {
+  if (snap.type === 'bank') return snap.fields || [];
+  if (snap.type === 'upi') {
+    return [
+      { label: 'UPI ID', value: snap.upiId },
+      { label: 'Payee Name', value: snap.payeeName },
+    ].filter((f) => f.value);
+  }
+  return [
+    { label: 'Network', value: snap.networkLabel || snap.network },
+    { label: 'Wallet Address', value: snap.walletAddress },
+  ].filter((f) => f.value);
+}
+
+function PaidIntoSection({ snapshot }) {
+  return (
+    <div className="rounded-[13px] border border-border/18 bg-surface-elevated shadow-card-subtle p-5">
+      <SectionHead
+        icon={Landmark}
+        title="Paid Into"
+        right={snapshot && (
+          <span className="text-[10.5px] text-text-muted/50">As shown to the client at deposit time</span>
+        )}
+      />
+      {!snapshot ? (
+        <p className="text-[12px] text-text-muted/70">
+          No account was recorded for this deposit. It was made before payment accounts were tracked.
+        </p>
+      ) : (
+        <div className="flex flex-col sm:flex-row gap-5">
+          <div className="flex-1 min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[14px] font-semibold text-text">{snapshot.label}</span>
+              <span className="rounded-[5px] border border-border/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-muted/70">
+                {PAYMENT_TYPE_NAMES[snapshot.type] || snapshot.type}
+              </span>
+              {snapshot.region && (
+                <span className="rounded-[5px] border border-border/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-text-muted/70">
+                  {REGION_NAMES[snapshot.region] || snapshot.region}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {paymentAccountFields(snapshot).map((f) => (
+                <Field key={f.label} label={f.label} value={f.value} mono copyable />
+              ))}
+            </div>
+          </div>
+          {snapshot.qrImage && (
+            <a href={getUploadUrl(snapshot.qrImage)} target="_blank" rel="noopener noreferrer" className="shrink-0 self-start">
+              <div className="rounded-[9px] bg-white p-2">
+                <img src={getUploadUrl(snapshot.qrImage)} alt="QR code shown to the client" className="h-28 w-28 object-contain" />
+              </div>
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    SECTION HEADER
 ───────────────────────────────────────────────────────── */
 function SectionHead({ icon, title, right }) {
@@ -281,6 +350,9 @@ export function DepositDetailPage() {
           reviewedBy: d.status !== 'pending' ? 'sys_admin_01' : 'Pending',
           note: d.note,
           proofUrl: getUploadUrl(d.depositProof),
+          paymentAccount: d.paymentMethodSnapshot || null,
+          // Client deposits by bank/UPI/USDT are paid into a company account; admin credits are not
+          paidByClient: d.role !== 'admin' && ['bank', 'upi', 'crypto'].includes(d.type),
           user: {
             name: d.recipient?.name || 'Unknown',
             uid: `U-${d.createdFor}`,
@@ -613,6 +685,11 @@ export function DepositDetailPage() {
                 <Field label="Reviewer" value={record.reviewedBy || 'Pending'} />
               </div>
             </div>
+
+            {/* Company account the client paid into */}
+            {(record.paymentAccount || record.paidByClient) && (
+              <PaidIntoSection snapshot={record.paymentAccount} />
+            )}
 
             {/* Payment Proof */}
             <div className="rounded-[13px] border border-border/18 bg-surface-elevated shadow-card-subtle p-5">

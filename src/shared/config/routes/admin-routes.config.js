@@ -1,7 +1,6 @@
 import {
   Copy,
   FileText,
-  FlaskConical,
   LayoutDashboard,
   LifeBuoy,
   LineChart,
@@ -478,9 +477,9 @@ export const adminRouteModules = [
     ],
   },
   {
-    id: 'demo-accounts',
-    label: 'Demo Account Settings',
-    icon: FlaskConical,
+    id: 'main-settings',
+    label: 'Settings',
+    icon: Settings,
     navSection: 'management',
     permission: PERMISSIONS.settings.view,
     defaultPath: '/admin/settings/demo-accounts',
@@ -489,9 +488,30 @@ export const adminRouteModules = [
         id: 'settings-demo-accounts',
         path: 'settings/demo-accounts',
         pageKey: 'settings/settings-workspace',
+        navLabel: 'Demo Accounts',
         permission: PERMISSIONS.settings.view,
         meta: [
-          { pattern: '/admin/settings/demo-accounts', title: 'Demo Account Settings', section: 'Demo Accounts', permission: PERMISSIONS.settings.view },
+          { pattern: '/admin/settings/demo-accounts', title: 'Demo Account Settings', section: 'Settings', permission: PERMISSIONS.settings.view },
+        ],
+      },
+      {
+        id: 'settings-payment-methods',
+        path: 'settings/payment-methods',
+        pageKey: 'settings/settings-workspace',
+        navLabel: 'Payment Methods',
+        permission: PERMISSIONS.settings.view,
+        meta: [
+          { pattern: '/admin/settings/payment-methods', title: 'Payment Methods', section: 'Settings', permission: PERMISSIONS.settings.view },
+        ],
+      },
+      {
+        id: 'settings-mt5-servers',
+        path: 'settings/mt5-servers',
+        pageKey: 'settings/settings-workspace',
+        navLabel: 'MT5 Servers',
+        permission: PERMISSIONS.settings.view,
+        meta: [
+          { pattern: '/admin/settings/mt5-servers', title: 'MT5 Servers', section: 'Settings', permission: PERMISSIONS.settings.view },
         ],
       },
     ],

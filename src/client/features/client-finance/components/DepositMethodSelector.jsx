@@ -30,7 +30,7 @@ const DEFAULT_METHODS = {
   crypto: {
     id: 'crypto',
     label: 'USDT',
-    sub: 'Tether (TRC20) — scan QR to pay',
+    sub: 'Tether stablecoin — send from your crypto wallet',
     icon: Coins,
     color: 'warning',
     processingLabel: 'After network confirmation',
@@ -41,7 +41,8 @@ const DEFAULT_METHODS = {
   }
 };
 
-export function DepositMethodSelector({ value, onChange }) {
+// `available`: method ids that have at least one active company account (null = show all)
+export function DepositMethodSelector({ value, onChange, available = null }) {
   const { clientSettings } = usePlatformSettings();
   const { gateways } = clientSettings;
 
@@ -57,11 +58,13 @@ export function DepositMethodSelector({ value, onChange }) {
     if (key && g.fee) feeOverrides[key] = g.fee;
   });
 
-  // Always show all methods in the defined order, with gateway fee overrides
-  const methodsToRender = Object.values(DEFAULT_METHODS).map((m) => ({
-    ...m,
-    ...(feeOverrides[m.id] ? { fee: feeOverrides[m.id] } : {}),
-  }));
+  // Methods in the defined order, limited to those the admin has enabled, with gateway fee overrides
+  const methodsToRender = Object.values(DEFAULT_METHODS)
+    .filter((m) => !available || available.includes(m.id))
+    .map((m) => ({
+      ...m,
+      ...(feeOverrides[m.id] ? { fee: feeOverrides[m.id] } : {}),
+    }));
 
   return (
     <div className="flex flex-col gap-3">

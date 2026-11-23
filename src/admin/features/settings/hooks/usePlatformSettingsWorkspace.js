@@ -26,6 +26,8 @@ const pathToSection = {
   '/settings/kyc': 'kyc',
   '/settings/trading': 'trading',
   '/settings/demo-accounts': 'demo',
+  '/settings/payment-methods': 'payment-methods',
+  '/settings/mt5-servers': 'mt5-servers',
   '/settings/notifications': 'notifications',
   '/settings/system': 'system',
 };
@@ -37,6 +39,8 @@ const sectionToPath = {
   'kyc': '/settings/kyc',
   'trading': '/settings/trading',
   'demo': '/settings/demo-accounts',
+  'payment-methods': '/settings/payment-methods',
+  'mt5-servers': '/settings/mt5-servers',
   'notifications': '/settings/notifications',
   'system': '/settings/system',
 };

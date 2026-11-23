@@ -1,23 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Copy, CheckCircle2, Upload, X, AlertCircle, Building2 } from 'lucide-react';
-import { financeApi } from '../services/finance.api';
-import upiQr from '@/assets/payments/upi-qr.jpg';
-import usdtQr from '@/assets/payments/usdt-trc20-qr.jpg';
+import { getUploadUrl } from '@/shared/utils/uploadUrl';
 
-/* Loads the company bank/UPI details (bank account picked server-side from the client's country) */
-function usePaymentDetails() {
-  const [details, setDetails] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let active = true;
-    financeApi.getPaymentDetails()
-      .then((d) => { if (active) setDetails(d); })
-      .catch((err) => { if (active) setError(err.message || 'Failed to load payment details'); });
-    return () => { active = false; };
-  }, []);
-
-  return { details, error, loading: !details && !error };
+/* Lets the client choose which company account to pay into when several are offered */
+function AccountPicker({ accounts, selectedId, onSelect }) {
+  if (!accounts || accounts.length < 2) return null;
+  return (
+    <div className="flex flex-col gap-2 w-full text-left">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'rgba(194,198,214,0.4)' }}>
+        Choose an account to pay into
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {accounts.map((a) => {
+          const active = String(a.id) === String(selectedId);
+          return (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => onSelect(a.id)}
+              className="flex items-center gap-2.5 px-3.5 py-3 rounded-[10px] text-left transition-all duration-150 cursor-pointer"
+              style={{
+                background: active ? 'color-mix(in srgb, var(--brand) 8%, transparent)' : 'var(--muted-surface)',
+                border: `1px solid ${active ? 'color-mix(in srgb, var(--brand) 35%, transparent)' : 'transparent'}`,
+              }}
+            >
+              <div
+                className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
+                style={{ borderColor: active ? 'var(--brand)' : 'rgba(194,198,214,0.2)' }}
+              >
+                {active && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand)' }} />}
+              </div>
+              <span className="text-[12.5px] font-semibold truncate" style={{ color: 'var(--text)' }}>{a.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function InrNotice() {
@@ -35,10 +54,7 @@ function InrNotice() {
 }
 
 /* ── Bank instructions ── */
-function BankInstructions({ onProofUpload, proofFile, accountId }) {
-  const { details: payment, error, loading } = usePaymentDetails();
-  const bank = payment?.bank;
-
+function BankInstructions({ bank, onProofUpload, proofFile, accountId }) {
   const details = [
     ...(bank?.fields || []),
     ...(accountId ? [{ label: 'Payment Reference (MT5 Account)', value: String(accountId), highlight: true }] : []),
@@ -52,15 +68,7 @@ function BankInstructions({ onProofUpload, proofFile, accountId }) {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  if (loading) {
-    return (
-      <div className="p-6 text-center text-[12px]" style={{ color: 'rgba(194,198,214,0.5)' }}>
-        Loading bank details...
-      </div>
-    );
-  }
-
-  if (error || !bank) {
+  if (!bank) {
     return (
       <div
         className="flex items-start gap-2.5 p-3.5 rounded-[10px] text-[12px]"
@@ -76,7 +84,7 @@ function BankInstructions({ onProofUpload, proofFile, accountId }) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <Building2 size={14} style={{ color: 'var(--brand)' }} strokeWidth={1.8} />
-        <span className="text-[12px] font-bold" style={{ color: 'var(--text)' }}>{bank.label} bank account</span>
+        <span className="text-[12px] font-bold" style={{ color: 'var(--text)' }}>{bank.label}</span>
       </div>
 
       <div
@@ -222,11 +230,10 @@ function ProofUpload({ id, onProofUpload, proofFile }) {
 }
 
 /* ── Crypto instructions (USDT) ── */
-const USDT_NETWORK = 'Tron (TRC20)';
-const USDT_ADDRESS = 'TP8eMW4tQriV3wS9ZRWQuasgLk3V64t89G';
-
-function CryptoInstructions({ onProofUpload, proofFile }) {
+function CryptoInstructions({ wallet, onProofUpload, proofFile }) {
   const [copied, setCopied] = useState(false);
+  const USDT_NETWORK = wallet.networkLabel || wallet.network;
+  const USDT_ADDRESS = wallet.walletAddress;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(USDT_ADDRESS).catch(() => {});
@@ -252,12 +259,20 @@ function CryptoInstructions({ onProofUpload, proofFile }) {
         </span>
       </div>
 
-      <div className="p-3 rounded-[12px] bg-white">
-        <img src={usdtQr} alt={`USDT ${USDT_NETWORK} deposit QR code`} className="w-48 h-48 object-contain" />
-      </div>
-      <p className="text-[12px]" style={{ color: 'rgba(194,198,214,0.6)' }}>
-        Scan this QR code with your wallet app, or copy the address below.
-      </p>
+      {wallet.qrImage ? (
+        <>
+          <div className="p-3 rounded-[12px] bg-white">
+            <img src={getUploadUrl(wallet.qrImage)} alt={`USDT ${USDT_NETWORK} deposit QR code`} className="w-48 h-48 object-contain" />
+          </div>
+          <p className="text-[12px]" style={{ color: 'rgba(194,198,214,0.6)' }}>
+            Scan this QR code with your wallet app, or copy the address below.
+          </p>
+        </>
+      ) : (
+        <p className="text-[12px]" style={{ color: 'rgba(194,198,214,0.6)' }}>
+          Copy the wallet address below into your wallet app.
+        </p>
+      )}
 
       <div
         className="flex items-center justify-between gap-3 w-full px-4 py-3.5 rounded-[13px] text-left"
@@ -300,11 +315,8 @@ function CryptoInstructions({ onProofUpload, proofFile }) {
 }
 
 /* ── UPI instructions ── */
-function UpiInstructions({ amount, onProofUpload, proofFile }) {
-  const { details: payment } = usePaymentDetails();
-  // Fallback keeps UPI usable if the details request fails; matches the server config
-  const upiId = payment?.upi?.upiId || 'spectronreseach@idfcbank';
-  const payeeName = payment?.upi?.payeeName || 'SPECTRON RESEARCH PRIVATE LIMITED';
+function UpiInstructions({ upi, amount, onProofUpload, proofFile }) {
+  const { upiId, payeeName } = upi;
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -320,13 +332,15 @@ function UpiInstructions({ amount, onProofUpload, proofFile }) {
           Pay with any UPI app
         </p>
         <p className="text-[12.5px] max-w-sm leading-relaxed" style={{ color: 'rgba(194,198,214,0.6)' }}>
-          Scan the QR code or pay to the UPI ID below for your deposit of <strong style={{ color: 'var(--text)' }}>${parseFloat(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>.
+          {upi.qrImage ? 'Scan the QR code or pay' : 'Pay'} to the UPI ID below for your deposit of <strong style={{ color: 'var(--text)' }}>${parseFloat(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>.
         </p>
       </div>
 
-      <div className="p-3 rounded-[12px] bg-white">
-        <img src={upiQr} alt="UPI payment QR code" className="w-48 h-48 object-contain" />
-      </div>
+      {upi.qrImage && (
+        <div className="p-3 rounded-[12px] bg-white">
+          <img src={getUploadUrl(upi.qrImage)} alt="UPI payment QR code" className="w-48 h-48 object-contain" />
+        </div>
+      )}
 
       <div className="w-full text-left">
         <p className="text-[10px] font-black uppercase tracking-[0.14em] mb-1.5" style={{ color: 'rgba(194,198,214,0.4)' }}>
@@ -351,9 +365,11 @@ function UpiInstructions({ amount, onProofUpload, proofFile }) {
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-        <p className="text-[11px] mt-1.5" style={{ color: 'rgba(194,198,214,0.5)' }}>
-          Payee: <strong style={{ color: 'var(--text)' }}>{payeeName}</strong>
-        </p>
+        {payeeName && (
+          <p className="text-[11px] mt-1.5" style={{ color: 'rgba(194,198,214,0.5)' }}>
+            Payee: <strong style={{ color: 'var(--text)' }}>{payeeName}</strong>
+          </p>
+        )}
       </div>
 
       <InrNotice />
@@ -417,12 +433,27 @@ function UpiInstructions({ amount, onProofUpload, proofFile }) {
  * DepositInstructions
  * Conditionally renders method-specific instructions.
  */
-export function DepositInstructions({ method, amount, accountId, onProofUpload, proofFile }) {
+export function DepositInstructions({ method, accounts = [], selectedAccountId, onSelectAccount, amount, accountId, onProofUpload, proofFile }) {
+  const selected = accounts.find((a) => String(a.id) === String(selectedAccountId)) || accounts[0];
+
+  if (!selected) {
+    return (
+      <div
+        className="flex items-start gap-2.5 p-3.5 rounded-[10px] text-[12px]"
+        style={{ background: 'color-mix(in srgb, var(--negative) 7%, transparent)', color: 'rgba(194,198,214,0.75)' }}
+      >
+        <AlertCircle size={13} className="shrink-0 mt-0.5" style={{ color: 'var(--negative)' }} strokeWidth={2} />
+        <span>Payment details could not be loaded. Please refresh the page or contact support before sending money.</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="animate-in fade-in duration-300">
-      {method === 'bank'   && <BankInstructions amount={amount} accountId={accountId} onProofUpload={onProofUpload} proofFile={proofFile} />}
-      {method === 'crypto' && <CryptoInstructions amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
-      {method === 'upi'    && <UpiInstructions amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
+    <div className="animate-in fade-in duration-300 flex flex-col gap-4">
+      <AccountPicker accounts={accounts} selectedId={selected.id} onSelect={onSelectAccount} />
+      {method === 'bank'   && <BankInstructions key={selected.id} bank={selected} amount={amount} accountId={accountId} onProofUpload={onProofUpload} proofFile={proofFile} />}
+      {method === 'crypto' && <CryptoInstructions key={selected.id} wallet={selected} amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
+      {method === 'upi'    && <UpiInstructions key={selected.id} upi={selected} amount={amount} onProofUpload={onProofUpload} proofFile={proofFile} />}
     </div>
   );
 }

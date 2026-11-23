@@ -29,6 +29,9 @@ const METHOD_NAMES = {
   upi: 'UPI',
 };
 
+// Deposit page method id → key in the payment-details response
+const METHOD_ACCOUNT_KEY = { bank: 'bank', upi: 'upi', crypto: 'usdt' };
+
 // Methods where the client must upload a payment screenshot / receipt
 const PROOF_REQUIRED = ['bank', 'upi', 'crypto'];
 
@@ -187,6 +190,39 @@ export function DepositPage() {
   const [transactionId, setTransactionId] = useState('');
   const [depositProof, setDepositProof] = useState(null);
 
+  // Company accounts the client can pay into, grouped by type (bank filtered to their region server-side)
+  const [paymentMethods, setPaymentMethods] = useState(null);
+  const [paymentLoadError, setPaymentLoadError] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
+
+  React.useEffect(() => {
+    let active = true;
+    financeApi.getPaymentDetails()
+      .then((d) => {
+        if (!active) return;
+        const methods = d?.methods || { bank: [], upi: [], usdt: [] };
+        setPaymentMethods(methods);
+        // Default to the first method type that has accounts
+        const first = Object.keys(METHOD_ACCOUNT_KEY).find((id) => (methods[METHOD_ACCOUNT_KEY[id]] || []).length > 0);
+        if (first) setMethod(first);
+      })
+      .catch((err) => { if (active) setPaymentLoadError(err.message || 'Failed to load payment methods.'); });
+    return () => { active = false; };
+  }, []);
+
+  const accountsFor = (methodId) => (paymentMethods ? paymentMethods[METHOD_ACCOUNT_KEY[methodId]] || [] : []);
+  const availableMethods = paymentMethods
+    ? Object.keys(METHOD_ACCOUNT_KEY).filter((id) => accountsFor(id).length > 0)
+    : [];
+  const methodAccounts = accountsFor(method);
+
+  // Keep the chosen account valid for the current method
+  React.useEffect(() => {
+    if (!methodAccounts.some((a) => String(a.id) === String(selectedAccountId))) {
+      setSelectedAccountId(methodAccounts[0]?.id ?? null);
+    }
+  }, [method, paymentMethods]); // eslint-disable-line react-hooks/exhaustive-deps
+
   React.useEffect(() => {
     apiClient.get('/mt5-accounts').then(res => {
       setMt5Accounts(res.data || []);
@@ -214,6 +250,7 @@ export function DepositPage() {
       formData.append('amount', amount);
       formData.append('type', method);
       formData.append('note', `Deposit via ${method}`);
+      if (selectedAccountId) formData.append('paymentMethodId', selectedAccountId);
       if (transactionId) formData.append('transactionId', transactionId);
       if (depositProof) formData.append('depositProof', depositProof);
 
@@ -258,12 +295,26 @@ export function DepositPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/40 mb-3">
                     Select Payment Method
                   </p>
-                  <DepositMethodSelector value={method} onChange={setMethod} />
+                  {!paymentMethods && !paymentLoadError && (
+                    <p className="text-[12px] text-text-muted/60 py-4 text-center">Loading payment methods…</p>
+                  )}
+                  {paymentLoadError && (
+                    <p className="text-[12px] text-negative py-4 text-center">{paymentLoadError} Please refresh the page.</p>
+                  )}
+                  {paymentMethods && availableMethods.length === 0 && (
+                    <p className="text-[12px] text-text-muted/70 py-4 text-center">
+                      No deposit methods are available right now. Please contact support.
+                    </p>
+                  )}
+                  {availableMethods.length > 0 && (
+                    <DepositMethodSelector value={method} onChange={setMethod} available={availableMethods} />
+                  )}
                 </div>
                 <button
                   id="deposit-step1-next-btn"
                   onClick={handleStep1Next}
-                  className="w-full h-12 rounded-[10px] font-bold text-[13.5px] transition-all duration-150 cursor-pointer bg-brand text-text-on-accent hover:opacity-90 active:scale-95 flex items-center justify-center gap-2"
+                  disabled={!availableMethods.includes(method)}
+                  className="w-full h-12 rounded-[10px] font-bold text-[13.5px] transition-all duration-150 cursor-pointer bg-brand text-text-on-accent hover:opacity-90 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ArrowRight size={15} strokeWidth={2.5} />
                   Continue with {displayMethodName}
@@ -294,7 +345,16 @@ export function DepositPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/40 mb-3">
                     Instructions
                   </p>
-                  <DepositInstructions method={method} amount={amount} accountId={accountId} onProofUpload={setDepositProof} proofFile={depositProof} />
+                  <DepositInstructions
+                    method={method}
+                    accounts={methodAccounts}
+                    selectedAccountId={selectedAccountId}
+                    onSelectAccount={setSelectedAccountId}
+                    amount={amount}
+                    accountId={accountId}
+                    onProofUpload={setDepositProof}
+                    proofFile={depositProof}
+                  />
                 </div>
 
                 {TXN_LABELS[method] && (
@@ -318,7 +378,7 @@ export function DepositPage() {
                   <button
                     id="deposit-confirm-sent-btn"
                     onClick={handleConfirm}
-                    disabled={isSubmitting || (PROOF_REQUIRED.includes(method) && !depositProof)}
+                    disabled={isSubmitting || !selectedAccountId || (PROOF_REQUIRED.includes(method) && !depositProof)}
                     className="w-full h-12 rounded-[10px] font-bold text-[13px] transition-all duration-150 cursor-pointer border border-border bg-surface-elevated text-text hover:bg-muted-surface active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                   >
                     <Check size={14} strokeWidth={2.5} />
