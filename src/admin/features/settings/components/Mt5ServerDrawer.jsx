@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, PlugZap } from 'lucide-react';
+import { PlugZap, Eye, EyeOff } from 'lucide-react';
 import { MainDrawer, DrawerHeader, DrawerBody, DrawerFooter } from '@/components/common/drawer';
-import { FieldLabel, FGroup, TInput, TArea, WarnBanner, Btn } from './SettingsForm';
+import { TInput, TArea, WarnBanner, Btn } from './SettingsForm';
+import { ConnectionPath } from './ConnectionPath';
 
 const EMPTY = {
   label: '',
@@ -32,24 +33,42 @@ function fromServer(server) {
   };
 }
 
-function TestResult({ result }) {
-  if (!result) return null;
-  const Icon = result.ok ? CheckCircle2 : XCircle;
-  const color = result.ok ? 'var(--positive)' : 'var(--negative)';
+function Label({ children, required, hint }) {
   return (
-    <div
-      className="rounded-[8px] border px-4 py-3 text-[12px] font-heading"
-      style={{ borderColor: `color-mix(in srgb, ${color} 25%, transparent)`, background: `color-mix(in srgb, ${color} 6%, transparent)` }}
-    >
-      <div className="flex items-center gap-2 font-semibold" style={{ color }}>
-        <Icon size={14} /> {result.ok ? 'Connection works' : 'Connection failed'}
-        <span className="ml-auto font-mono text-[10.5px] text-text-muted/50">{result.ms} ms</span>
-      </div>
-      <p className="mt-1 text-text-muted/80">{result.message}</p>
-      <div className="mt-2 flex gap-4 text-[11px] text-text-muted/60">
-        <span>Gateway login: {result.tokenOk ? '✓' : '✕'}</span>
-        <span>Manager login: {result.managerOk ? '✓' : result.tokenOk ? '✕' : '—'}</span>
-      </div>
+    <div className="mb-1.5 flex items-baseline justify-between gap-2">
+      <span className="text-[12.5px] font-medium text-text/90 font-heading">
+        {children}
+        {required && <span className="ml-0.5 text-negative" aria-hidden>*</span>}
+      </span>
+      {hint && <span className="truncate text-[11px] text-text-muted/50 font-heading">{hint}</span>}
+    </div>
+  );
+}
+
+function Group({ title, desc, children }) {
+  return (
+    <fieldset>
+      <legend className="text-[13.5px] font-semibold text-text font-heading">{title}</legend>
+      {desc && <p className="mt-0.5 text-[12px] text-text-muted/60 font-heading">{desc}</p>}
+      <div className="mt-3.5 grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
+    </fieldset>
+  );
+}
+
+function PasswordInput({ value, onChange, placeholder }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      {/* suffix reserves right padding so the eye button never covers the text */}
+      <TInput type={show ? 'text' : 'password'} value={value} onChange={onChange} placeholder={placeholder} mono suffix=" " />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        aria-label={show ? 'Hide password' : 'Show password'}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-[6px] p-1.5 text-text-muted/50 hover:text-text focus-visible:outline focus-visible:outline-1 focus-visible:outline-brand/60"
+      >
+        {show ? <EyeOff size={13} /> : <Eye size={13} />}
+      </button>
     </div>
   );
 }
@@ -60,7 +79,7 @@ function TestResult({ result }) {
  */
 export function Mt5ServerDrawer({ open, session, server, onClose, onSubmit, onTest }) {
   return (
-    <MainDrawer open={open} onClose={onClose} width="max-w-[600px]">
+    <MainDrawer open={open} onClose={onClose} width="max-w-[640px]">
       <ServerForm key={session} server={server} onClose={onClose} onSubmit={onSubmit} onTest={onTest} />
     </MainDrawer>
   );
@@ -76,7 +95,7 @@ function ServerForm({ server, onClose, onSubmit, onTest }) {
   const isEdit = Boolean(server);
   const set = (key, value) => {
     setForm((p) => ({ ...p, [key]: value }));
-    setTestResult(null);
+    setTestResult(null); // a result only describes the values it was run with
   };
 
   const payload = () => ({ ...form, serverId: server?.id });
@@ -88,7 +107,7 @@ function ServerForm({ server, onClose, onSubmit, onTest }) {
       setTestResult(await onTest(payload()));
     } catch (err) {
       setTestResult(null);
-      setError(err.message || 'Test failed.');
+      setError(err.message || 'The test could not run.');
     } finally {
       setTesting(false);
     }
@@ -100,93 +119,110 @@ function ServerForm({ server, onClose, onSubmit, onTest }) {
     try {
       await onSubmit(payload());
     } catch (err) {
-      setError(err.message || 'Failed to save MT5 server.');
+      setError(err.message || 'Failed to save the server.');
       setSaving(false);
     }
   };
 
-  const passwordHint = isEdit ? 'Leave blank to keep the saved password' : undefined;
+  const keepHint = isEdit ? 'Leave blank to keep the saved one' : undefined;
+  const pathServer = {
+    baseUrl: form.baseUrl,
+    managerId: form.managerId,
+    serverIp: form.serverIp,
+  };
 
   return (
     <>
       <DrawerHeader
-        eyebrow="MT5 Servers"
-        title={isEdit ? `Edit ${server.label}` : 'Add MT5 Server'}
-        subtitle={isEdit && server.isActive
-          ? 'This server is active. Saved changes take effect immediately.'
-          : 'Saving does not switch servers. Activate it from the list when ready.'}
+        title={isEdit ? 'Edit server' : 'Add server'}
+        subtitle={isEdit
+          ? server.label
+          : 'Saving does not switch servers. Switch to it from the list when you are ready.'}
         onClose={onClose}
       />
       <DrawerBody>
-        <div className="space-y-5">
-          {error && <WarnBanner title="Can't save" message={error} severity="danger" />}
+        <div className="space-y-7">
           {isEdit && server.isActive && (
             <WarnBanner
-              title="Editing the active server"
-              message="Deposits, withdrawals, account creation and the live feed all use these settings. Test before saving."
+              title="This is the active server"
+              message="Deposits, withdrawals, new accounts and the live feed use these settings. Saved changes apply straight away, so test first."
             />
           )}
+          {error && <WarnBanner title="Check this before saving" message={error} severity="danger" />}
 
           <div>
-            <FieldLabel required hint="Your own name for this profile, e.g. 'FuryHolding live – Nov 2026'">Name</FieldLabel>
-            <TInput value={form.label} onChange={(v) => set('label', v)} />
+            <Label required hint="Only admins see this">Name</Label>
+            <TInput value={form.label} onChange={(v) => set('label', v)} placeholder="e.g. FuryHolding live, Nov 2026" />
           </div>
 
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/50 font-heading pt-1">Gateway API</p>
-          <FGroup cols={2}>
-            <div className="col-span-full">
-              <FieldLabel required>API URL</FieldLabel>
+          <Group title="Gateway API" desc="The REST gateway the CRM logs in to.">
+            <div className="sm:col-span-2">
+              <Label required>API URL</Label>
               <TInput value={form.baseUrl} onChange={(v) => set('baseUrl', v.trim())} placeholder="http://1.2.3.4:6969" mono />
             </div>
             <div>
-              <FieldLabel required>API Username</FieldLabel>
+              <Label required>Username</Label>
               <TInput value={form.apiUsername} onChange={(v) => set('apiUsername', v)} mono />
             </div>
             <div>
-              <FieldLabel required={!isEdit} hint={passwordHint}>API Password</FieldLabel>
-              <TInput type="password" value={form.apiPassword} onChange={(v) => set('apiPassword', v)} placeholder={isEdit ? '••••••••' : ''} mono />
+              <Label required={!isEdit} hint={keepHint}>Password</Label>
+              <PasswordInput value={form.apiPassword} onChange={(v) => set('apiPassword', v)} placeholder={isEdit ? 'Saved' : ''} />
             </div>
-          </FGroup>
+          </Group>
 
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-text-muted/50 font-heading pt-1">MT5 Manager</p>
-          <FGroup cols={2}>
+          <Group title="MT5 manager" desc="The manager account the gateway uses on the MT5 server.">
             <div>
-              <FieldLabel required>Manager ID</FieldLabel>
+              <Label required>Manager ID</Label>
               <TInput value={form.managerId} onChange={(v) => set('managerId', v.replace(/\D/g, ''))} mono />
             </div>
             <div>
-              <FieldLabel required={!isEdit} hint={passwordHint}>Manager Password</FieldLabel>
-              <TInput type="password" value={form.managerPassword} onChange={(v) => set('managerPassword', v)} placeholder={isEdit ? '••••••••' : ''} mono />
+              <Label required={!isEdit} hint={keepHint}>Manager password</Label>
+              <PasswordInput value={form.managerPassword} onChange={(v) => set('managerPassword', v)} placeholder={isEdit ? 'Saved' : ''} />
             </div>
-            <div>
-              <FieldLabel required hint="MT5 server address the manager logs in to">Server IP / Host</FieldLabel>
+            <div className="sm:col-span-2">
+              <Label required>MT5 server address</Label>
               <TInput value={form.serverIp} onChange={(v) => set('serverIp', v.trim())} placeholder="1.2.3.4:443" mono />
             </div>
-            <div>
-              <FieldLabel required hint="Saved on new accounts and shown to clients">Server Name</FieldLabel>
+          </Group>
+
+          <Group title="What clients see">
+            <div className="sm:col-span-2">
+              <Label required hint="Saved on new accounts and in credential emails">Server name</Label>
               <TInput value={form.serverName} onChange={(v) => set('serverName', v)} placeholder="e.g. FuryHolding-Trade" />
             </div>
-          </FGroup>
+          </Group>
+
+          <Group title="Live feed" desc="Streams balances and positions to the CRM in real time.">
+            <div className="sm:col-span-2">
+              <Label hint="Blank uses the API URL with ws:// and /ws/accounts">Feed URL</Label>
+              <TInput value={form.wsUrl} onChange={(v) => set('wsUrl', v.trim())} placeholder="ws://1.2.3.4:6969/ws/accounts" mono />
+            </div>
+          </Group>
 
           <div>
-            <FieldLabel hint="Leave blank to use the API URL with ws:// and /ws/accounts">Live Feed URL</FieldLabel>
-            <TInput value={form.wsUrl} onChange={(v) => set('wsUrl', v.trim())} placeholder="ws://1.2.3.4:6969/ws/accounts" mono />
+            <Label hint="Optional">Notes</Label>
+            <TArea value={form.notes} onChange={(v) => set('notes', v)} rows={2} placeholder="e.g. Broker migration, ticket #1234" />
           </div>
 
-          <div>
-            <FieldLabel>Notes</FieldLabel>
-            <TArea value={form.notes} onChange={(v) => set('notes', v)} rows={2} placeholder="e.g. why this server was added" />
-          </div>
-
-          <TestResult result={testResult} />
+          {(testing || testResult) && (
+            <div className="rounded-[12px] border px-4 py-4" style={{ borderColor: 'color-mix(in srgb, var(--border) 60%, transparent)' }}>
+              <p className="mb-3.5 text-[13px] font-semibold text-text font-heading">Connection test</p>
+              <ConnectionPath server={pathServer} result={testResult} testing={testing} showFeed={false} />
+              {testResult && !testing && (
+                <p className="mt-3.5 text-[12px] font-heading" style={{ color: testResult.ok ? 'var(--positive)' : 'var(--negative)' }}>
+                  {testResult.message} <span className="text-text-muted/50">({testResult.ms} ms)</span>
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </DrawerBody>
       <DrawerFooter>
         <div className="flex items-center justify-between gap-2">
-          <Btn Icon={PlugZap} label="Test Connection" variant="cyan" onClick={handleTest} loading={testing} />
+          <Btn Icon={PlugZap} label={testing ? 'Testing…' : 'Test connection'} variant="cyan" onClick={handleTest} disabled={testing} />
           <div className="flex gap-2">
             <Btn label="Cancel" onClick={onClose} />
-            <Btn label={isEdit ? 'Save Changes' : 'Save Server'} variant="primary" onClick={handleSave} loading={saving} />
+            <Btn label={isEdit ? 'Save changes' : 'Add server'} variant="primary" onClick={handleSave} loading={saving} />
           </div>
         </div>
       </DrawerFooter>
